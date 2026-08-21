@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.user import User
 from app.security.jwt import decode_access_token
 from sqlmodel import Session, select
-
+from app.models.customer import Customer
 from app.models.shop import Shop
 from app.models.user import User, UserRole
 
@@ -111,3 +111,29 @@ def require_role(required_role:UserRole):
         return current_user
 
     return role_checker
+
+
+def get_current_customer(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Customer:
+
+    if current_user.role != UserRole.CUSTOMER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only customers can access customer resources"
+        )
+
+    customer = db.exec(
+        select(Customer).where(
+            Customer.user_id == current_user.user_id
+        )
+    ).first()
+
+    if customer is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Customer profile not found"
+        )
+
+    return customer

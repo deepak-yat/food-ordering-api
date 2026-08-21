@@ -123,7 +123,7 @@ def update_menu_item(
         raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Category not found in your shop"
-            )
+            )  
 
     if data.category_id is not None:
         existing_item.category_id = data.category_id
