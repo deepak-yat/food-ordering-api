@@ -12,11 +12,15 @@ from app.routers.menu_item import router as menu_item_router
 
 from app.routers.customer_view_shop import router as customer_view_shop_router
 
+from app.routers.customer_cart import router as customer_cart_router
+
+
 app = FastAPI(
     title="Food Ordering API",
     version="1.0.0"
 )
 
+app.include_router(customer_cart_router)
 app.include_router(customer_view_shop_router)
 app.include_router(menu_item_router)
 app.include_router(menu_category_router)
