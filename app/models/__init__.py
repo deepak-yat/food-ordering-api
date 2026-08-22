@@ -5,3 +5,5 @@ from app.models.menu_category import MenuCategory
 from app.models.menu_item import MenuItem
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
+from app.models.order import Order
+from app.models.order_item import OrderItem

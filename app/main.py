@@ -1,18 +1,17 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from app.routers.auth import router as auth_router
-
-from app.routers.shop import router as shop_router
-
 from app.routers.admin import router as admin_router
-
+from app.routers.shop import router as shop_router
+from app.routers.customer_view_shop import router as customer_shop_router
 from app.routers.menu_category import router as menu_category_router
-
 from app.routers.menu_item import router as menu_item_router
-
-from app.routers.customer_view_shop import router as customer_view_shop_router
-
 from app.routers.customer_cart import router as customer_cart_router
+from app.routers.customer_order import router as customer_order_router
+from app.routers.shop_orders import router as shop_orders_router
 
 
 app = FastAPI(
@@ -20,10 +19,63 @@ app = FastAPI(
     version="1.0.0"
 )
 
-app.include_router(customer_cart_router)
-app.include_router(customer_view_shop_router)
-app.include_router(menu_item_router)
-app.include_router(menu_category_router)
+
+app.mount(
+    "/static",
+    StaticFiles(directory="app/static"),
+    name="static"
+)
+
+templates = Jinja2Templates(
+    directory="app/templates"
+)
+
+
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="home.html",
+        context={
+            "request": request
+        }
+    )
+
+app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(shop_router)
-app.include_router(auth_router)
+app.include_router(customer_shop_router)
+app.include_router(menu_category_router)
+app.include_router(menu_item_router)
+app.include_router(customer_cart_router)
+app.include_router(customer_order_router)
+app.include_router(shop_orders_router)
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="login.html",
+        context={
+            "request": request
+        }
+    )
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="register.html",
+        context={
+            "request": request
+        }
+    )
+
+@app.get("/register/shop", response_class=HTMLResponse)
+def shop_register_page(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="shop_register.html",
+        context={
+            "request": request
+        }
+    )

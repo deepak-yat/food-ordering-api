@@ -7,7 +7,7 @@ from app.models.cart import Cart
 from app.models.cart_item import CartItem
 from app.models.customer import Customer
 from app.models.menu_item import MenuItem
-from app.schemas.cart import AddCartItem,CartResponse,CartItemResponse
+from app.schemas.cart import AddCartItem,CartResponse,CartItemResponse,UpdateCartItem
 
 
 router = APIRouter(
@@ -148,3 +148,65 @@ def get_cart(
         total=total
     )
 
+@router.put("/items/{cart_item_id}")
+def update_cart_item(
+    cart_item_id: int,
+    data: UpdateCartItem,
+    current_customer: Customer = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    cart_item = db.exec(
+        select(CartItem)
+        .join(Cart)
+        .where(
+            CartItem.cart_item_id == cart_item_id,
+            Cart.customer_id == current_customer.customer_id
+        )
+    ).first()
+
+    if cart_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cart item not found"
+        )
+
+    cart_item.quantity = data.quantity
+
+    db.commit()
+    db.refresh(cart_item)
+
+    return {
+        "message": "Cart item updated successfully",
+        "cart_item_id": cart_item.cart_item_id,
+        "quantity": cart_item.quantity
+    }
+
+
+@router.delete("/items/{cart_item_id}")
+def remove_cart_item(
+    cart_item_id: int,
+    current_customer: Customer = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    cart_item = db.exec(
+        select(CartItem)
+        .join(Cart)
+        .where(
+            CartItem.cart_item_id == cart_item_id,
+            Cart.customer_id == current_customer.customer_id
+        )
+    ).first()
+
+    if cart_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cart item not found"
+        )
+
+    db.delete(cart_item)
+    db.commit()
+
+    return {
+        "message": "Item removed from cart",
+        "cart_item_id": cart_item_id
+    }

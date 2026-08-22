@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Foodly | Food Ordering</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <a href="/" class="brand">
+        <span class="brand-mark">F</span>
+        Foodly
+    </a>
+
+    <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="#about">About</a>
+        <a href="#contact">Contact</a>
+    </nav>
+
+    <div class="nav-actions">
+        <a href="/login" class="nav-login">Login</a>
+        <a href="/register" class="btn btn-yellow">Register</a>
+    </div>
+
+</header>
+
+
+<main>
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+        <div class="hero-content">
+
+            <span class="eyebrow">
+                GOOD FOOD. GOOD MOOD.
+            </span>
+
+            <h1>
+                Your next great meal
+                <span>is waiting.</span>
+            </h1>
+
+            <p>
+                Discover local restaurants, explore their menus,
+                build your cart and order your favourites.
+            </p>
+
+            <div class="hero-actions">
+                <a href="#shops" class="btn btn-yellow">
+                    Explore Shops
+                </a>
+
+                <a href="/register" class="btn btn-outline">
+                    Create Account
+                </a>
+            </div>
+
+        </div>
+
+        <div class="hero-image">
+
+            <div class="food-glow"></div>
+
+            <img
+                src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=85"
+                alt="Delicious food"
+            >
+
+        </div>
+
+    </section>
+
+
+    <!-- SHOPS -->
+
+    <section id="shops" class="section">
+
+        <div class="section-heading">
+
+            <div>
+                <span class="eyebrow">
+                    DISCOVER
+                </span>
+
+                <h2>Available Shops</h2>
+
+                <p>
+                    Explore restaurants and discover
+                    what they have on the menu.
+                </p>
+            </div>
+
+        </div>
+
+        <div
+            id="shops-grid"
+            class="shops-grid"
+        ></div>
+
+        <div
+            id="shops-loading"
+            class="loading"
+        >
+            Loading shops...
+        </div>
+
+    </section>
+
+
+    <!-- ABOUT -->
+
+    <section id="about" class="info-section">
+
+        <div>
+            <span class="eyebrow">ABOUT US</span>
+            <h2>Food ordering, made simple.</h2>
+        </div>
+
+        <p>
+            We connect customers with local food shops through
+            a simple and modern ordering platform. Browse menus,
+            build your cart and enjoy your favourite meals.
+        </p>
+
+    </section>
+
+
+    <!-- CONTACT -->
+
+    <section id="contact" class="info-section contact-section">
+
+        <div>
+            <span class="eyebrow">CONTACT</span>
+            <h2>Need help?</h2>
+        </div>
+
+        <div class="contact-details">
+            <p>support@foodly.local</p>
+            <p>+91 90000 00000</p>
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+
+    <p>
+        © 2026 Foodly. All rights reserved.
+    </p>
+
+</footer>
+
+
+<script
+    src="{{ url_for('static', path='js/home.js') }}"
+></script>
+
+</body>
+</html>

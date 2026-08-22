@@ -1,45 +1,62 @@
-from fastapi import APIRouter, Depends , HTTPException , status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlmodel import Session, select
 
-from sqlmodel import Session , select
-
-from app.dependencies import get_current_user
 from app.database import get_db
+from app.dependencies import get_current_user
 from app.models.customer import Customer
-from app.models.user import User,UserRole
-from app.schemas.auth import CustomerRegister,LoginRequest
-from app.security.password import hash_password,verify
-from app.security.jwt import create_access_token
 from app.models.shop import Shop
 from app.models.user import User, UserRole
 from app.schemas.auth import (
     CustomerRegister,
     LoginRequest,
-    ShopRegister
+    ShopRegister,
 )
-router=APIRouter(
+from app.security.jwt import create_access_token
+from app.security.password import hash_password, verify
+
+
+router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
 
-@router.post(
-    "/register",
-)
+
+# =========================================================
+# CUSTOMER REGISTRATION
+# =========================================================
+
+@router.post("/register")
 def register_customer(
-    data:CustomerRegister,
-    db:Session=Depends(get_db)
+    data: CustomerRegister,
+    db: Session = Depends(get_db)
 ):
-    existing_user=db.exec(
+    # Check email
+    existing_user = db.exec(
         select(User).where(
-            User.user_email==data.user_email
+            User.user_email == data.user_email
         )
     ).first()
 
-    if existing_user :
+    if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            Detail="User already exists with this email"
+            detail="User already exists with this email"
         )
 
+    # Check username
+    existing_username = db.exec(
+        select(User).where(
+            User.user_name == data.user_name
+        )
+    ).first()
+
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists"
+        )
+
+    # Create user
     new_user = User(
         user_name=data.user_name,
         user_email=data.user_email,
@@ -49,39 +66,142 @@ def register_customer(
     )
 
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
 
-    new_customer=Customer(
+    # Get generated user_id without committing yet
+    db.flush()
+
+    # Create customer profile
+    new_customer = Customer(
         user_id=new_user.user_id,
         customer_name=data.user_name
     )
 
     db.add(new_customer)
+
+    # Commit both together
     db.commit()
+
+    db.refresh(new_user)
     db.refresh(new_customer)
 
     return {
-        "message" : "Customer registered successfully",
-        "User id" : new_user.user_id,
-        "customer_id" : new_customer.customer_id
+        "message": "Customer registered successfully",
+        "user_id": new_user.user_id,
+        "customer_id": new_customer.customer_id
     }
+
+
+# =========================================================
+# SHOP OWNER REGISTRATION
+# =========================================================
+
+@router.post("/register/shop")
+def register_shop(
+    data: ShopRegister,
+    db: Session = Depends(get_db)
+):
+    # Check email
+    existing_user = db.exec(
+        select(User).where(
+            User.user_email == data.user_email
+        )
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User with this email already exists"
+        )
+
+    # Check username
+    existing_username = db.exec(
+        select(User).where(
+            User.user_name == data.user_name
+        )
+    ).first()
+
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists"
+        )
+
+    # Check shop name
+    existing_shop = db.exec(
+        select(Shop).where(
+            Shop.shop_name == data.shop_name
+        )
+    ).first()
+
+    if existing_shop:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Shop with this name already exists"
+        )
+
+    # Create shop owner user
+    new_user = User(
+        user_name=data.user_name,
+        user_email=data.user_email,
+        password_hash=hash_password(data.password),
+        role=UserRole.SHOP_OWNER,
+        is_active=False
+    )
+
+    db.add(new_user)
+
+    # Generate user_id without committing
+    db.flush()
+
+    # Create shop in pending state
+    new_shop = Shop(
+        shop_name=data.shop_name,
+        description=data.description,
+        owner_user_id=new_user.user_id,
+        is_approved=False,
+        is_active=False
+    )
+
+    db.add(new_shop)
+
+    # Commit User + Shop together
+    db.commit()
+
+    db.refresh(new_user)
+    db.refresh(new_shop)
+
+    return {
+        "message": (
+            "Shop registration submitted successfully. "
+            "Waiting for admin approval."
+        ),
+        "user_id": new_user.user_id,
+        "shop_id": new_shop.shop_id
+    }
+
+
+# =========================================================
+# LOGIN
+# =========================================================
 
 @router.post("/login")
 def login(
     credentials: LoginRequest,
     db: Session = Depends(get_db)
 ):
-    statement = select(User).where(
-        User.user_name == credentials.user_name
-    )
-
-    user = db.exec(statement).first()
+    user = db.exec(
+        select(User).where(
+            User.user_name == credentials.user_name
+        )
+    ).first()
 
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Invalid username or password",
+            headers={
+                "WWW-Authenticate": "Bearer"
+            }
         )
 
     if not verify(
@@ -90,7 +210,10 @@ def login(
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Invalid username or password",
+            headers={
+                "WWW-Authenticate": "Bearer"
+            }
         )
 
     if not user.is_active:
@@ -109,6 +232,11 @@ def login(
         "token_type": "bearer"
     }
 
+
+# =========================================================
+# CURRENT USER
+# =========================================================
+
 @router.get("/me")
 def get_me(
     current_user: User = Depends(get_current_user)
@@ -119,65 +247,4 @@ def get_me(
         "user_email": current_user.user_email,
         "role": current_user.role.value,
         "is_active": current_user.is_active
-    }
-
-@router.post(
-    "/register/shop"
-)
-def register_shop(
-     data:ShopRegister,
-    db:Session=Depends(get_db),
-):
-    existing_user=db.exec(
-        select(User).where(
-            User.user_email == data.user_email
-        )
-    ).first()
-
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="User with this email already exists"
-        )
-    existing_shop=db.exec(
-        select(Shop).where(
-            Shop.shop_name==data.shop_name
-        )
-    ).first()
-
-    if existing_shop:
-        raise HTTPException(
-            status_code=409,
-            detail="Shop with this name already exists"
-        )
-
-    new_user=User(
-        user_name=data.user_name,
-        user_email=data.user_email,
-        password_hash=hash_password(data.password),
-        role=UserRole.SHOP_OWNER,
-        is_active=False
-    )
-    db.add(new_user)
-    db.flush()
-
-    new_shop=Shop(
-        shop_name=data.shop_name,
-        owner_user_id=new_user.user_id,
-        is_approved=False,
-        is_active=False,
-        description=data.description
-    )
-    db.add(new_shop)
-    db.commit()
-    db.refresh(new_user)
-    db.refresh(new_shop)
-
-    return {
-        "message":(
-            "New user submitted successfully",
-            "New shop added successfully"
-        ),
-        "user_id":new_user.user_id,
-        "shop_id":new_shop.shop_id
     }

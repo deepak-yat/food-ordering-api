@@ -17,4 +17,12 @@ class ShopRegister(BaseModel):
     password: str
     shop_name: str
     description: str | None = None
-    
+
+class CustomerRegisterResponse(BaseModel):
+    message: str
+    user_id: int
+    customer_id: int
+class ShopRegisterResponse(BaseModel):
+    message: str
+    user_id: int
+    shop_id: int

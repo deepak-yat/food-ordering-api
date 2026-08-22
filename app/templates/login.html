@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Foodly</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<header class="navbar">
+
+    <a href="/" class="brand">
+        <span class="brand-mark">F</span>
+        Foodly
+    </a>
+
+    <div class="nav-actions">
+        <a href="/" class="nav-login">
+            Home
+        </a>
+
+        <a href="/register" class="btn btn-yellow">
+            Register
+        </a>
+    </div>
+
+</header>
+
+
+<main class="auth-page">
+
+    <div class="auth-card">
+
+        <span class="eyebrow">
+            WELCOME BACK
+        </span>
+
+        <h1>Login</h1>
+
+        <p class="auth-subtitle">
+            Sign in to continue ordering.
+        </p>
+
+        <form id="login-form">
+
+            <label>
+                Username
+            </label>
+
+            <input
+                type="text"
+                name="user_name"
+                required
+            >
+
+            <label>
+                Password
+            </label>
+
+            <input
+                type="password"
+                name="password"
+                required
+            >
+
+            <button
+                type="submit"
+                class="btn btn-yellow auth-button"
+            >
+                Login
+            </button>
+
+        </form>
+
+        <p id="login-message"></p>
+
+        <div class="auth-divider">
+            OR
+        </div>
+
+        <a
+            href="/register"
+            class="btn btn-outline auth-button"
+        >
+            Create Customer Account
+        </a>
+
+        <a
+            href="/register/shop"
+            class="shop-register-link"
+        >
+            List your shop and items →
+        </a>
+
+    </div>
+
+</main>
+
+<script
+    src="{{ url_for('static', path='js/login.js') }}"
+></script>
+
+</body>
+</html>
