@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import Session, select
 
 from app.database import get_db
@@ -8,8 +8,10 @@ from app.models.shop import Shop
 from app.models.user import User, UserRole
 from app.schemas.auth import (
     CustomerRegister,
+    CustomerRegisterResponse,
     LoginRequest,
     ShopRegister,
+    ShopRegisterResponse
 )
 from app.security.jwt import create_access_token
 from app.security.password import hash_password, verify
@@ -25,7 +27,8 @@ router = APIRouter(
 # CUSTOMER REGISTRATION
 # =========================================================
 
-@router.post("/register")
+@router.post("/register",
+            response_model=CustomerRegisterResponse )
 def register_customer(
     data: CustomerRegister,
     db: Session = Depends(get_db)
@@ -95,7 +98,8 @@ def register_customer(
 # SHOP OWNER REGISTRATION
 # =========================================================
 
-@router.post("/register/shop")
+@router.post("/register/shop",
+             response_model=ShopRegisterResponse)
 def register_shop(
     data: ShopRegister,
     db: Session = Depends(get_db)
@@ -187,6 +191,7 @@ def register_shop(
 @router.post("/login")
 def login(
     credentials: LoginRequest,
+    response : Response,
     db: Session = Depends(get_db)
 ):
     user = db.exec(
@@ -226,6 +231,14 @@ def login(
         user_id=user.user_id,
         role=user.role.value
     )
+    response.set_cookie(
+    key="access_token",
+    value=access_token,
+    httponly=True,
+    secure=False,
+    samesite="lax",
+    max_age=30 * 60
+)
 
     return {
         "access_token": access_token,
@@ -247,4 +260,14 @@ def get_me(
         "user_email": current_user.user_email,
         "role": current_user.role.value,
         "is_active": current_user.is_active
+    }
+
+@router.post("/logout")
+def logout(response: Response):
+    response.delete_cookie(
+        key="access_token"
+    )
+
+    return {
+        "message": "Logged out successfully"
     }

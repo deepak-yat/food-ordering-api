@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request , Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,8 +12,8 @@ from app.routers.menu_item import router as menu_item_router
 from app.routers.customer_cart import router as customer_cart_router
 from app.routers.customer_order import router as customer_order_router
 from app.routers.shop_orders import router as shop_orders_router
-
-
+from app.dependencies import require_page_role,UserRole
+from app.models.user import User
 app = FastAPI(
     title="Food Ordering API",
     version="1.0.0"
@@ -77,5 +77,24 @@ def shop_register_page(request: Request):
         name="shop_register.html",
         context={
             "request": request
+        }
+    )
+
+@app.get(
+    "/customer/dashboard",
+    response_class=HTMLResponse
+)
+def customer_dashboard(
+    request: Request,
+    current_user: User = Depends(
+        require_page_role(UserRole.CUSTOMER)
+    )
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="customer_dashboard.html",
+        context={
+            "request": request,
+            "user": current_user
         }
     )

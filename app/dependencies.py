@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status,Cookie
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlmodel import Session
 
@@ -15,8 +15,11 @@ bearer_scheme = HTTPBearer()
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(
-        bearer_scheme
+    credentials: HTTPAuthorizationCredentials | None = Depends(
+        HTTPBearer(auto_error=False)
+    ),
+    access_token: str | None = Cookie(
+        default=None
     ),
     db: Session = Depends(get_db)
 ) -> User:
@@ -26,10 +29,21 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={
             "WWW-Authenticate": "Bearer"
-        }   
+        }
     )
 
-    token = credentials.credentials
+    token = None
+
+    # 1. Prefer Authorization: Bearer <token>
+    if credentials is not None:
+        token = credentials.credentials
+
+    # 2. Otherwise use browser HttpOnly cookie
+    elif access_token is not None:
+        token = access_token
+
+    if token is None:
+        raise credentials_exception
 
     payload = decode_access_token(token)
 
@@ -137,3 +151,19 @@ def get_current_customer(
         )
 
     return customer
+
+def require_page_role(required_role: UserRole):
+
+    def page_role_checker(
+        current_user: User = Depends(get_current_user)
+    ) -> User:
+
+        if current_user.role != required_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to access this page"
+            )
+
+        return current_user
+
+    return page_role_checker
