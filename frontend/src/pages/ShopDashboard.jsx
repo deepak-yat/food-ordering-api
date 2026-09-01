@@ -29,7 +29,17 @@ const [categoryError, setCategoryError] = useState("");
 
     const [editingCategory, setEditingCategory] = useState(null);
 const [deleteCategory, setDeleteCategory] = useState(null);
+const [showItemForm, setShowItemForm] = useState(false);
+const [selectedCategory, setSelectedCategory] = useState(null);
 
+const [itemForm, setItemForm] = useState({
+    name: "",
+    description: "",
+    price: ""
+});
+
+const [itemLoading, setItemLoading] = useState(false);
+const [itemError, setItemError] = useState("");
 
 
     useEffect (()=>{
@@ -80,6 +90,7 @@ const [deleteCategory, setDeleteCategory] = useState(null);
             setLoading(false);
         }
     }
+
 
 
     async function handleLogout() {
@@ -274,6 +285,86 @@ async function confirmDeleteCategory() {
 
     } finally {
         setCategoryLoading(false);
+    }
+}
+
+    async function addItem(event) {
+    event.preventDefault();
+
+    if (!selectedCategory) {
+        return;
+    }
+
+    setItemError("");
+
+    if (!itemForm.name.trim()) {
+        setItemError("Item name is required.");
+        return;
+    }
+
+    if (
+        itemForm.price === "" ||
+        Number(itemForm.price) <= 0
+    ) {
+        setItemError("Price must be greater than 0.");
+        return;
+    }
+
+    try {
+
+        setItemLoading(true);
+
+        const newItem = await apiFetch(
+            "/menu/categories/item",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    category_id:
+                        selectedCategory.category_id,
+                    name: itemForm.name.trim(),
+                    description:
+                        itemForm.description.trim() || null,
+                    price: Number(itemForm.price)
+                })
+            }
+        );
+
+        setItems(currentItems => [
+            ...currentItems,
+            newItem
+        ]);
+
+        setItemForm({
+            name: "",
+            description: "",
+            price: ""
+        });
+
+        setSelectedCategory(null);
+        setShowItemForm(false);
+
+    } catch (error) {
+
+        console.error(error);
+
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setItemError(
+            error.message ||
+            "Unable to add item."
+        );
+
+    } finally {
+
+        setItemLoading(false);
     }
 }
 
@@ -580,16 +671,22 @@ async function confirmDeleteCategory() {
 
 
                         <button
-                            className="add-item-button"
-                            onClick={() =>
-                                console.log(
-                                    "Add item to category",
-                                    category.category_id
-                                )
-                            }
-                        >
-                            + Add Item
-                        </button>
+    className="add-item-button"
+    onClick={() => {
+        setSelectedCategory(category);
+
+        setItemForm({
+            name: "",
+            description: "",
+            price: ""
+        });
+
+        setItemError("");
+        setShowItemForm(true);
+    }}
+>
+    + Add Item
+</button>
 
                     </div>
 
@@ -990,6 +1087,173 @@ async function confirmDeleteCategory() {
         </div>
     </div>
 )}
+
+    {showItemForm && selectedCategory && (
+    <div
+        className="shop-modal-overlay"
+        onClick={() => {
+            if (!itemLoading) {
+                setShowItemForm(false);
+                setSelectedCategory(null);
+            }
+        }}
+    >
+        <div
+            className="shop-modal"
+            onClick={(event) =>
+                event.stopPropagation()
+            }
+        >
+
+            <div className="shop-modal-header">
+
+                <div>
+                    <span className="eyebrow">
+                        ADD MENU ITEM
+                    </span>
+
+                    <h2>
+                        Add Item
+                    </h2>
+                </div>
+
+                <button
+                    className="shop-modal-close"
+                    onClick={() => {
+                        setShowItemForm(false);
+                        setSelectedCategory(null);
+                    }}
+                    disabled={itemLoading}
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div className="selected-category-display">
+                <span>
+                    Category
+                </span>
+
+                <strong>
+                    {selectedCategory.category_name}
+                </strong>
+            </div>
+
+
+            <form onSubmit={addItem}>
+
+                <div className="form-group">
+
+                    <label htmlFor="item_name">
+                        Item Name
+                    </label>
+
+                    <input
+                        id="item_name"
+                        type="text"
+                        placeholder="Item name."
+                        value={itemForm.name}
+                        onChange={(event) =>
+                            setItemForm({
+                                ...itemForm,
+                                name: event.target.value
+                            })
+                        }
+                        required
+                    />
+
+                </div>
+
+
+                <div className="form-group">
+
+                    <label htmlFor="item_description">
+                        Description
+                    </label>
+
+                    <textarea
+                        id="item_description"
+                        placeholder="Describe the item..."
+                        rows="4"
+                        value={itemForm.description}
+                        onChange={(event) =>
+                            setItemForm({
+                                ...itemForm,
+                                description:
+                                    event.target.value
+                            })
+                        }
+                    />
+
+                </div>
+
+
+                <div className="form-group">
+
+                    <label htmlFor="item_price">
+                        Price
+                    </label>
+
+                    <input
+                        id="item_price"
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        placeholder="Enter price"
+                        value={itemForm.price}
+                        onChange={(event) =>
+                            setItemForm({
+                                ...itemForm,
+                                price: event.target.value
+                            })
+                        }
+                        required
+                    />
+
+                </div>
+
+
+                {itemError && (
+                    <p className="error-text">
+                        {itemError}
+                    </p>
+                )}
+
+
+                <div className="shop-modal-actions">
+
+                    <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={() => {
+                            setShowItemForm(false);
+                            setSelectedCategory(null);
+                        }}
+                        disabled={itemLoading}
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        className="primary-button"
+                        disabled={itemLoading}
+                    >
+                        {itemLoading
+                            ? "Adding..."
+                            : "Add Item"}
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+)}
+
         </div>
     );
 }
