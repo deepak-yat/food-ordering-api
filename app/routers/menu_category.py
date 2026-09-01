@@ -8,7 +8,7 @@ from app.models.shop import Shop
 from app.schemas.menu_category import (
     MenuCategoryCreate,
     MenuCategoryResponse,
-    MenuCategoryUpdate
+    UpdateMenuCategory
 )
 
 router=APIRouter(
@@ -60,3 +60,61 @@ def get_category(
         )
     ).all()
     return categories
+
+@router.put("/categories/{category_id}")
+def update_category(
+    category_id: int,
+    data: UpdateMenuCategory,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    category = db.exec(
+        select(MenuCategory).where(
+            MenuCategory.category_id == category_id,
+            MenuCategory.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    if category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
+    category.category_name = data.category_name.strip()
+
+    db.commit()
+    db.refresh(category)
+
+    return {
+        "message": "Category updated successfully",
+        "category_id": category.category_id,
+        "category_name": category.category_name
+    }
+
+@router.delete("/categories/{category_id}")
+def delete_category(
+    category_id: int,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    category = db.exec(
+        select(MenuCategory).where(
+            MenuCategory.category_id == category_id,
+            MenuCategory.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    if category is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Category not found"
+        )
+
+    db.delete(category)
+    db.commit()
+
+    return {
+        "message": "Category deleted successfully",
+        "category_id": category_id
+    }

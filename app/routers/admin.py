@@ -5,7 +5,10 @@ from app.database import get_db
 from app.dependencies import get_current_user,require_role
 from app.models.shop import Shop
 from app.models.user import User,UserRole
-
+from app.schemas.admin import (
+    AdminUserResponse,
+    AdminUsersResponse
+)
 
 router = APIRouter(
     prefix="/admin",
@@ -99,4 +102,82 @@ def delete_shop(
     return {
         "message": "Shop deleted successfully",
         "shop_id": shop_id
+    }
+
+@router.get("/shops")
+def get_all_shops(
+    current_user : User = Depends(
+            require_role(UserRole.ADMIN)
+        ),
+        db : Session =Depends(get_db)
+):
+    shops = db.exec(
+        select(Shop)
+    ).all()
+
+    return shops
+
+@router.get("/shops/{shop_id}")
+def get_shop_details(
+    shop_id: int,
+    current_user : User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db:Session = Depends(get_db)
+):
+    shop = db.get(
+        Shop,
+        shop_id
+    )
+
+    if shop is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shop Not found"
+        )
+
+    return shop
+
+
+@router.get(
+    "/users",
+    response_model=AdminUsersResponse
+)
+def get_all_users(
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db: Session = Depends(get_db)
+):
+    users = db.exec(
+        select(User)
+    ).all()
+
+    customers = [
+        AdminUserResponse(
+            user_id=user.user_id,
+            user_name=user.user_name,
+            user_email=user.user_email,
+            role=user.role.value,
+            is_active=user.is_active
+        )
+        for user in users
+        if user.role == UserRole.CUSTOMER
+    ]
+
+    shop_owners = [
+        AdminUserResponse(
+            user_id=user.user_id,
+            user_name=user.user_name,
+            user_email=user.user_email,
+            role=user.role.value,
+            is_active=user.is_active
+        )
+        for user in users
+        if user.role == UserRole.SHOP_OWNER
+    ]
+
+    return {
+        "customers": customers,
+        "shop_owners": shop_owners
     }

@@ -3,8 +3,8 @@ from pydantic import BaseModel
 class MenuCategoryCreate(BaseModel):
     category_name : str
 
-class MenuCategoryUpdate(BaseModel):
-    category_name : str
+class UpdateMenuCategory(BaseModel):
+    category_name: str
 
 class MenuCategoryResponse(BaseModel):
     category_id : int
