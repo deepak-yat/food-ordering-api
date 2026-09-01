@@ -34,12 +34,33 @@ form.addEventListener("submit", async (event) => {
         );
 
         const params = new URLSearchParams(
-            window.location.search
-        );
+        window.location.search
+    );
 
-        const next = params.get("next") || "/";
+    const next = params.get("next");
 
+    if (next) {
         window.location.href = next;
+        return;
+    }
+
+    switch (data.user.role) {
+    case "customer":
+        window.location.href = "/customer/dashboard";
+        break;
+
+    case "shop_owner":
+        window.location.href = "/shop/dashboard";
+        break;
+
+    case "admin":
+        window.location.href = "/admin/dashboard";
+        break;
+
+    default:
+        message.textContent =
+            "Unknown user role.";
+    }
 
     } catch (error) {
         message.textContent =

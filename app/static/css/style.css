@@ -845,3 +845,58 @@ footer {
         justify-content: space-between;
     }
 }
+
+.order-card {
+    background: #141414;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    margin-bottom: 18px;
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.order-card-header h3 {
+    margin-top: 6px;
+}
+
+.order-items {
+    margin-top: 20px;
+}
+
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+}
+
+.order-date {
+    margin-top: 15px;
+    color: #777;
+    font-size: 0.82rem;
+}
+
+.shop-order-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 22px;
+}
+
+.btn-danger {
+    background: transparent;
+    color: #ff5a5a;
+
+    border: 1px solid #572222;
+}
+
+.btn-danger:hover {
+    border-color: #ff5a5a;
+    background: rgba(255, 90, 90, 0.08);
+}

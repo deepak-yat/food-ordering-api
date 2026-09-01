@@ -73,3 +73,30 @@ def approve_shop(
         "shop_active": shop.is_active,
         "owner_active": owner.is_active
     }
+
+@router.delete("/shops/{shop_id}")
+def delete_shop(
+    shop_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    )
+):
+    shop = db.get(
+        Shop,
+        shop_id
+    )
+
+    if shop is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shop not found"
+        )
+
+    db.delete(shop)
+    db.commit()
+
+    return {
+        "message": "Shop deleted successfully",
+        "shop_id": shop_id
+    }

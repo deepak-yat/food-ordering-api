@@ -143,4 +143,100 @@ def create_order(
         for item in order_items
     ]
 )
-    
+
+
+@router.get(
+    "",
+    response_model=list[OrderResponse]
+)
+def get_customer_orders(
+    current_customer: Customer = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    orders = db.exec(
+        select(Order).where(
+            Order.customer_id == current_customer.customer_id
+        )
+    ).all()
+
+    response = []
+
+    for order in orders:
+
+        order_items = db.exec(
+            select(OrderItem).where(
+                OrderItem.order_id == order.order_id
+            )
+        ).all()
+
+        response.append(
+            OrderResponse(
+                order_id=order.order_id,
+                customer_id=order.customer_id,
+                shop_id=order.shop_id,
+                status=order.status,
+                total_amount=order.total_amount,
+                created_at=order.created_at,
+                items=[
+                    OrderItemResponse(
+                        order_item_id=item.order_item_id,
+                        menu_item_id=item.menu_item_id,
+                        item_name=item.item_name,
+                        unit_price=item.unit_price,
+                        quantity=item.quantity,
+                        subtotal=item.subtotal
+                    )
+                    for item in order_items
+                ]
+            )
+        )
+
+    return response
+
+@router.get(
+    "/{order_id}",
+    response_model=OrderResponse
+)
+def get_customer_order(
+    order_id: int,
+    current_customer: Customer = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id,
+            Order.customer_id == current_customer.customer_id
+        )
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    order_items = db.exec(
+        select(OrderItem).where(
+            OrderItem.order_id == order.order_id
+        )
+    ).all()
+
+    return OrderResponse(
+        order_id=order.order_id,
+        customer_id=order.customer_id,
+        shop_id=order.shop_id,
+        status=order.status,
+        total_amount=order.total_amount,
+        created_at=order.created_at,
+        items=[
+            OrderItemResponse(
+                order_item_id=item.order_item_id,
+                menu_item_id=item.menu_item_id,
+                item_name=item.item_name,
+                unit_price=item.unit_price,
+                quantity=item.quantity,
+                subtotal=item.subtotal
+            )
+            for item in order_items
+        ]
+    )

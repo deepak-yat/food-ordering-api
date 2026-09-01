@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request , Depends
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-
+from fastapi.middleware.cors import CORSMiddleware
 from app.routers.auth import router as auth_router
 from app.routers.admin import router as admin_router
 from app.routers.shop import router as shop_router
@@ -19,6 +19,16 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.mount(
     "/static",
@@ -93,6 +103,26 @@ def customer_dashboard(
     return templates.TemplateResponse(
         request=request,
         name="customer_dashboard.html",
+        context={
+            "request": request,
+            "user": current_user
+        }
+    )
+
+
+@app.get(
+    "/shop/dashboard",
+    response_class=HTMLResponse
+)
+def shop_dashboard(
+    request: Request,
+    current_user: User = Depends(
+        require_page_role(UserRole.SHOP_OWNER)
+    )
+):
+    return templates.TemplateResponse(
+        request=request,
+        name="shop_dashboard.html",
         context={
             "request": request,
             "user": current_user

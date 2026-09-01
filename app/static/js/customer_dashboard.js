@@ -455,53 +455,120 @@ async function checkout(cartId) {
 async function loadOrders() {
 
     const container =
-        document.getElementById(
-            "orders-container"
+        document.getElementById("orders-container");
+
+    try {
+        const response = await fetch(
+            "/customer/orders"
         );
 
-    /*
-     * We'll connect this to the customer order-history
-     * endpoint after we add that endpoint.
-     */
+        if (response.status === 401) {
+            window.location.href = "/login";
+            return;
+        }
 
-    container.innerHTML = `
-        <div class="empty-state">
-            <h3>Orders</h3>
-            <p>
-                Your order history will appear here.
-            </p>
-        </div>
-    `;
-}
+        if (!response.ok) {
+            throw new Error("Unable to load orders");
+        }
 
-function escapeHtml(value) {
+        const orders = await response.json();
 
-    const div =
-        document.createElement("div");
+        document.getElementById(
+            "order-count"
+        ).textContent = orders.length;
 
-    div.textContent = value;
+        if (orders.length === 0) {
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>No orders yet</h3>
+                    <p>
+                        Your orders will appear here
+                        after you place one.
+                    </p>
+                </div>
+            `;
+            return;
+        }
 
-    return div.innerHTML;
-}
+        container.innerHTML = orders.map(order => `
+            <div class="order-card">
 
+                <div class="order-card-header">
 
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
+                    <div>
+                        <span class="eyebrow">
+                            ORDER #${order.order_id}
+                        </span>
 
-        loadShops();
-        loadCart();
-        loadOrders();
+                        <h3>
+                            ${formatOrderStatus(order.status)}
+                        </h3>
+                    </div>
 
-        document
-            .getElementById("logout-btn")
-            .addEventListener(
-                "click",
-                logout
-            );
+                    <strong class="price">
+                        ₹${Number(
+                            order.total_amount
+                        ).toFixed(2)}
+                    </strong>
+
+                </div>
+
+                <div class="order-items">
+
+                    ${order.items.map(item => `
+                        <div class="order-item-row">
+
+                            <span>
+                                ${escapeHtml(
+                                    item.item_name
+                                )}
+                                × ${item.quantity}
+                            </span>
+
+                            <strong>
+                                ₹${Number(
+                                    item.subtotal
+                                ).toFixed(2)}
+                            </strong>
+
+                        </div>
+                    `).join("")}
+
+                </div>
+
+                <div class="order-date">
+                    ${new Date(
+                        order.created_at
+                    ).toLocaleString()}
+                </div>
+
+            </div>
+        `).join("");
+
+    } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Unable to load orders</h3>
+                <p> 
+                    Please try again later.
+                </p>
+            </div>
+        `;
     }
-);
+}
 
+
+function formatOrderStatus(status) {
+
+    return status
+        .replace("_", " ")
+        .replace(/\b\w/g, letter =>
+            letter.toUpperCase()
+        );
+}
 async function logout() {
 
     await fetch(

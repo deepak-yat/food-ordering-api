@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Shop Dashboard | Foodly</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+<header class="dashboard-navbar">
+
+    <a href="/" class="brand">
+        <span class="brand-mark">F</span>
+        Foodly
+    </a>
+
+    <nav class="dashboard-nav">
+
+        <a href="#overview">
+            Overview
+        </a>
+
+        <a href="#orders">
+            Orders
+        </a>
+
+        <a href="#menu">
+            Menu
+        </a>
+
+    </nav>
+
+    <div class="dashboard-user">
+
+        <span>
+            {{ user.user_name }}
+        </span>
+
+        <button
+            id="logout-btn"
+            class="btn btn-outline"
+        >
+            Logout
+        </button>
+
+    </div>
+
+</header>
+
+
+<main class="dashboard">
+
+    <!-- OVERVIEW -->
+
+    <section
+        id="overview"
+        class="dashboard-welcome"
+    >
+
+        <span class="eyebrow">
+            SHOP OWNER
+        </span>
+
+        <h1>
+            Welcome back,
+            <span>{{ user.user_name }}</span>
+        </h1>
+
+        <p>
+            Manage your shop, menu and incoming orders
+            from one place.
+        </p>
+
+    </section>
+
+
+    <!-- STATS -->
+
+    <section class="dashboard-stats">
+
+        <div class="stat-card">
+
+            <span>
+                Pending Orders
+            </span>
+
+            <strong id="pending-order-count">
+                —
+            </strong>
+
+        </div>
+
+        <div class="stat-card">
+
+            <span>
+                Active Orders
+            </span>
+
+            <strong id="active-order-count">
+                —
+            </strong>
+
+        </div>
+
+        <div class="stat-card">
+
+            <span>
+                Total Orders
+            </span>
+
+            <strong id="total-order-count">
+                —
+            </strong>
+
+        </div>
+
+    </section>
+
+
+    <!-- ORDERS -->
+
+    <section
+        id="orders"
+        class="dashboard-section"
+    >
+
+        <div class="section-heading">
+
+            <span class="eyebrow">
+                ORDER MANAGEMENT
+            </span>
+
+            <h2>
+                Incoming Orders
+            </h2>
+
+            <p>
+                Review and process orders from your shop.
+            </p>
+
+        </div>
+
+        <div
+            id="shop-orders-container"
+            class="dashboard-panel"
+        >
+            Loading orders...
+        </div>
+
+    </section>
+
+
+    <!-- MENU -->
+
+    <section
+        id="menu"
+        class="dashboard-section"
+    >
+
+        <div class="section-heading">
+
+            <span class="eyebrow">
+                MENU MANAGEMENT
+            </span>
+
+            <h2>
+                Your Menu
+            </h2>
+
+            <p>
+                Manage your categories and food items.
+            </p>
+
+        </div>
+
+        <div
+            id="shop-menu-container"
+            class="dashboard-panel"
+        >
+            Loading menu...
+        </div>
+
+    </section>
+
+</main>
+
+
+<script
+    src="{{ url_for(
+        'static',
+        path='js/shop_dashboard.js'
+    ) }}"
+></script>
+
+</body>
+</html>

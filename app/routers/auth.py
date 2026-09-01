@@ -241,9 +241,14 @@ def login(
 )
 
     return {
-        "access_token": access_token,
-        "token_type": "bearer"
+    "access_token": access_token,
+    "token_type": "bearer",
+    "user": {
+        "user_id": user.user_id,
+        "user_name": user.user_name,
+        "role": user.role.value
     }
+}
 
 
 # =========================================================

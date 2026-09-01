@@ -23,7 +23,13 @@ class CartItemResponse(BaseModel):
 
 
 class CartResponse(BaseModel):
+
     cart_id: int
+
     shop_id: int
+
+    shop_name: str
+
     items: list[CartItemResponse]
+
     total: float
