@@ -22,3 +22,4 @@ class Shop(SQLModel,table=True):
         default=False)
     is_active :bool = Field(
         default=False )
+

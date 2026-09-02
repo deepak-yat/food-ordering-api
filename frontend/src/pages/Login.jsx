@@ -131,6 +131,17 @@ function Login() {
 
             <div className="auth-card">
 
+                <div className="auth-brand">
+
+                    <Link
+                        to="/"
+                        className="logo"
+                    >
+                        Foodly
+                    </Link>
+
+                </div>
+
                 <span className="eyebrow">
                     WELCOME BACK
                 </span>

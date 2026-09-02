@@ -5,9 +5,9 @@ function Navbar() {
         <header className="navbar">
             <div className="navbar-container">
 
-                <Link to="/" className="logo">
+                <span to="/" className="logo">
                     Foodly
-                </Link>
+                </span>
 
                 <nav className="nav-links">
                     <Link to="/">
