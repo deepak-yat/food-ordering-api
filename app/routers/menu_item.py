@@ -92,52 +92,83 @@ def get_menu_item(
     response_model=MenuItemResponse
 )
 def update_menu_item(
-    category_id:int,
-    item_id :int,
-    data : MenuItemUpdate,
-    db : Session = Depends(get_db),
-    current_shop : Shop = Depends(get_current_shop)
+    category_id: int,
+    item_id: int,
+    data: MenuItemUpdate,
+    db: Session = Depends(get_db),
+    current_shop: Shop = Depends(get_current_shop)
 ):
     existing_item = db.exec(
         select(MenuItem).where(
-            MenuItem.category_id==category_id,
+            MenuItem.category_id == category_id,
             MenuItem.item_id == item_id,
-            MenuItem.shop_id==current_shop.shop_id
+            MenuItem.shop_id == current_shop.shop_id
         )
     ).first()
 
     if existing_item is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="invalid category id or item id"
+            detail="Invalid category id or item id"
         )
-
-    category=db.exec(
-        select(MenuCategory).where(
-            MenuCategory.category_id == data.category_id,
-            MenuCategory.shop_id == current_shop.shop_id
-        )
-    ).first()
-
-    if category is None:
-        raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Category not found in your shop"
-            )  
 
     if data.category_id is not None:
+
+        category = db.exec(
+            select(MenuCategory).where(
+                MenuCategory.category_id == data.category_id,
+                MenuCategory.shop_id == current_shop.shop_id
+            )
+        ).first()
+
+        if category is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found in your shop"
+            )
+
         existing_item.category_id = data.category_id
-    
+
     if data.name is not None:
-        existing_item.name=data.name
-    if data.description is not None :
-        existing_item.description=data.description
-    if data.price is not None :
-        existing_item.price=data.price
-    if data.is_available is not None :
-        existing_item.is_available=data.is_available
+        existing_item.name = data.name
+
+    if data.description is not None:
+        existing_item.description = data.description
+
+    if data.price is not None:
+        existing_item.price = data.price
+
+    if data.is_available is not None:
+        existing_item.is_available = data.is_available
 
     db.commit()
     db.refresh(existing_item)
 
     return existing_item
+
+
+@router.delete("/items/{item_id}")
+def delete_item(
+    item_id: int,
+    db: Session = Depends(get_db),
+    current_shop: Shop = Depends(get_current_shop)
+):
+    item = db.exec(
+        select(MenuItem).where(
+            MenuItem.item_id == item_id,
+            MenuItem.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Menu item not found"
+        )
+
+    db.delete(item)
+    db.commit()
+
+    return {
+        "message": "Menu item deleted successfully"
+    }

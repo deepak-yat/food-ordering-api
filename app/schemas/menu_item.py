@@ -8,11 +8,11 @@ class MenuItemCreate(BaseModel):
     is_available : bool = True
 
 class MenuItemUpdate(BaseModel):
-    category_id : int = None
-    name : str = None
-    description : str  = None
-    price : float = None
-    is_available : bool |None = None
+    category_id: int | None = None
+    name: str | None = None
+    description: str | None = None
+    price: float | None = None
+    is_available: bool | None = None
 
 class MenuItemResponse(BaseModel):
     item_id : int

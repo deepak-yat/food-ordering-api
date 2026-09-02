@@ -21,26 +21,41 @@ function ShopDashboard(){
 
     const [showCategoryForm, setShowCategoryForm] = useState(false);
 
-const [categoryName, setCategoryName] = useState("");
+    const [categoryName, setCategoryName] = useState("");
 
-const [categoryLoading, setCategoryLoading] = useState(false);
+    const [categoryLoading, setCategoryLoading] = useState(false);
 
-const [categoryError, setCategoryError] = useState("");
+    const [categoryError, setCategoryError] = useState("");
 
     const [editingCategory, setEditingCategory] = useState(null);
-const [deleteCategory, setDeleteCategory] = useState(null);
-const [showItemForm, setShowItemForm] = useState(false);
-const [selectedCategory, setSelectedCategory] = useState(null);
+    const [deleteCategory, setDeleteCategory] = useState(null);
+    const [showItemForm, setShowItemForm] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState(null);
 
-const [itemForm, setItemForm] = useState({
+    const [itemForm, setItemForm] = useState({
+        name: "",
+        description: "",
+        price: ""
+    });
+
+    const [itemLoading, setItemLoading] = useState(false);
+    const [itemError, setItemError] = useState("");
+
+
+    const [showItemEditForm, setShowItemEditForm] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+
+    const [itemEditForm, setItemEditForm] = useState({
     name: "",
     description: "",
-    price: ""
-});
+    price: "",
+    });
 
-const [itemLoading, setItemLoading] = useState(false);
-const [itemError, setItemError] = useState("");
+    const [itemEditLoading, setItemEditLoading] = useState(false);
+    const [itemEditError, setItemEditError] = useState("");
 
+    const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState(false);
+    const [itemDeleteLoading, setItemDeleteLoading] = useState(false);
 
     useEffect (()=>{
         loadDashboard();
@@ -368,6 +383,149 @@ async function confirmDeleteCategory() {
     }
 }
 
+    async function openEditItem(item){
+        setSelectedItem(item);
+
+        setItemEditForm(
+            {
+                name : item.name || "",
+                description : item.description || "",
+                price : item.price ?? "",
+                is_available : item.is_available ?? true
+            }
+        );
+        setItemEditError("");
+        setShowItemEditForm(true);
+    }
+
+    function handleItemEditChange(){
+        const {name , value , type , checked } = event.target;
+        
+        setItemEditForm((previous) => ({
+            ...previous,
+            [name] : type === "checkbox" ? checked : value
+        }));
+    }
+
+    async function saveItemChanges(){
+        if (!selectedItem) return;
+
+        setItemEditLoading(true);
+        setItemEditError("");
+
+        try{
+            const changes = {};
+
+            if (itemEditForm.name !== selectedItem.name){
+                changes.name = itemEditForm.name.trim();
+            }
+            if (itemEditForm.description !== (selectedItem.description || "")){
+                changes.description = itemEditForm.description.trim();
+            }
+
+            if (Number(itemEditForm.price) !== Number(selectedItem.price)){
+                changes.price = Number(itemEditForm.price);
+            }
+
+            if (
+                itemEditForm.is_available !== selectedItem.is_available
+            ){
+                changes.is_available = itemEditForm.is_available;
+            }
+
+            if (Object.keys(changes).length === 0){
+                setItemEditError("No changes were made.");
+                return;
+            }
+
+            const updatedItem = await apiFetch(
+    `/menu/categories/item/${selectedItem.category_id}/${selectedItem.item_id}`,
+    {
+        method: "PUT",
+        body: JSON.stringify(changes)
+    }
+);
+
+setItems((previousItems) =>
+    previousItems.map((item) =>
+        item.item_id === updatedItem.item_id
+            ? updatedItem
+            : item
+    )
+);
+
+
+        setShowItemEditForm(false);
+        setSelectedItem(null);
+
+    } catch (error) {
+        setItemEditError(
+            error.data?.detail ||
+            error.message ||
+            "Unable to edit item."
+        );
+    } finally {
+        setItemEditLoading(false);
+    }
+
+    }
+
+    async function deleteItem() {
+    if (!selectedItem) return;
+
+    setItemDeleteLoading(true);
+
+    try {
+        await apiFetch(`/menu/categories/item/items/${selectedItem.item_id}`, {
+            method: "DELETE"
+        });
+
+        setItems((previousItems) =>
+            previousItems.filter(
+                (item) => item.item_id !== selectedItem.item_id
+            )
+        );
+
+        setShowDeleteItemConfirm(false);
+        setShowItemEditForm(false);
+        setSelectedItem(null);
+
+    } catch (error) {
+        setItemEditError(
+            error.data?.detail ||
+            error.message ||
+            "Failed to delete item"
+        );
+    } finally {
+        setItemDeleteLoading(false);
+    }
+}
+
+    async function toggleItemAvailability(item) {
+    try {
+        const updatedItem = await apiFetch(
+            `/menu/categories/item/${item.category_id}/${item.item_id}`,
+            {
+                method: "PUT",
+                body: JSON.stringify({
+                    is_available: !item.is_available
+                })
+            }
+        );
+
+        setItems((previousItems) =>
+            previousItems.map((currentItem) =>
+                currentItem.item_id === updatedItem.item_id
+                    ? updatedItem
+                    : currentItem
+            )
+        );
+
+    } catch (error) {
+        console.error("Failed to update availability:", error);
+    }
+}
+
     return (
         <div className="shop-dashboard">
 
@@ -652,14 +810,34 @@ async function confirmDeleteCategory() {
                                         <button
                                             className="item-edit-button"
                                             onClick={() =>
-                                                console.log(
-                                                    "Edit item",
-                                                    item.item_id
-                                                )
+                                                openEditItem(item)
+                                            
                                             }
                                         >
                                             Edit
                                         </button>
+
+                                        <div className="item-availability">
+    <button
+        type="button"
+        className={
+            item.is_available
+                ? "availability-status available"
+                : "availability-status unavailable"
+        }
+        onClick={() => toggleItemAvailability(item)}
+        title={
+            item.is_available
+                ? "Mark as unavailable"
+                : "Mark as available"
+        }
+    >
+        <span className="availability-icon">
+            {item.is_available ? "✓" : "×"}
+        </span>
+
+    </button>
+</div>
 
                                     </div>
 
@@ -929,7 +1107,7 @@ async function confirmDeleteCategory() {
                     }
                     disabled={categoryLoading}
                 >
-                    ×
+                   × 
                 </button>
 
             </div>
@@ -1249,6 +1427,159 @@ async function confirmDeleteCategory() {
                 </div>
 
             </form>
+
+        </div>
+    </div>
+)}
+
+    {showItemEditForm && selectedItem && (
+    <div className="shop-modal-overlay">
+        <div className="shop-modal">
+
+            <div className="shop-modal-header">
+                <div>
+                    <h2>Edit Item</h2>
+                    <p>Update your menu item details</p>
+                </div>
+
+                <button
+                    className="shop-modal-close"
+                    onClick={() => setShowItemEditForm(false)}
+                >
+                    ×
+                </button>
+            </div>
+
+            <div className="shop-modal-body">
+
+                <div className="form-group">
+                    <label>Item Name</label>
+
+                    <input
+                        type="text"
+                        name="name"
+                        value={itemEditForm.name}
+                        onChange={handleItemEditChange}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>Description</label>
+
+                    <textarea
+                        name="description"
+                        value={itemEditForm.description}
+                        onChange={handleItemEditChange}
+                        rows="4"
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label>Price</label>
+
+                    <input
+                        type="number"
+                        name="price"
+                        value={itemEditForm.price}
+                        onChange={handleItemEditChange}
+                        min="0"
+                        step="0.01"
+                    />
+                </div>
+
+                
+
+                {itemEditError && (
+                    <p className="shop-form-error">
+                        {itemEditError}
+                    </p>
+                )}
+
+                {/* Danger Zone */}
+                <div className="danger-zone">
+                    <h3>Danger Zone</h3>
+
+                    <p>
+                        Deleting this item will permanently remove it
+                        from your menu.
+                    </p>
+
+                    <button
+                        type="button"
+                        className="delete-item-btn"
+                        onClick={() => setShowDeleteItemConfirm(true)}
+                    >
+                        Delete Item
+                    </button>
+                </div>
+
+            </div>
+
+            <div className="shop-modal-actions">
+
+                <button
+                    className="shop-cancel-btn"
+                    onClick={() => setShowItemEditForm(false)}
+                >
+                    Cancel
+                </button>
+
+                <button
+                    className="shop-save-btn"
+                    onClick={saveItemChanges}
+                    disabled={itemEditLoading}
+                >
+                    {itemEditLoading
+                        ? "Saving..."
+                        : "Save Changes"}
+                </button>
+
+            </div>
+
+        </div>
+    </div>
+)}
+
+{showDeleteItemConfirm && selectedItem && (
+    <div className="shop-modal-overlay">
+        <div className="delete-confirm-modal">
+
+            <div className="delete-confirm-icon">
+                !
+            </div>
+
+            <h2>Delete Item?</h2>
+
+            <p>
+                Are you sure you want to delete{" "}
+                <strong>{selectedItem.name}</strong>?
+            </p>
+
+            <p className="delete-warning">
+                This action cannot be undone.
+            </p>
+
+            <div className="delete-confirm-actions">
+
+                <button
+                    className="shop-cancel-btn"
+                    onClick={() => setShowDeleteItemConfirm(false)}
+                    disabled={itemDeleteLoading}
+                >
+                    Cancel
+                </button>
+
+                <button
+                    className="confirm-delete-btn"
+                    onClick={deleteItem}
+                    disabled={itemDeleteLoading}
+                >
+                    {itemDeleteLoading
+                        ? "Deleting..."
+                        : "Delete Item"}
+                </button>
+
+            </div>
 
         </div>
     </div>

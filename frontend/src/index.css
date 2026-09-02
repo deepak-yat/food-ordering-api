@@ -4520,3 +4520,758 @@ background: var(--primary-dark);
         width: 100%;
     }
 }
+
+/* =========================================================
+   EDIT ITEM MODAL
+   ========================================================= */
+
+.shop-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+    z-index: 1000;
+
+    animation: overlayFadeIn 0.2s ease;
+}
+
+.shop-modal {
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+
+    background: #ffffff;
+    border-radius: 18px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+
+    overflow: hidden;
+
+    animation: modalSlideUp 0.25s ease;
+}
+
+/* -------------------------
+   MODAL HEADER
+   ------------------------- */
+
+.shop-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    padding: 24px 26px;
+
+    border-bottom: 1px solid #eeeeee;
+}
+
+.shop-modal-header h2 {
+    margin: 0;
+
+    font-size: 22px;
+    font-weight: 700;
+
+    color: #222222;
+}
+
+.shop-modal-header p {
+    margin: 6px 0 0;
+
+    font-size: 14px;
+    color: #777777;
+}
+
+.shop-modal-close {
+    width: 34px;
+    height: 34px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: #f5f5f5;
+    color: #555555;
+
+    font-size: 22px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.shop-modal-close:hover {
+    background: #eeeeee;
+    color: #222222;
+
+    transform: rotate(90deg);
+}
+
+/* -------------------------
+   MODAL BODY
+   ------------------------- */
+
+.shop-modal-body {
+    padding: 24px 26px;
+
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Custom scrollbar */
+
+.shop-modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.shop-modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.shop-modal-body::-webkit-scrollbar-thumb {
+    background: #d8d8d8;
+    border-radius: 10px;
+}
+
+/* -------------------------
+   FORM GROUP
+   ------------------------- */
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #333333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    color: #222222;
+
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.form-group input {
+    height: 46px;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: #f5b400;
+
+    box-shadow: 0 0 0 3px rgba(245, 180, 0, 0.14);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #aaaaaa;
+}
+
+/* Remove number input arrows where appropriate */
+
+.form-group input[type="number"]::-webkit-inner-spin-button,
+.form-group input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+/* =========================================================
+   AVAILABILITY
+   ========================================================= */
+
+.availability-section {
+    margin-top: 8px;
+    margin-bottom: 24px;
+
+    padding: 18px;
+
+    background: #fafafa;
+    border: 1px solid #eeeeee;
+
+    border-radius: 12px;
+}
+
+.availability-section h3 {
+    margin: 0 0 12px;
+
+    font-size: 15px;
+    font-weight: 650;
+
+    color: #333333;
+}
+
+.availability-toggle {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    color: #444444;
+}
+
+/* Hide default checkbox */
+
+.availability-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Custom checkbox */
+
+.availability-toggle span {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    padding-left: 30px;
+
+    min-height: 22px;
+}
+
+.availability-toggle span::before {
+    content: "";
+
+    position: absolute;
+    left: 0;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    width: 20px;
+    height: 20px;
+
+    border: 2px solid #cccccc;
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.availability-toggle span::after {
+    content: "";
+
+    position: absolute;
+
+    left: 7px;
+    top: 2px;
+
+    width: 5px;
+    height: 10px;
+
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+
+    transform: rotate(45deg) scale(0);
+
+    transition: transform 0.15s ease;
+}
+
+/* Checked */
+
+.availability-toggle input:checked + span::before {
+    background: #f5b400;
+    border-color: #f5b400;
+}
+
+.availability-toggle input:checked + span::after {
+    transform: rotate(45deg) scale(1);
+}
+
+/* =========================================================
+   ERROR MESSAGE
+   ========================================================= */
+
+.shop-form-error {
+    margin: 14px 0 0;
+
+    padding: 11px 13px;
+
+    border-radius: 8px;
+
+    background: #fff3f3;
+    border: 1px solid #f3caca;
+
+    color: #c62828;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   DANGER ZONE
+   ========================================================= */
+
+.danger-zone {
+    margin-top: 26px;
+
+    padding: 18px;
+
+    border: 1px solid #f0cccc;
+    border-radius: 12px;
+
+    background: #fff9f9;
+}
+
+.danger-zone h3 {
+    margin: 0 0 6px;
+
+    font-size: 15px;
+    font-weight: 700;
+
+    color: #c62828;
+}
+
+.danger-zone p {
+    margin: 0 0 14px;
+
+    font-size: 13px;
+    line-height: 1.5;
+
+    color: #777777;
+}
+
+.delete-item-btn {
+    padding: 10px 16px;
+
+    border: 1px solid #e1aaaa;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #c62828;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.delete-item-btn:hover {
+    background: #fff0f0;
+    border-color: #d88b8b;
+
+    transform: translateY(-1px);
+}
+
+/* =========================================================
+   MODAL ACTIONS
+   ========================================================= */
+
+.shop-modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    padding: 18px 26px;
+
+    border-top: 1px solid #eeeeee;
+
+    background: #ffffff;
+}
+
+.shop-cancel-btn,
+.shop-save-btn {
+    min-width: 110px;
+
+    padding: 11px 18px;
+
+    border-radius: 9px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.shop-cancel-btn {
+    border: 1px solid #dddddd;
+
+    background: #ffffff;
+    color: #555555;
+}
+
+.shop-cancel-btn:hover {
+    background: #f7f7f7;
+
+    transform: translateY(-1px);
+}
+
+.shop-save-btn {
+    border: 1px solid #f5b400;
+
+    background: #f5b400;
+    color: #222222;
+}
+
+.shop-save-btn:hover {
+    background: #e7a900;
+
+    transform: translateY(-1px);
+}
+
+.shop-save-btn:disabled,
+.shop-cancel-btn:disabled,
+.delete-item-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+/* =========================================================
+   DELETE CONFIRMATION POPUP
+   ========================================================= */
+
+.delete-confirm-modal {
+    width: 100%;
+    max-width: 420px;
+
+    padding: 30px 28px;
+
+    background: #ffffff;
+
+    border-radius: 18px;
+
+    text-align: center;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+
+    animation: modalSlideUp 0.22s ease;
+}
+
+/* -------------------------
+   DELETE ICON
+   ------------------------- */
+
+.delete-confirm-icon {
+    width: 54px;
+    height: 54px;
+
+    margin: 0 auto 18px;
+
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #fff1f1;
+
+    color: #c62828;
+
+    font-size: 25px;
+    font-weight: 700;
+
+    border: 1px solid #f1cccc;
+}
+
+/* -------------------------
+   DELETE TITLE
+   ------------------------- */
+
+.delete-confirm-modal h2 {
+    margin: 0;
+
+    font-size: 21px;
+    font-weight: 700;
+
+    color: #222222;
+}
+
+.delete-confirm-modal p {
+    margin: 12px auto 0;
+
+    max-width: 330px;
+
+    font-size: 14px;
+    line-height: 1.5;
+
+    color: #666666;
+}
+
+.delete-confirm-modal strong {
+    color: #222222;
+}
+
+/* Warning text */
+
+.delete-confirm-modal .delete-warning {
+    margin-top: 7px;
+
+    font-size: 13px;
+
+    color: #c62828;
+}
+
+/* =========================================================
+   DELETE CONFIRMATION BUTTONS
+   ========================================================= */
+
+.delete-confirm-actions {
+    display: flex;
+    justify-content: center;
+
+    gap: 10px;
+
+    margin-top: 26px;
+}
+
+.delete-confirm-actions .shop-cancel-btn,
+.confirm-delete-btn {
+    min-width: 120px;
+
+    padding: 11px 18px;
+
+    border-radius: 9px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.confirm-delete-btn {
+    border: 1px solid #c62828;
+
+    background: #c62828;
+    color: #ffffff;
+}
+
+.confirm-delete-btn:hover {
+    background: #ad1f1f;
+
+    transform: translateY(-1px);
+}
+
+.confirm-delete-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+/* =========================================================
+   ANIMATIONS
+   ========================================================= */
+
+@keyframes overlayFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(15px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .shop-modal-overlay {
+        padding: 12px;
+    }
+
+    .shop-modal {
+        max-height: 94vh;
+
+        border-radius: 14px;
+    }
+
+    .shop-modal-header {
+        padding: 20px;
+    }
+
+    .shop-modal-header h2 {
+        font-size: 20px;
+    }
+
+    .shop-modal-body {
+        padding: 20px;
+    }
+
+    .shop-modal-actions {
+        padding: 16px 20px;
+
+        flex-direction: column-reverse;
+    }
+
+    .shop-modal-actions .shop-cancel-btn,
+    .shop-modal-actions .shop-save-btn {
+        width: 100%;
+    }
+
+    .delete-confirm-modal {
+        padding: 26px 20px;
+    }
+
+    .delete-confirm-actions {
+        flex-direction: column-reverse;
+    }
+
+    .delete-confirm-actions .shop-cancel-btn,
+    .delete-confirm-actions .confirm-delete-btn {
+        width: 100%;
+    }
+}
+
+.item-availability {
+    display: flex;
+    align-items: center;
+}
+
+.availability-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    border: none;
+    background: transparent;
+
+    padding: 5px 8px;
+
+    border-radius: 7px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.availability-status:hover {
+    transform: translateY(-1px);
+}
+
+.availability-icon {
+    width: 20px;
+    height: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+/* Available */
+
+.availability-status.available {
+    color: #2e7d32;
+}
+
+.availability-status.available .availability-icon {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.availability-status.available:hover {
+    background: #f1f8f1;
+}
+
+/* Unavailable */
+
+.availability-status.unavailable {
+    color: #c62828;
+}
+
+.availability-status.unavailable .availability-icon {
+    background: #ffebee;
+    color: #c62828;
+}
+
+.availability-status.unavailable:hover {
+    background: #fff4f4;
+}
+
+.item-status.unavailable {
+    background-color: #fff0ee !important;
+    color: #c0392b !important;
+}
