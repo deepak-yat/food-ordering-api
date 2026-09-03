@@ -15,11 +15,39 @@ function CustomerDashboard(){
     const [cartLoading, setCartLoading] = useState(true);
     const [cartConflict, setCartConflict] = useState(null);
     const [showCheckout, setShowCheckout] = useState(false);
+    const [showProfile, setShowProfile] = useState(false);
 
+    const [profile, setProfile] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(false);
+    const [profileError, setProfileError] = useState("");
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
 
+const [profileForm, setProfileForm] = useState({
+    customer_name: "",
+    phone: ""
+});
+const [addresses, setAddresses] = useState([]);
+const [selectedAddressId, setSelectedAddressId] = useState(null);
+const [showAddAddress, setShowAddAddress] = useState(false);
+
+const [addressForm, setAddressForm] = useState({
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    pincode: "",
+    is_default: false,
+});
+
+const [addressSaving, setAddressSaving] = useState(false);
+const [addressFormError, setAddressFormError] = useState("");
+const [addressLoading, setAddressLoading] = useState(true);
+const [addressError, setAddressError] = useState("");
+const [profileSaving, setProfileSaving] = useState(false);
     useEffect( () => {
         loadShops();
         loadCart();
+        loadAddresses();
     }, []);
 
     
@@ -249,6 +277,214 @@ async function viewShopMenu(shopId) {
     }
 }
 
+    async function openProfile() {
+    setShowProfile(true);
+    setProfileError("");
+    setProfileLoading(true);
+
+    try {
+        const data = await apiFetch("/customer/profile");
+        setProfile(data);
+    } catch (error) {
+        setProfileError(
+            error.data?.detail ||
+            error.message ||
+            "Failed to load profile"
+        );
+    } finally {
+        setProfileLoading(false);
+    }
+}
+
+    async function openProfile() {
+    setShowProfile(true);
+    setIsEditingProfile(false);
+    setProfileError("");
+    setProfileLoading(true);
+
+    try {
+        const data = await apiFetch("/customer/profile");
+
+        setProfile(data);
+
+        setProfileForm({
+            customer_name: data.customer_name || "",
+            phone: data.phone || ""
+        });
+
+    } catch (error) {
+        setProfileError(
+            error.data?.detail ||
+            error.message ||
+            "Failed to load profile"
+        );
+    } finally {
+        setProfileLoading(false);
+    }
+}
+
+    async function saveProfileChanges() {
+    if (!profile) return;
+
+    setProfileSaving(true);
+    setProfileError("");
+
+    try {
+        const changes = {};
+
+        if (
+            profileForm.customer_name.trim() !==
+            (profile.customer_name || "")
+        ) {
+            changes.customer_name =
+                profileForm.customer_name.trim();
+        }
+
+        if (
+            profileForm.phone.trim() !==
+            (profile.phone || "")
+        ) {
+            changes.phone =
+                profileForm.phone.trim();
+        }
+
+        if (Object.keys(changes).length === 0) {
+            setProfileError("No changes were made.");
+            return;
+        }
+
+        const updatedProfile = await apiFetch(
+            "/customer/profile",
+            {
+                method: "PUT",
+                body: JSON.stringify(changes)
+            }
+        );
+
+        setProfile(updatedProfile);
+
+        setProfileForm({
+            customer_name:
+                updatedProfile.customer_name || "",
+            phone:
+                updatedProfile.phone || ""
+        });
+
+        setIsEditingProfile(false);
+
+    } catch (error) {
+        setProfileError(
+            error.data?.detail ||
+            error.message ||
+            "Failed to update profile"
+        );
+    } finally {
+        setProfileSaving(false);
+    }
+}
+
+    async function loadAddresses() {
+    setAddressLoading(true);
+    setAddressError("");
+
+    try {
+        const response = await fetch(
+            "http://127.0.0.1:8000/customer/addresses",
+            {
+                credentials: "include",
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to load addresses");
+        }
+
+        const data = await response.json();
+
+        setAddresses(data);
+
+        // Automatically select the default address
+        const defaultAddress = data.find(
+            (address) => address.is_default
+        );
+
+        if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.address_id);
+        } else if (data.length > 0) {
+            // Otherwise select the first address
+            setSelectedAddressId(data[0].address_id);
+        }
+
+    } catch (error) {
+        setAddressError(error.message);
+    } finally {
+        setAddressLoading(false);
+    }
+}
+
+    async function saveAddress() {
+    setAddressSaving(true);
+    setAddressFormError("");
+
+    try {
+        const response = await fetch(
+            "http://127.0.0.1:8000/customer/addresses",
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(addressForm),
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || "Failed to save address"
+            );
+        }
+
+        // Add the new address to the existing list
+        setAddresses((previousAddresses) => {
+            if (data.is_default) {
+                return [
+                    ...previousAddresses.map((address) => ({
+                        ...address,
+                        is_default: false,
+                    })),
+                    data,
+                ];
+            }
+
+            return [...previousAddresses, data];
+        });
+
+        // Select the newly created address
+        setSelectedAddressId(data.address_id);
+
+        // Close the form
+        setShowAddAddress(false);
+
+        // Clear the form
+        setAddressForm({
+            address_line1: "",
+            address_line2: "",
+            city: "",
+            state: "",
+            pincode: "",
+            is_default: false,
+        });
+
+    } catch (error) {
+        setAddressFormError(error.message);
+    } finally {
+        setAddressSaving(false);
+    }
+}
+
     return (
         
         <div className="customer-dashboard">
@@ -291,16 +527,10 @@ async function viewShopMenu(shopId) {
             </button>
 
             <button
-                onClick={() => {
-                    document
-                        .getElementById("customer-profile")
-                        ?.scrollIntoView({
-                            behavior: "smooth"
-                        });
-                }}
-            >
-                Profile
-            </button>
+    onClick={openProfile}
+>
+    Profile
+</button>
 
         </nav>
 
@@ -882,18 +1112,191 @@ async function viewShopMenu(shopId) {
             </div>
 
 
-            <div className="checkout-address-section">
+<div className="checkout-address-section">
 
-                <span className="eyebrow">
-                    DELIVERY ADDRESS
-                </span>
+    <span className="eyebrow">
+        DELIVERY ADDRESS
+    </span>
 
-                <p className="status-text">
-                    Delivery address support will be
-                    connected here.
-                </p>
+    {addressLoading ? (
+        <p className="status-text">
+            Loading saved addresses...
+        </p>
+    ) : addressError ? (
+        <p className="status-text">
+            {addressError}
+        </p>
+    ) : addresses.length === 0 ? (
+        <p className="status-text">
+            No saved addresses yet.
+        </p>
+    ) : (
+        <div className="address-list">
 
-            </div>
+            {addresses.map((address) => (
+                <div
+                    key={address.address_id}
+                    className={`address-card ${
+                        selectedAddressId === address.address_id
+                            ? "selected"
+                            : ""
+                    }`}
+                    onClick={() =>
+                        setSelectedAddressId(address.address_id)
+                    }
+                >
+                    <div className="address-card-header">
+
+                        <span>
+                            {address.address_line1}
+                        </span>
+
+                        {address.is_default && (
+                            <span className="default-badge">
+                                Default
+                            </span>
+                        )}
+
+                    </div>
+
+                    {address.address_line2 && (
+                        <p>{address.address_line2}</p>
+                    )}
+
+                    <p>
+                        {address.city}, {address.state} - {address.pincode}
+                    </p>
+                </div>
+            ))}
+        </div>
+    )}
+
+    <button
+    type="button"
+    className="add-address-btn"
+    onClick={() => {
+        setShowAddAddress(true);
+        setAddressFormError("");
+    }}
+>
+    + Add Address
+</button>
+
+{showAddAddress && (
+    <div className="add-address-form">
+
+        <div className="address-form-header">
+            <h3>Add New Address</h3>
+
+            <button
+                type="button"
+                className="close-address-form"
+                onClick={() => setShowAddAddress(false)}
+            >
+                ×
+            </button>
+        </div>
+
+        {addressFormError && (
+            <p className="address-form-error">
+                {addressFormError}
+            </p>
+        )}
+
+        <input
+            type="text"
+            placeholder="Address Line 1"
+            value={addressForm.address_line1}
+            onChange={(event) =>
+                setAddressForm({
+                    ...addressForm,
+                    address_line1: event.target.value,
+                })
+            }
+        />
+
+        <input
+            type="text"
+            placeholder="Address Line 2 (Optional)"
+            value={addressForm.address_line2}
+            onChange={(event) =>
+                setAddressForm({
+                    ...addressForm,
+                    address_line2: event.target.value,
+                })
+            }
+        />
+
+        <div className="address-form-row">
+
+            <input
+                type="text"
+                placeholder="City"
+                value={addressForm.city}
+                onChange={(event) =>
+                    setAddressForm({
+                        ...addressForm,
+                        city: event.target.value,
+                    })
+                }
+            />
+
+            <input
+                type="text"
+                placeholder="State"
+                value={addressForm.state}
+                onChange={(event) =>
+                    setAddressForm({
+                        ...addressForm,
+                        state: event.target.value,
+                    })
+                }
+            />
+
+        </div>
+
+        <input
+            type="text"
+            placeholder="Pincode"
+            value={addressForm.pincode}
+            onChange={(event) =>
+                setAddressForm({
+                    ...addressForm,
+                    pincode: event.target.value,
+                })
+            }
+        />
+
+        <label className="default-address-checkbox">
+
+            <input
+                type="checkbox"
+                checked={addressForm.is_default}
+                onChange={(event) =>
+                    setAddressForm({
+                        ...addressForm,
+                        is_default: event.target.checked,
+                    })
+                }
+            />
+
+            Set as default address
+
+        </label>
+
+        <button
+            type="button"
+            className="save-address-btn"
+            onClick={saveAddress}
+            disabled={addressSaving}
+        >
+            {addressSaving ? "Saving..." : "Save Address"}
+        </button>
+
+    </div>
+)}
+
+</div>
 
 
             <button
@@ -908,6 +1311,422 @@ async function viewShopMenu(shopId) {
     </div>
 )}
 
+{showProfile && (
+    <div className="customer-modal-overlay">
+
+        <div className="customer-profile-modal">
+
+            {/* Header */}
+            <div className="customer-profile-header">
+
+                <div>
+                    <h2>
+                        {isEditingProfile
+                            ? "Edit Profile"
+                            : "My Profile"}
+                    </h2>
+
+                    <p>
+                        {isEditingProfile
+                            ? "Update your account information"
+                            : "Your Foodly account information"}
+                    </p>
+                </div>
+
+                <button
+                    className="customer-modal-close"
+                    onClick={() => {
+                        setShowProfile(false);
+                        setIsEditingProfile(false);
+                        setProfileError("");
+                    }}
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            {/* Body */}
+            <div className="customer-profile-body">
+
+                {profileLoading ? (
+
+                    <div className="profile-loading">
+                        Loading profile...
+                    </div>
+
+                ) : profileError ? (
+
+                    <p className="customer-profile-error">
+                        {profileError}
+                    </p>
+
+                ) : profile ? (
+
+                    isEditingProfile ? (
+
+                        /* =========================
+                           EDIT MODE
+                           ========================= */
+
+                        <div className="profile-edit-form">
+
+                            <div className="profile-form-group">
+
+                                <label>
+                                    Customer Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="customer_name"
+                                    value={
+                                        profileForm.customer_name
+                                    }
+                                    onChange={(event) =>
+                                        setProfileForm(
+                                            (previous) => ({
+                                                ...previous,
+                                                customer_name:
+                                                    event.target.value
+                                            })
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+
+                            <div className="profile-form-group">
+
+                                <label>
+                                    Phone
+                                </label>
+
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    value={
+                                        profileForm.phone
+                                    }
+                                    onChange={(event) =>
+                                        setProfileForm(
+                                            (previous) => ({
+                                                ...previous,
+                                                phone:
+                                                    event.target.value
+                                            })
+                                        )
+                                    }
+                                />
+
+                            </div>
+
+                        </div>
+
+                    ) : (
+
+                        /* =========================
+                           VIEW MODE
+                           ========================= */
+
+                        <div className="profile-view">
+
+                            <div className="profile-field">
+
+                                <span>
+                                    Customer Name
+                                </span>
+
+                                <strong>
+                                    {profile.customer_name ||
+                                        "Not provided"}
+                                </strong>
+
+                            </div>
+
+
+                            <div className="profile-field">
+
+                                <span>
+                                    Phone
+                                </span>
+
+                                <strong>
+                                    {profile.phone ||
+                                        "Not provided"}
+                                </strong>
+
+                            </div>
+
+
+                            <div className="profile-field">
+
+                                <span>
+                                    Customer ID
+                                </span>
+
+                                <strong>
+                                    {profile.customer_id}
+                                </strong>
+
+                            </div>
+                            <div className="profile-address-section">
+
+    <span className="profile-section-label">
+        DELIVERY ADDRESS
+    </span>
+
+    {addresses.length === 0 ? (
+
+        <div className="profile-address-empty">
+            <span>Not yet added</span>
+        </div>
+
+    ) : (
+
+        <div className="profile-address-card">
+
+            {(() => {
+                const defaultAddress =
+                    addresses.find(
+                        (address) => address.is_default
+                    ) || addresses[0];
+
+                return (
+                    <>
+                        <div className="profile-address-top">
+
+                            <strong>
+                                {defaultAddress.address_line1}
+                            </strong>
+
+                            {defaultAddress.is_default && (
+                                <span className="default-badge">
+                                    Default
+                                </span>
+                            )}
+
+                        </div>
+
+                        {defaultAddress.address_line2 && (
+                            <p>
+                                {defaultAddress.address_line2}
+                            </p>
+                        )}
+
+                        <p>
+                            {defaultAddress.city},{" "}
+                            {defaultAddress.state} -{" "}
+                            {defaultAddress.pincode}
+                        </p>
+                    </>
+                );
+            })()}
+
+        </div>
+
+    )}
+
+</div>
+
+                        </div>
+
+                    )
+
+                ) : null}
+
+            </div>
+
+
+            {/* Footer */}
+            <div className="customer-profile-footer">
+
+                {isEditingProfile ? (
+
+    <>
+
+                    {isEditingProfile && showAddAddress && (
+
+    <div className="profile-add-address-form">
+
+        <div className="profile-add-address-header">
+
+            <h3>Add New Address</h3>
+
+            <button
+                type="button"
+                className="profile-address-close-btn"
+                onClick={() => setShowAddAddress(false)}
+            >
+                ×
+            </button>
+
+        </div>
+
+        {addressFormError && (
+            <p className="profile-address-error">
+                {addressFormError}
+            </p>
+        )}
+
+        <input
+            type="text"
+            placeholder="Address Line 1"
+            value={addressForm.address_line1}
+            onChange={(event) =>
+                setAddressForm({
+                    ...addressForm,
+                    address_line1: event.target.value
+                })
+            }
+        />
+
+        <input
+            type="text"
+            placeholder="Address Line 2 (Optional)"
+            value={addressForm.address_line2}
+            onChange={(event) =>
+                setAddressForm({
+                    ...addressForm,
+                    address_line2: event.target.value
+                })
+            }
+        />
+
+        <div className="profile-address-row">
+
+            <input
+                type="text"
+                placeholder="City"
+                value={addressForm.city}
+                onChange={(event) =>
+                    setAddressForm({
+                        ...addressForm,
+                        city: event.target.value
+                    })
+                }
+            />
+
+            <input
+                type="text"
+                placeholder="State"
+                value={addressForm.state}
+                onChange={(event) =>
+                    setAddressForm({
+                        ...addressForm,
+                        state: event.target.value
+                    })
+                }
+            />
+
+        </div>
+
+        <input
+            type="text"
+            placeholder="Pincode"
+            value={addressForm.pincode}
+            onChange={(event) =>
+                setAddressForm({
+                    ...addressForm,
+                    pincode: event.target.value
+                })
+            }
+        />
+
+        <label className="profile-default-address">
+
+            <input
+                type="checkbox"
+                checked={addressForm.is_default}
+                onChange={(event) =>
+                    setAddressForm({
+                        ...addressForm,
+                        is_default: event.target.checked
+                    })
+                }
+            />
+
+            <span>Set as default address</span>
+
+        </label>
+
+        <button
+            type="button"
+            className="profile-save-address-btn"
+            onClick={saveAddress}
+            disabled={addressSaving}
+        >
+            {addressSaving
+                ? "Saving..."
+                : "Save Address"}
+        </button>
+
+    </div>
+)}
+
+        <button
+            className="profile-add-address-btn"
+            onClick={() => {
+                setShowAddAddress(true);
+                setAddressFormError("");
+            }}
+        >
+            + Add Address
+        </button>
+
+        <button
+            className="profile-cancel-btn"
+            onClick={() => {
+
+                setIsEditingProfile(false);
+                setProfileError("");
+
+                setProfileForm({
+                    customer_name:
+                        profile.customer_name ||
+                        "",
+                    phone:
+                        profile.phone ||
+                        ""
+                });
+
+            }}
+            disabled={profileSaving}
+        >
+            Cancel
+        </button>
+
+        <button
+            className="profile-save-btn"
+            onClick={saveProfileChanges}
+            disabled={profileSaving}
+        >
+            {profileSaving
+                ? "Saving..."
+                : "Save Changes"}
+        </button>
+    </>
+
+) : (
+
+    <button
+        className="profile-edit-btn"
+        onClick={() =>
+            setIsEditingProfile(true)
+        }
+    >
+        Edit Profile
+    </button>
+
+)}
+            </div>
+
+        </div>
+
+    </div>
+)}
         </div>
     )
 }

@@ -5275,3 +5275,1212 @@ background: var(--primary-dark);
     background-color: #fff0ee !important;
     color: #c0392b !important;
 }
+
+/* Foodly logo / brand */
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    text-decoration: none;
+
+    font-size: 1.6rem;
+    font-weight: 700;
+
+    color: #222;
+
+    white-space: nowrap;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+
+    object-fit: contain;
+
+    display: block;
+}
+
+/* =========================================================
+   INCOMING ORDERS SECTION
+   ========================================================= */
+
+.shop-section {
+    margin-top: 30px;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    margin: 0;
+
+    font-size: 1.35rem;
+    font-weight: 700;
+
+    color: #222;
+}
+
+.section-header p {
+    margin: 5px 0 0;
+
+    font-size: 0.85rem;
+    color: #777;
+}
+
+.order-count {
+    padding: 7px 13px;
+
+    border-radius: 20px;
+
+    background: #fff8dc;
+    color: #9a7200;
+
+    font-size: 0.75rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+/* =========================================================
+   ORDERS LIST
+   ========================================================= */
+
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* =========================================================
+   ORDER CARD
+   ========================================================= */
+
+.order-card {
+    background: #ffffff;
+
+    border: 1px solid #eeeeee;
+    border-radius: 16px;
+
+    padding: 22px;
+
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.order-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* =========================================================
+   ORDER HEADER
+   ========================================================= */
+
+.order-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-bottom: 16px;
+
+    border-bottom: 1px solid #eeeeee;
+}
+
+.order-card-header h3 {
+    margin: 0;
+
+    font-size: 1rem;
+    font-weight: 700;
+
+    color: #222;
+}
+
+.order-card-header p {
+    margin: 5px 0 0;
+
+    font-size: 0.75rem;
+
+    color: #888;
+}
+
+/* =========================================================
+   ORDER STATUS
+   ========================================================= */
+
+.order-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 6px 11px;
+
+    border-radius: 20px;
+
+    font-size: 0.68rem;
+    font-weight: 700;
+
+    text-transform: capitalize;
+}
+
+/* Pending */
+
+.order-status.pending {
+    background: #fff7df;
+    color: #9a7200;
+}
+
+/* Accepted */
+
+.order-status.accepted {
+    background: #eef5ff;
+    color: #3367b1;
+}
+
+/* Preparing */
+
+.order-status.preparing {
+    background: #f1edff;
+    color: #6849aa;
+}
+
+/* Ready */
+
+.order-status.ready {
+    background: #edf8ee;
+    color: #37823d;
+}
+
+/* Completed */
+
+.order-status.completed {
+    background: #e8f7ed;
+    color: #23753c;
+}
+
+/* Rejected */
+
+.order-status.rejected {
+    background: #fff0ee;
+    color: #c0392b;
+}
+
+/* Cancelled */
+
+.order-status.cancelled {
+    background: #f2f2f2;
+    color: #777;
+}
+
+/* =========================================================
+   CUSTOMER DETAILS
+   ========================================================= */
+
+.customer-details,
+.delivery-details,
+.order-items {
+    padding: 17px 0;
+
+    border-bottom: 1px solid #eeeeee;
+}
+
+.customer-details h4,
+.delivery-details h4,
+.order-items h4 {
+    margin: 0 0 10px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    color: #444;
+}
+
+.customer-details p,
+.delivery-details p {
+    margin: 4px 0;
+
+    font-size: 0.82rem;
+    line-height: 1.5;
+
+    color: #666;
+}
+
+.customer-details strong {
+    color: #222;
+}
+
+/* =========================================================
+   DELIVERY INSTRUCTION
+   ========================================================= */
+
+.delivery-instruction {
+    margin-top: 12px !important;
+
+    padding: 10px 12px;
+
+    border-radius: 9px;
+
+    background: #fafafa;
+
+    font-size: 0.78rem !important;
+
+    color: #666;
+}
+
+.delivery-instruction strong {
+    color: #444;
+}
+
+/* =========================================================
+   ORDER ITEMS
+   ========================================================= */
+
+.order-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 9px 0;
+}
+
+.order-item-row > div {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    min-width: 0;
+}
+
+.order-item-name {
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    color: #333;
+}
+
+.order-item-quantity {
+    font-size: 0.76rem;
+
+    color: #888;
+}
+
+.order-item-row > span {
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    color: #333;
+
+    white-space: nowrap;
+}
+
+/* =========================================================
+   ORDER FOOTER
+   ========================================================= */
+
+.order-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding-top: 17px;
+}
+
+.order-card-footer span {
+    font-size: 0.82rem;
+    font-weight: 600;
+
+    color: #777;
+}
+
+.order-card-footer strong {
+    font-size: 1.05rem;
+    font-weight: 700;
+
+    color: #222;
+}
+
+/* =========================================================
+   EMPTY ORDERS
+   ========================================================= */
+
+.empty-orders {
+    padding: 55px 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #eeeeee;
+    border-radius: 16px;
+
+    text-align: center;
+}
+
+.empty-orders-icon {
+    width: 54px;
+    height: 54px;
+
+    margin: 0 auto 15px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #fff8dc;
+
+    font-size: 24px;
+}
+
+.empty-orders h3 {
+    margin: 0;
+
+    font-size: 1rem;
+    color: #333;
+}
+
+.empty-orders p {
+    margin: 6px 0 0;
+
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .section-header {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .order-card {
+        padding: 18px;
+    }
+
+    .order-card-header {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .order-item-row {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .section-header {
+        flex-direction: column;
+    }
+
+    .order-count {
+        align-self: flex-start;
+    }
+
+    .order-card-header {
+        flex-direction: column;
+    }
+
+    .order-status {
+        align-self: flex-start;
+    }
+
+    .order-card-footer strong {
+        font-size: 1rem;
+    }
+}
+.view-live-orders-btn {
+    margin-top: 16px;
+
+    padding: 10px 17px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #f5b400;
+    color: #222;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.view-live-orders-btn:hover {
+    background: #e7a900;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.customer-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    background: rgba(0, 0, 0, 0.45);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    z-index: 1000;
+}
+
+.customer-profile-modal {
+    width: 100%;
+    max-width: 460px;
+
+    background: #ffffff;
+    border-radius: 18px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+
+    overflow: hidden;
+
+    animation: customerProfilePop 0.2s ease;
+}
+
+.customer-profile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    padding: 24px;
+
+    border-bottom: 1px solid #eeeeee;
+}
+
+.customer-profile-header h2 {
+    margin: 0;
+
+    font-size: 21px;
+    color: #222;
+}
+
+.customer-profile-header p {
+    margin: 6px 0 0;
+
+    font-size: 13px;
+    color: #888;
+}
+
+.customer-modal-close {
+    width: 34px;
+    height: 34px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: #f5f5f5;
+    color: #555;
+
+    font-size: 22px;
+
+    cursor: pointer;
+}
+
+.customer-profile-body {
+    padding: 24px;
+}
+
+.profile-field {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    padding: 15px 0;
+
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.profile-field:last-child {
+    border-bottom: none;
+}
+
+.profile-field span {
+    font-size: 12px;
+    color: #888;
+}
+
+.profile-field strong {
+    font-size: 14px;
+    color: #222;
+}
+
+.customer-profile-footer {
+    display: flex;
+    justify-content: flex-end;
+
+    padding: 18px 24px;
+
+    border-top: 1px solid #eeeeee;
+}
+
+.profile-edit-btn {
+    padding: 10px 18px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #f5b400;
+    color: #222;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.profile-edit-btn:hover {
+    background: #e7a900;
+    transform: translateY(-1px);
+}
+
+.customer-profile-error {
+    padding: 12px;
+
+    border-radius: 8px;
+
+    background: #fff2f2;
+    color: #c62828;
+
+    font-size: 13px;
+}
+
+@keyframes customerProfilePop {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (max-width: 500px) {
+    .customer-profile-modal {
+        max-width: 100%;
+    }
+
+    .customer-profile-header,
+    .customer-profile-body,
+    .customer-profile-footer {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .profile-edit-btn {
+        width: 100%;
+    }
+}
+
+.profile-edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.profile-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.profile-form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+}
+
+.profile-form-group input {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #dddddd;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #222;
+
+    font-size: 14px;
+    font-family: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.profile-form-group input:focus {
+    border-color: #f5b400;
+
+    box-shadow:
+        0 0 0 3px rgba(245, 180, 0, 0.14);
+}
+
+.profile-loading {
+    padding: 30px 0;
+
+    text-align: center;
+
+    font-size: 14px;
+    color: #777;
+}
+
+.profile-cancel-btn {
+    padding: 10px 18px;
+
+    border: 1px solid #dddddd;
+    border-radius: 9px;
+
+    background: #ffffff;
+    color: #555;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: background 0.2s ease;
+}
+
+.profile-cancel-btn:hover {
+    background: #f7f7f7;
+}
+
+.profile-save-btn {
+    padding: 10px 18px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: #f5b400;
+    color: #222;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.profile-save-btn:hover {
+    background: #e7a900;
+    transform: translateY(-1px);
+}
+
+.profile-save-btn:disabled,
+.profile-cancel-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.customer-profile-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+
+    padding: 18px 24px;
+
+    border-top: 1px solid #eeeeee;
+}
+
+/* ================================
+   DELIVERY ADDRESS
+================================ */
+
+.checkout-address-section {
+    width: 100%;
+    margin-top: 20px;
+}
+
+.checkout-address-section .eyebrow {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #777;
+}
+
+.address-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Saved address card */
+
+.address-card {
+    position: relative;
+    padding: 16px 18px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.address-card:hover {
+    border-color: #aaa;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+}
+
+.address-card.selected {
+    border: 2px solid #222;
+    background: #fafafa;
+}
+
+/* Address text */
+
+.address-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.address-card-header span:first-child {
+    font-size: 15px;
+    font-weight: 600;
+    color: #222;
+}
+
+.address-card p {
+    margin: 4px 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #666;
+}
+
+/* Default badge */
+
+.default-badge {
+    padding: 4px 8px;
+    border-radius: 20px;
+    background: #222;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+/* Add Address button */
+
+.add-address-btn {
+    width: 100%;
+    margin-top: 14px;
+    padding: 13px 16px;
+    border: 1px dashed #bbb;
+    border-radius: 10px;
+    background: #fff;
+    color: #333;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.add-address-btn:hover {
+    border-color: #222;
+    background: #fafafa;
+}
+
+/* Loading / error / empty text */
+
+.checkout-address-section .status-text {
+    margin: 8px 0;
+    font-size: 14px;
+    color: #777;
+}
+
+/* ================================
+   ADD ADDRESS FORM
+================================ */
+
+.add-address-form {
+    margin-top: 16px;
+    padding: 18px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: #fff;
+}
+
+.address-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.address-form-header h3 {
+    margin: 0;
+    font-size: 17px;
+    color: #222;
+}
+
+.close-address-form {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+    color: #777;
+    cursor: pointer;
+}
+
+.close-address-form:hover {
+    color: #222;
+}
+
+.add-address-form input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    font-size: 14px;
+}
+
+.add-address-form input[type="text"]:focus {
+    border-color: #222;
+}
+
+.address-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.address-form-row input {
+    min-width: 0;
+}
+
+.default-address-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 16px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+}
+
+.default-address-checkbox input {
+    width: auto;
+    margin: 0;
+}
+
+.save-address-btn {
+    width: 100%;
+    padding: 13px 16px;
+    border: none;
+    border-radius: 9px;
+    background: #222;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.save-address-btn:hover {
+    background: #000;
+}
+
+.save-address-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.address-form-error {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #c62828;
+}
+
+/* ================================
+   PROFILE ADDRESS
+================================ */
+
+.profile-address-section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #eee;
+}
+
+.profile-address-header {
+    margin-bottom: 12px;
+}
+
+.profile-section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #777;
+}
+
+.profile-address-empty {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px;
+    border: 1px dashed #ccc;
+    border-radius: 10px;
+    color: #888;
+    font-size: 14px;
+}
+
+.profile-address-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.profile-address-card {
+    padding: 14px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.profile-address-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.profile-address-card p {
+    margin: 4px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #666;
+}
+
+.profile-add-address-btn {
+    align-self: flex-start;
+    border: none;
+    background: transparent;
+    padding: 4px 0;
+    color: #222;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.profile-add-address-btn:hover {
+    text-decoration: underline;
+}
+
+/* =================================
+   PROFILE ADDRESS
+================================= */
+
+.profile-address-section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid #eeeeee;
+}
+
+.profile-section-label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #777;
+}
+
+.profile-address-empty {
+    padding: 13px 14px;
+    border: 1px dashed #cccccc;
+    border-radius: 10px;
+    color: #888;
+    font-size: 14px;
+    background: #fafafa;
+}
+
+.profile-address-card {
+    padding: 14px;
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+    background: #fafafa;
+}
+
+.profile-address-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.profile-address-card p {
+    margin: 5px 0 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #666;
+}
+
+.profile-add-address-btn {
+    padding: 9px 13px;
+    border: 1px solid #222;
+    border-radius: 7px;
+    background: #fff;
+    color: #222;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.profile-add-address-btn:hover {
+    background: #222;
+    color: #fff;
+}
+
+/* =================================
+   PROFILE ADD ADDRESS FORM
+================================= */
+
+.profile-add-address-form {
+    margin-top: 16px;
+    padding: 18px;
+    border: 1px solid #dddddd;
+    border-radius: 12px;
+    background: #fafafa;
+}
+
+.profile-add-address-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.profile-add-address-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #222;
+}
+
+.profile-address-close-btn {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: #eeeeee;
+    color: #555;
+    font-size: 20px;
+    line-height: 30px;
+    cursor: pointer;
+}
+
+.profile-address-close-btn:hover {
+    background: #dddddd;
+    color: #222;
+}
+
+.profile-add-address-form input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 11px;
+    padding: 11px 12px;
+    border: 1px solid #d8d8d8;
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    font-size: 13px;
+}
+
+.profile-add-address-form input[type="text"]:focus {
+    border-color: #222;
+}
+
+.profile-address-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.profile-default-address {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 3px 0 15px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+}
+
+.profile-default-address input {
+    margin: 0;
+}
+
+.profile-save-address-btn {
+    width: 100%;
+    padding: 11px;
+    border: none;
+    border-radius: 8px;
+    background: #222;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.profile-save-address-btn:hover {
+    background: #000;
+}
+
+.profile-save-address-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.profile-address-error {
+    margin: 0 0 12px;
+    font-size: 13px;
+    color: #c62828;
+}

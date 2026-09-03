@@ -884,89 +884,169 @@ setItems((previousItems) =>
 
                 <section className="shop-section">
 
-                    <div className="section-heading">
+    <div className="section-header">
+        <div>
+            <h2>Incoming Orders</h2>
+            <p>Manage your recent customer orders</p>
+        </div>
 
-                        <span className="eyebrow">
-                            ORDERS
+        <span className="order-count">
+            {orders.length} Orders
+        </span>
+                    <button
+    className="view-live-orders-btn"
+    onClick={() => navigate("/shop/orders")}
+>
+    View Live Orders →
+</button>
+
+    </div>
+
+    {orders.length === 0 ? (
+
+        <div className="empty-orders">
+            <div className="empty-orders-icon">
+                🧾
+            </div>
+
+            <h3>No orders yet</h3>
+
+            <p>
+                New customer orders will appear here.
+            </p>
+        </div>
+
+    ) : (
+
+        <div className="orders-list">
+
+            {orders.map((order) => (
+
+                <div
+                    className="order-card"
+                    key={order.order_id}
+                >
+
+                    <div className="order-card-header">
+
+                        <div>
+                            <h3>
+                                Order #{order.order_id}
+                            </h3>
+
+                            <p>
+                                Customer ID: {order.customer_id}
+                            </p>
+                        </div>
+
+                        <span
+                            className={
+                                `order-status ${order.status}`
+                            }
+                        >
+                            {order.status}
                         </span>
 
-                        <h2>
-                            Incoming Orders
-                        </h2>
+                    </div>
+
+                    <div className="customer-details">
+
+                        <h4>Customer</h4>
 
                         <p>
-                            Orders placed at your shop.
+                            <strong>
+                                {order.customer_name}
+                            </strong>
+                        </p>
+
+                        <p>
+                            Phone:{" "}
+                            {order.customer_phone || "Not provided"}
                         </p>
 
                     </div>
 
+                    <div className="delivery-details">
 
-                    {loading ? (
+                        <h4>Delivery Address</h4>
 
-                        <p className="status-text">
-                            Loading orders...
+                        <p>
+                            {order.delivery_address.address_line1}
                         </p>
 
-                    ) : (
+                        {order.delivery_address.address_line2 && (
+                            <p>
+                                {order.delivery_address.address_line2}
+                            </p>
+                        )}
 
-                        <div className="shop-order-list">
+                        <p>
+                            {order.delivery_address.city},{" "}
+                            {order.delivery_address.state}{" "}
+                            {order.delivery_address.pincode}
+                        </p>
 
-                            {orders.length === 0 ? (
+                        {order.delivery_instruction && (
+                            <p className="delivery-instruction">
+                                <strong>Instruction:</strong>{" "}
+                                {order.delivery_instruction}
+                            </p>
+                        )}
 
-                                <div className="empty-state">
+                    </div>
 
-                                    <h3>
-                                        No orders yet
-                                    </h3>
+                    <div className="order-items">
 
-                                    <p>
-                                        New customer orders
-                                        will appear here.
-                                    </p>
+                        <h4>Items</h4>
 
+                        {order.items.map((item) => (
+
+                            <div
+                                className="order-item-row"
+                                key={item.order_item_id}
+                            >
+
+                                <div>
+                                    <span className="order-item-name">
+                                        {item.item_name}
+                                    </span>
+
+                                    <span className="order-item-quantity">
+                                        × {item.quantity}
+                                    </span>
                                 </div>
 
-                            ) : (
+                                <span>
+                                    ₹{item.subtotal}
+                                </span>
 
-                                orders.map(order => (
+                            </div>
 
-                                    <article
-                                        key={order.order_id}
-                                        className="shop-order-card"
-                                    >
+                        ))}
 
-                                        <div>
+                    </div>
 
-                                            <span className="eyebrow">
-                                                ORDER #{order.order_id}
-                                            </span>
+                    <div className="order-card-footer">
 
-                                            <h3>
-                                                {formatStatus(
-                                                    order.status
-                                                )}
-                                            </h3>
+                        <span>
+                            Total
+                        </span>
 
-                                        </div>
+                        <strong>
+                            ₹{order.total_amount}
+                        </strong>
 
+                    </div>
 
-                                        <strong>
-                                            ₹{Number(
-                                                order.total_amount
-                                            ).toFixed(2)}
-                                        </strong>
+                </div>
 
-                                    </article>
+            ))}
 
-                                ))
+        </div>
 
-                            )}
+    )}
 
-                        </div>
-
-                    )}
-
-                </section>
+</section>
 
             </main>
 {showCategoryForm && (

@@ -23,3 +23,4 @@ class Shop(SQLModel,table=True):
     is_active :bool = Field(
         default=False )
 
+    phone: str | None = None

@@ -12,6 +12,7 @@ from app.routers.menu_item import router as menu_item_router
 from app.routers.customer_cart import router as customer_cart_router
 from app.routers.customer_order import router as customer_order_router
 from app.routers.shop_orders import router as shop_orders_router
+from app.routers.customer import router as customer_router
 from app.dependencies import require_page_role,UserRole
 from app.models.user import User
 app = FastAPI(
@@ -60,7 +61,7 @@ app.include_router(menu_item_router)
 app.include_router(customer_cart_router)
 app.include_router(customer_order_router)
 app.include_router(shop_orders_router)
-
+app.include_router(customer_router)
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(

@@ -11,11 +11,13 @@ from app.models.customer import Customer
 from app.models.menu_item import MenuItem
 from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
-
+from app.models.customer_addresses import CustomerAddress
+from app.models.order_delivery_address import OrderDeliveryAddress
 from app.schemas.order import (
     CreateOrderRequest,
     OrderResponse,
-    OrderItemResponse
+    OrderItemResponse,
+    OrderDeliveryAddressResponse
 )
 
 
@@ -29,24 +31,51 @@ router = APIRouter(
     response_model=OrderResponse
 )
 def create_order(
-    data:CreateOrderRequest,
+    data: CreateOrderRequest,
     current_customer: Customer = Depends(get_current_customer),
-    db : Session = Depends(get_db)
+    db: Session = Depends(get_db)
 ):
+    # ----------------------------------------
+    # 1. Find customer's cart
+    # ----------------------------------------
+
     cart = db.exec(
         select(Cart).where(
-            Cart.cart_id==data.cart_id,
-            Cart.customer_id==current_customer.customer_id
+            Cart.cart_id == data.cart_id,
+            Cart.customer_id == current_customer.customer_id
         )
     ).first()
+
     if cart is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="cart not found"
+            detail="Cart not found"
         )
-    cart_items=db.exec(
+
+    # ----------------------------------------
+    # 2. Validate delivery address
+    # ----------------------------------------
+
+    customer_address = db.exec(
+        select(CustomerAddress).where(
+            CustomerAddress.address_id == data.address_id,
+            CustomerAddress.customer_id == current_customer.customer_id
+        )
+    ).first()
+
+    if customer_address is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery address not found"
+        )
+
+    # ----------------------------------------
+    # 3. Get cart items
+    # ----------------------------------------
+
+    cart_items = db.exec(
         select(CartItem).where(
-            CartItem.cart_id==cart.cart_id,
+            CartItem.cart_id == cart.cart_id
         )
     ).all()
 
@@ -54,96 +83,155 @@ def create_order(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Cannot place an order with an empty cart"
-    )
-    total_amount = 0.0
-    for cart_item in cart_items:
-        menu_item=db.exec(
-            select(MenuItem).where(
-                MenuItem.item_id==cart_item.menu_item_id,
-                MenuItem.shop_id==cart.shop_id
-            )
-        ).first()
-        if menu_item is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="item not found"
-            )
-        if not menu_item.is_available:
-            raise HTTPException (
-                status_code=status.HTTP_410_GONE,
-                detail=f"{menu_item.name} is currently unavailable"
-            )
-        sub_total=menu_item.price * cart_item.quantity
-
-        total_amount+=sub_total
-
-    order=Order(
-            customer_id=current_customer.customer_id,
-            shop_id=cart.shop_id,
-            status=OrderStatus.PENDING,
-            total_amount=total_amount
         )
 
-    db.add(order)
-    db.flush()
+    # ----------------------------------------
+    # 4. Validate items and calculate total
+    # ----------------------------------------
+
+    total_amount = 0.0
+
+    menu_items = {}
 
     for cart_item in cart_items:
 
         menu_item = db.exec(
-        select(MenuItem).where(
-            MenuItem.item_id == cart_item.menu_item_id,
-            MenuItem.shop_id == cart.shop_id
-        )
+            select(MenuItem).where(
+                MenuItem.item_id == cart_item.menu_item_id,
+                MenuItem.shop_id == cart.shop_id
+            )
         ).first()
 
+        if menu_item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Item not found"
+            )
+
+        if not menu_item.is_available:
+            raise HTTPException(
+                status_code=status.HTTP_410_GONE,
+                detail=f"{menu_item.name} is currently unavailable"
+            )
+
+        subtotal = menu_item.price * cart_item.quantity
+
+        total_amount += subtotal
+
+        menu_items[cart_item.menu_item_id] = menu_item
+
+    # ----------------------------------------
+    # 5. Create Order
+    # ----------------------------------------
+
+    order = Order(
+        customer_id=current_customer.customer_id,
+        shop_id=cart.shop_id,
+        status=OrderStatus.PENDING,
+        total_amount=total_amount,
+        delivery_instruction=data.delivery_instruction
+    )
+
+    db.add(order)
+    db.flush()
+
+    # ----------------------------------------
+    # 6. Create delivery address snapshot
+    # ----------------------------------------
+
+    delivery_address = OrderDeliveryAddress(
+        order_id=order.order_id,
+        address_line1=customer_address.address_line1,
+        address_line2=customer_address.address_line2,
+        city=customer_address.city,
+        state=customer_address.state,
+        pincode=customer_address.pincode
+    )
+
+    db.add(delivery_address)
+
+    # ----------------------------------------
+    # 7. Create OrderItems
+    # ----------------------------------------
+
+    for cart_item in cart_items:
+
+        menu_item = menu_items[cart_item.menu_item_id]
+
         subtotal = (
-        menu_item.price *
-        cart_item.quantity
+            menu_item.price *
+            cart_item.quantity
         )
 
         order_item = OrderItem(
-        order_id=order.order_id,
-        menu_item_id=menu_item.item_id,
-        item_name=menu_item.name,
-        unit_price=menu_item.price,
-        quantity=cart_item.quantity,
-        subtotal=subtotal
+            order_id=order.order_id,
+            menu_item_id=menu_item.item_id,
+            item_name=menu_item.name,
+            unit_price=menu_item.price,
+            quantity=cart_item.quantity,
+            subtotal=subtotal
         )
 
         db.add(order_item)
 
+    # ----------------------------------------
+    # 8. Remove cart items
+    # ----------------------------------------
+
     for cart_item in cart_items:
         db.delete(cart_item)
 
+    # ----------------------------------------
+    # 9. Commit everything
+    # ----------------------------------------
+
     db.commit()
     db.refresh(order)
+    db.refresh(delivery_address)
+
+    # ----------------------------------------
+    # 10. Get created order items
+    # ----------------------------------------
 
     order_items = db.exec(
-    select(OrderItem).where(
-        OrderItem.order_id == order.order_id
-    )
-        ).all()
-    
-    return OrderResponse(
-    order_id=order.order_id,
-    customer_id=order.customer_id,
-    shop_id=order.shop_id,
-    status=order.status,
-    total_amount=order.total_amount,
-    created_at=order.created_at,
-    items=[
-        OrderItemResponse(
-            order_item_id=item.order_item_id,
-            menu_item_id=item.menu_item_id,
-            item_name=item.item_name,
-            unit_price=item.unit_price,
-            quantity=item.quantity,
-            subtotal=item.subtotal
+        select(OrderItem).where(
+            OrderItem.order_id == order.order_id
         )
-        for item in order_items
-    ]
-)
+    ).all()
 
+    # ----------------------------------------
+    # 11. Return response
+    # ----------------------------------------
+
+    return OrderResponse(
+        order_id=order.order_id,
+        customer_id=order.customer_id,
+        shop_id=order.shop_id,
+        status=order.status,
+        total_amount=order.total_amount,
+        created_at=order.created_at,
+        delivery_instruction=order.delivery_instruction,
+        delivery_address=OrderDeliveryAddressResponse(
+            delivery_address_id=delivery_address.delivery_address_id,
+            order_id=delivery_address.order_id,
+            address_line1=delivery_address.address_line1,
+            address_line2=delivery_address.address_line2,
+            city=delivery_address.city,
+            state=delivery_address.state,
+            pincode=delivery_address.pincode
+        ),
+        items=[
+            OrderItemResponse(
+                order_item_id=item.order_item_id,
+                menu_item_id=item.menu_item_id,
+                item_name=item.item_name,
+                unit_price=item.unit_price,
+                quantity=item.quantity,
+                subtotal=item.subtotal
+            )
+            for item in order_items
+        ]
+    )
 
 @router.get(
     "",
@@ -169,6 +257,18 @@ def get_customer_orders(
             )
         ).all()
 
+        delivery_address = db.exec(
+            select(OrderDeliveryAddress).where(
+                OrderDeliveryAddress.order_id == order.order_id
+            )
+        ).first()
+
+        if delivery_address is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Delivery address not found for order"
+            )
+
         response.append(
             OrderResponse(
                 order_id=order.order_id,
@@ -177,6 +277,18 @@ def get_customer_orders(
                 status=order.status,
                 total_amount=order.total_amount,
                 created_at=order.created_at,
+                delivery_instruction=order.delivery_instruction,
+
+                delivery_address=OrderDeliveryAddressResponse(
+                    delivery_address_id=delivery_address.delivery_address_id,
+                    order_id=delivery_address.order_id,
+                    address_line1=delivery_address.address_line1,
+                    address_line2=delivery_address.address_line2,
+                    city=delivery_address.city,
+                    state=delivery_address.state,
+                    pincode=delivery_address.pincode
+                ),
+
                 items=[
                     OrderItemResponse(
                         order_item_id=item.order_item_id,

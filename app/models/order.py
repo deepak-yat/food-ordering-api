@@ -45,6 +45,8 @@ class Order(SQLModel, table=True):
 
     total_amount: float
 
+    delivery_instruction: str | None = None
+
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
