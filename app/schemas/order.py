@@ -65,3 +65,6 @@ class ShopOrderResponse(BaseModel):
     delivery_address: OrderDeliveryAddressResponse
 
     items: list[ShopOrderItemResponse]
+
+class ShopOrderStatusUpdate(BaseModel):
+    status: OrderStatus

@@ -5,7 +5,7 @@ from app.database import get_db
 from app.dependencies import get_current_shop
 
 from app.models.customer import Customer
-from app.models.order import Order
+from app.models.order import Order,OrderStatus
 from app.models.order_delivery_address import OrderDeliveryAddress
 from app.models.order_item import OrderItem
 from app.models.shop import Shop
@@ -15,7 +15,9 @@ from app.schemas.order import (
     OrderDeliveryAddressResponse,
     ShopOrderItemResponse,
     ShopOrderResponse,
+    ShopOrderStatusUpdate
 )
+
 router = APIRouter(
     prefix="/shop/orders",
     tags=["Shop Orders"]
@@ -107,3 +109,70 @@ def get_shop_orders(
         )
 
     return response
+
+@router.put(
+    "/{order_id}/status"
+)
+def update_shop_order_status(
+    order_id: int,
+    data: ShopOrderStatusUpdate,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id,
+            Order.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    current_status = order.status
+    new_status = data.status
+
+    allowed_transitions = {
+        OrderStatus.PENDING: {
+            OrderStatus.ACCEPTED,
+            OrderStatus.REJECTED,
+        },
+        OrderStatus.ACCEPTED: {
+            OrderStatus.PREPARING,
+        },
+        OrderStatus.PREPARING: {
+            OrderStatus.READY,
+        },
+        OrderStatus.READY: {
+            OrderStatus.COMPLETED,
+        },
+    }
+
+    allowed_statuses = allowed_transitions.get(
+        current_status,
+        set()
+    )
+
+    if new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Cannot change order status "
+                f"from {current_status} to {new_status}"
+            )
+        )
+
+    order.status = new_status
+
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    return {
+        "message": "Order status updated successfully",
+        "order_id": order.order_id,
+        "status": order.status
+    }

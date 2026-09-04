@@ -125,7 +125,7 @@ def update_address(
     return address
 
 @router.delete(
-    "address/{address_id}",
+    "addresses/{address_id}",
     status_code=status.HTTP_200_OK
 )
 def delete_address(

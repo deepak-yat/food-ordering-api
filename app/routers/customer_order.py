@@ -175,20 +175,26 @@ def create_order(
         db.add(order_item)
 
     # ----------------------------------------
-    # 8. Remove cart items
-    # ----------------------------------------
+# 8. Remove cart items
+# ----------------------------------------
 
     for cart_item in cart_items:
         db.delete(cart_item)
 
-    # ----------------------------------------
-    # 9. Commit everything
-    # ----------------------------------------
+    db.flush()
 
-    db.commit()
-    db.refresh(order)
-    db.refresh(delivery_address)
+# Cart is now empty, so remove the active cart itself.
+    db.delete(cart)
 
+# ----------------------------------------
+# 9. Commit everything
+# ----------------------------------------
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     # ----------------------------------------
     # 10. Get created order items
     # ----------------------------------------
@@ -314,6 +320,7 @@ def get_customer_order(
     current_customer: Customer = Depends(get_current_customer),
     db: Session = Depends(get_db)
 ):
+    # Find the customer's order
     order = db.exec(
         select(Order).where(
             Order.order_id == order_id,
@@ -327,11 +334,25 @@ def get_customer_order(
             detail="Order not found"
         )
 
+    # Get order items
     order_items = db.exec(
         select(OrderItem).where(
             OrderItem.order_id == order.order_id
         )
     ).all()
+
+    # Get delivery-address snapshot
+    delivery_address = db.exec(
+        select(OrderDeliveryAddress).where(
+            OrderDeliveryAddress.order_id == order.order_id
+        )
+    ).first()
+
+    if delivery_address is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery address not found for order"
+        )
 
     return OrderResponse(
         order_id=order.order_id,
@@ -340,6 +361,18 @@ def get_customer_order(
         status=order.status,
         total_amount=order.total_amount,
         created_at=order.created_at,
+        delivery_instruction=order.delivery_instruction,
+
+        delivery_address=OrderDeliveryAddressResponse(
+            delivery_address_id=delivery_address.delivery_address_id,
+            order_id=delivery_address.order_id,
+            address_line1=delivery_address.address_line1,
+            address_line2=delivery_address.address_line2,
+            city=delivery_address.city,
+            state=delivery_address.state,
+            pincode=delivery_address.pincode
+        ),
+
         items=[
             OrderItemResponse(
                 order_item_id=item.order_item_id,

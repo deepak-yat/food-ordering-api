@@ -15,6 +15,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import ShopDashboard from "./pages/ShopDashboard";
+import CustomerOrderPage from "./pages/CustomerOrderPage";
+import CustomerOrders from "./pages/CustomerOrder";
+import ShopOrders from "./pages/ShopOrders";
 function App() {
 
     return (
@@ -59,6 +62,14 @@ function App() {
                     }
                     />
                     <Route
+    path="/shop/orders"
+    element={
+        <ProtectedRoute allowedRoles={["shop_owner"]}>
+            <ShopOrders />
+        </ProtectedRoute>
+    }
+/>
+                    <Route
                     path="/admin/users"
                     element={
                             <ProtectedRoute role="admin">
@@ -66,6 +77,31 @@ function App() {
                             </ProtectedRoute>
                     }
                     />
+                    <Route
+    path="/customer/orders/:orderId"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/customer/orders/review"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderPage />
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/customer/orders"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrders />
+        </ProtectedRoute>
+    }
+/>
                     <Route
     path="/shop/dashboard"
     element={

@@ -29,7 +29,7 @@ const [profileForm, setProfileForm] = useState({
 const [addresses, setAddresses] = useState([]);
 const [selectedAddressId, setSelectedAddressId] = useState(null);
 const [showAddAddress, setShowAddAddress] = useState(false);
-
+const [pendingOrderCount, setPendingOrderCount] = useState(0);
 const [addressForm, setAddressForm] = useState({
     address_line1: "",
     address_line2: "",
@@ -188,27 +188,36 @@ async function viewShopMenu(shopId) {
     }
 }
 
-    async function loadCart(){
-        try{
-            setCartLoading(true);
-            const data = await apiFetch(
-                "/customer/cart"
-            );
-            setCart(data);
-        }catch(error){
-            if(error.status === 404){
-                setCart(null);
-                return;
-            }
-            console.error(error);
-            setError(
-                error.message ||
-                "Unable to load cart"
-            );
-        } finally {
-            setCartLoading(false);
+async function loadCart(){
+    try{
+        setCartLoading(true);
+
+        const data = await apiFetch(
+            "/customer/cart"
+        );
+
+        setCart(data);
+
+    }catch(error){
+
+        if(error.status === 404){
+            setCart(null);
+            return;
         }
+
+        console.error(error);
+
+        setError(
+            error.message ||
+            "Unable to load cart"
+        );
+
+    } finally {
+
+        setCartLoading(false);
+
     }
+}
 
     async function updateCartQuantity(
         cartItemId,
@@ -485,34 +494,81 @@ async function viewShopMenu(shopId) {
     }
 }
 
+  function placeOrder() {
+    if (!selectedAddressId) {
+        alert("Please select a delivery address.");
+        return;
+    }
+
+    navigate("/customer/orders/review", {
+        state: {
+            cart: cart,
+            address: addresses.find(
+                (address) =>
+                    address.address_id === selectedAddressId
+            )
+        }
+    });
+}
+
+async function loadPendingOrderCount() {
+
+    try {
+        const response = await fetch(
+            "http://127.0.0.1:8000/customer/orders",
+            {
+                credentials: "include",
+            }
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const data = await response.json();
+        console.log("CUSTOMER ORDERS:", data);
+        const pendingCount = data.filter(
+            (order) => order.status === "pending"
+        ).length;
+
+        setPendingOrderCount(pendingCount);
+
+    } catch (error) {
+        console.error(
+            "Failed to load order count:",
+            error
+        );
+    }
+}
     return (
         
         <div className="customer-dashboard">
 <header className="customer-navbar">
 
     <div className="customer-navbar-container">
-
-        <a
-            href="/"
-            className="customer-logo"
-        >
-            Foodly
-        </a>
-
+        <span to="" className="logo">
+                    Foodly
+                    <img
+        src="/logo1.png"
+        alt="Foodly"
+        className="logo-icon"
+    />
+                </span>
 
         <nav className="customer-nav-links">
 
             <button
-                onClick={() => {
-                    document
-                        .getElementById("customer-orders")
-                        ?.scrollIntoView({
-                            behavior: "smooth"
-                        });
-                }}
-            >
-                Orders
-            </button>
+    className="customer-orders-nav-btn"
+    onClick={() => navigate("/customer/orders")}
+>
+    <span>Orders</span>
+
+    {pendingOrderCount > 0 && (
+        <span className="customer-orders-counter">
+            {pendingOrderCount}
+        </span>
+    )}
+</button>
 
             <button
                 onClick={() => {
@@ -1299,12 +1355,13 @@ async function viewShopMenu(shopId) {
 </div>
 
 
-            <button
-                className="primary-button checkout-place-button"
-                disabled
-            >
-                Place Order
-            </button>
+           <button
+    className="primary-button checkout-place-button"
+    disabled={!selectedAddressId}
+    onClick={placeOrder}
+>
+    Place Order
+</button>
 
         </div>
 
@@ -1541,187 +1598,187 @@ async function viewShopMenu(shopId) {
 
 
             {/* Footer */}
-            <div className="customer-profile-footer">
+            {isEditingProfile && showAddAddress && (
+            <div className="profile-add-address-form">
 
-                {isEditingProfile ? (
+                <div className="profile-add-address-header">
 
-    <>
+                    <h3>Add New Address</h3>
 
-                    {isEditingProfile && showAddAddress && (
+                    <button
+                        type="button"
+                        className="profile-address-close-btn"
+                        onClick={() => setShowAddAddress(false)}
+                    >
+                        ×
+                    </button>
 
-    <div className="profile-add-address-form">
+                </div>
 
-        <div className="profile-add-address-header">
+                {addressFormError && (
+                    <p className="profile-address-error">
+                        {addressFormError}
+                    </p>
+                )}
 
-            <h3>Add New Address</h3>
+                <input
+                    type="text"
+                    placeholder="Address Line 1"
+                    value={addressForm.address_line1}
+                    onChange={(event) =>
+                        setAddressForm({
+                            ...addressForm,
+                            address_line1: event.target.value
+                        })
+                    }
+                />
 
-            <button
-                type="button"
-                className="profile-address-close-btn"
-                onClick={() => setShowAddAddress(false)}
-            >
-                ×
-            </button>
+                <input
+                    type="text"
+                    placeholder="Address Line 2 (Optional)"
+                    value={addressForm.address_line2}
+                    onChange={(event) =>
+                        setAddressForm({
+                            ...addressForm,
+                            address_line2: event.target.value
+                        })
+                    }
+                />
 
-        </div>
+                <div className="profile-address-row">
 
-        {addressFormError && (
-            <p className="profile-address-error">
-                {addressFormError}
-            </p>
+                    <input
+                        type="text"
+                        placeholder="City"
+                        value={addressForm.city}
+                        onChange={(event) =>
+                            setAddressForm({
+                                ...addressForm,
+                                city: event.target.value
+                            })
+                        }
+                    />
+
+                    <input
+                        type="text"
+                        placeholder="State"
+                        value={addressForm.state}
+                        onChange={(event) =>
+                            setAddressForm({
+                                ...addressForm,
+                                state: event.target.value
+                            })
+                        }
+                    />
+
+                </div>
+
+                <input
+                    type="text"
+                    placeholder="Pincode"
+                    value={addressForm.pincode}
+                    onChange={(event) =>
+                        setAddressForm({
+                            ...addressForm,
+                            pincode: event.target.value
+                        })
+                    }
+                />
+
+                <label className="profile-default-address">
+
+                    <input
+                        type="checkbox"
+                        checked={addressForm.is_default}
+                        onChange={(event) =>
+                            setAddressForm({
+                                ...addressForm,
+                                is_default: event.target.checked
+                            })
+                        }
+                    />
+
+                    <span>Set as default address</span>
+
+                </label>
+
+                <button
+                    type="button"
+                    className="profile-save-address-btn"
+                    onClick={saveAddress}
+                    disabled={addressSaving}
+                >
+                    {addressSaving
+                        ? "Saving..."
+                        : "Save Address"}
+                </button>
+
+            </div>
         )}
 
-        <input
-            type="text"
-            placeholder="Address Line 1"
-            value={addressForm.address_line1}
-            onChange={(event) =>
-                setAddressForm({
-                    ...addressForm,
-                    address_line1: event.target.value
-                })
-            }
-        />
 
-        <input
-            type="text"
-            placeholder="Address Line 2 (Optional)"
-            value={addressForm.address_line2}
-            onChange={(event) =>
-                setAddressForm({
-                    ...addressForm,
-                    address_line2: event.target.value
-                })
-            }
-        />
+        {/* Footer */}
+        <div className="customer-profile-footer">
 
-        <div className="profile-address-row">
+            {isEditingProfile ? (
 
-            <input
-                type="text"
-                placeholder="City"
-                value={addressForm.city}
-                onChange={(event) =>
-                    setAddressForm({
-                        ...addressForm,
-                        city: event.target.value
-                    })
-                }
-            />
+                <>
+                    <button
+                        className="profile-add-address-btn"
+                        onClick={() => {
+                            setShowAddAddress(true);
+                            setAddressFormError("");
+                        }}
+                    >
+                        + Add Address
+                    </button>
 
-            <input
-                type="text"
-                placeholder="State"
-                value={addressForm.state}
-                onChange={(event) =>
-                    setAddressForm({
-                        ...addressForm,
-                        state: event.target.value
-                    })
-                }
-            />
+                    <button
+                        className="profile-cancel-btn"
+                        onClick={() => {
+
+                            setIsEditingProfile(false);
+                            setShowAddAddress(false);
+                            setProfileError("");
+
+                            setProfileForm({
+                                customer_name:
+                                    profile.customer_name || "",
+                                phone:
+                                    profile.phone || ""
+                            });
+
+                        }}
+                        disabled={profileSaving}
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        className="profile-save-btn"
+                        onClick={saveProfileChanges}
+                        disabled={profileSaving}
+                    >
+                        {profileSaving
+                            ? "Saving..."
+                            : "Save Changes"}
+                    </button>
+                </>
+
+            ) : (
+
+                <button
+                    className="profile-edit-btn"
+                    onClick={() =>
+                        setIsEditingProfile(true)
+                    }
+                >
+                    Edit Profile
+                </button>
+
+            )}
 
         </div>
-
-        <input
-            type="text"
-            placeholder="Pincode"
-            value={addressForm.pincode}
-            onChange={(event) =>
-                setAddressForm({
-                    ...addressForm,
-                    pincode: event.target.value
-                })
-            }
-        />
-
-        <label className="profile-default-address">
-
-            <input
-                type="checkbox"
-                checked={addressForm.is_default}
-                onChange={(event) =>
-                    setAddressForm({
-                        ...addressForm,
-                        is_default: event.target.checked
-                    })
-                }
-            />
-
-            <span>Set as default address</span>
-
-        </label>
-
-        <button
-            type="button"
-            className="profile-save-address-btn"
-            onClick={saveAddress}
-            disabled={addressSaving}
-        >
-            {addressSaving
-                ? "Saving..."
-                : "Save Address"}
-        </button>
-
-    </div>
-)}
-
-        <button
-            className="profile-add-address-btn"
-            onClick={() => {
-                setShowAddAddress(true);
-                setAddressFormError("");
-            }}
-        >
-            + Add Address
-        </button>
-
-        <button
-            className="profile-cancel-btn"
-            onClick={() => {
-
-                setIsEditingProfile(false);
-                setProfileError("");
-
-                setProfileForm({
-                    customer_name:
-                        profile.customer_name ||
-                        "",
-                    phone:
-                        profile.phone ||
-                        ""
-                });
-
-            }}
-            disabled={profileSaving}
-        >
-            Cancel
-        </button>
-
-        <button
-            className="profile-save-btn"
-            onClick={saveProfileChanges}
-            disabled={profileSaving}
-        >
-            {profileSaving
-                ? "Saving..."
-                : "Save Changes"}
-        </button>
-    </>
-
-) : (
-
-    <button
-        className="profile-edit-btn"
-        onClick={() =>
-            setIsEditingProfile(true)
-        }
-    >
-        Edit Profile
-    </button>
-
-)}
-            </div>
 
         </div>
 

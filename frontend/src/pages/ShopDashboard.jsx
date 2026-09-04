@@ -533,14 +533,16 @@ setItems((previousItems) =>
 
                 <div className="shop-navbar-container">
 
-                    <button
-                        className="shop-brand"
-                        onClick={() =>
-                            navigate("/shop/dashboard")
-                        }
-                    >
-                        Foodly
-                    </button>
+                    <span to="" className="logo">
+                    Foodly
+                    <img
+        src="/logo1.png"
+        alt="Foodly"
+        className="logo-icon"
+    />
+                </span>
+                   
+                    
 
 
                     <nav className="shop-nav">
