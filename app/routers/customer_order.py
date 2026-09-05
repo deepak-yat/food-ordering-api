@@ -13,6 +13,7 @@ from app.models.order import Order, OrderStatus
 from app.models.order_item import OrderItem
 from app.models.customer_addresses import CustomerAddress
 from app.models.order_delivery_address import OrderDeliveryAddress
+from app.models.shop import Shop
 from app.schemas.order import (
     CreateOrderRequest,
     OrderResponse,
@@ -204,7 +205,17 @@ def create_order(
             OrderItem.order_id == order.order_id
         )
     ).all()
+#GET SHOP
+    shop = db.get(
+        Shop,
+        order.shop_id
+    )
 
+    if shop is None:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Shop not found"
+    )
     # ----------------------------------------
     # 11. Return response
     # ----------------------------------------
@@ -213,6 +224,7 @@ def create_order(
         order_id=order.order_id,
         customer_id=order.customer_id,
         shop_id=order.shop_id,
+        shop_name=shop.shop_name,
         status=order.status,
         total_amount=order.total_amount,
         created_at=order.created_at,
@@ -263,6 +275,17 @@ def get_customer_orders(
             )
         ).all()
 
+        shop = db.get(
+            Shop,
+            order.shop_id
+        )
+
+        if shop is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="shop not found"
+            )
+
         delivery_address = db.exec(
             select(OrderDeliveryAddress).where(
                 OrderDeliveryAddress.order_id == order.order_id
@@ -280,6 +303,7 @@ def get_customer_orders(
                 order_id=order.order_id,
                 customer_id=order.customer_id,
                 shop_id=order.shop_id,
+                shop_name=shop.shop_name,
                 status=order.status,
                 total_amount=order.total_amount,
                 created_at=order.created_at,
@@ -328,6 +352,17 @@ def get_customer_order(
         )
     ).first()
 
+    shop = db.get(
+        Shop,
+        order.shop_id
+    )
+
+    if shop is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="SHOP name not found"
+        )
+
     if order is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -358,6 +393,7 @@ def get_customer_order(
         order_id=order.order_id,
         customer_id=order.customer_id,
         shop_id=order.shop_id,
+        shop_name=shop.shop_name,
         status=order.status,
         total_amount=order.total_amount,
         created_at=order.created_at,

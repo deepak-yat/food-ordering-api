@@ -32,6 +32,7 @@ class OrderResponse(BaseModel):
     order_id: int
     customer_id: int
     shop_id: int
+    shop_name : str
     status: OrderStatus
     total_amount: float
     created_at: datetime

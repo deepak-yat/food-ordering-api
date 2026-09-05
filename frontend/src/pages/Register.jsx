@@ -9,11 +9,11 @@ function Register() {
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
-    user_name: "",
-    user_email: "",
-    password: "",
-    confirm_password: ""
-});
+        user_name: "",
+        user_email: "",
+        password: "",
+        confirm_password: ""
+    });
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -33,18 +33,18 @@ function Register() {
 
         event.preventDefault();
         if (form.password !== form.confirm_password) {
-    setError("Passwords do not match.");
-    return;
-}
+            setError("Passwords do not match.");
+            return;
+        }
         setError("");
         setSuccess("");
         setLoading(true);
 
         try {
             const registrationData = {
-            user_name: form.user_name,
-            user_email: form.user_email,
-            password: form.password
+                user_name: form.user_name,
+                user_email: form.user_email,
+                password: form.password
             };
 
             await apiFetch(
@@ -183,21 +183,21 @@ function Register() {
 
                         <div className="form-group">
 
-    <label htmlFor="confirm_password">
-        Confirm Password
-    </label>
+                            <label htmlFor="confirm_password">
+                                Confirm Password
+                            </label>
 
-    <input
-        id="confirm_password"
-        name="confirm_password"
-        type="password"
-        placeholder="Confirm your password"
-        value={form.confirm_password}
-        onChange={handleChange}
-        required
-    />
+                            <input
+                                id="confirm_password"
+                                name="confirm_password"
+                                type="password"
+                                placeholder="Confirm your password"
+                                value={form.confirm_password}
+                                onChange={handleChange}
+                                required
+                            />
 
-</div>
+                        </div>
 
 
                         {error && (
@@ -242,7 +242,7 @@ function Register() {
                         to="/register/shop"
                         className="shop-link"
                     >
-                        Own a restaurant?
+                        Own a restaurant? 
                         <strong>
                             List your shop →
                         </strong>

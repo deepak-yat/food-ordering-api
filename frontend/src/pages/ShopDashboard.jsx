@@ -1,23 +1,23 @@
-import { useEffect , useState } from "react";
-import {useNavigate} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import {apiFetch} from "../api/client";
-import {useAuth} from "../context/AuthContext";
+import { apiFetch } from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 
-function ShopDashboard(){
+function ShopDashboard() {
 
     const navigate = useNavigate();
-    const {logout}=useAuth();
+    const { logout } = useAuth();
 
-    const [orders,setOrders] = useState([]);
+    const [orders, setOrders] = useState([]);
     const [categories, setCategories] = useState([]);
-    const [items,setItems] = useState([]);
+    const [items, setItems] = useState([]);
 
-    const [loading,setLoading] = useState(true);
-    const [error,setError] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [expandedCategory, setExpandedCategory] =
-    useState(null);
+        useState(null);
 
     const [showCategoryForm, setShowCategoryForm] = useState(false);
 
@@ -46,9 +46,9 @@ function ShopDashboard(){
     const [selectedItem, setSelectedItem] = useState(null);
 
     const [itemEditForm, setItemEditForm] = useState({
-    name: "",
-    description: "",
-    price: "",
+        name: "",
+        description: "",
+        price: "",
     });
 
     const [itemEditLoading, setItemEditLoading] = useState(false);
@@ -57,7 +57,8 @@ function ShopDashboard(){
     const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState(false);
     const [itemDeleteLoading, setItemDeleteLoading] = useState(false);
 
-    useEffect (()=>{
+    
+    useEffect(() => {
         loadDashboard();
     }, []);
     async function loadDashboard() {
@@ -117,414 +118,416 @@ function ShopDashboard(){
         }
     }
 
-    
-    async function addCategory(event){
+
+    async function addCategory(event) {
         event.preventDefault();
 
         setCategoryError("");
 
-        if (!categoryName.trim()){
+        if (!categoryName.trim()) {
             setCategoryError("Category name is required.");
             return;
         }
 
-        try{
+        try {
             setCategoryLoading(true);
 
             const newCategory = await apiFetch(
                 "/menu/categories",
                 {
-                    method:"POST",
-                    body:JSON.stringify(
+                    method: "POST",
+                    body: JSON.stringify(
                         {
-                    category_name: categoryName.trim()
-                }
+                            category_name: categoryName.trim()
+                        }
                     )
                 }
             );
-             console.log("Category created:", newCategory);
+            console.log("Category created:", newCategory);
 
-        setCategories((currentCategories) => [
-            ...currentCategories,
-            newCategory
-        ]);
+            setCategories((currentCategories) => [
+                ...currentCategories,
+                newCategory
+            ]);
 
-        setCategoryName("");
-        setShowCategoryForm(false);
-        }catch (error) {
-        console.error(error);
+            setCategoryName("");
+            setShowCategoryForm(false);
+        } catch (error) {
+            console.error(error);
 
-        if (error.status === 401) {
-            navigate("/login");
-            return;
+            if (error.status === 401) {
+                navigate("/login");
+                return;
+            }
+
+            if (error.status === 403) {
+                navigate("/");
+                return;
+            }
+
+            setCategoryError(
+                error.message ||
+                "Unable to create category."
+            );
+
+        } finally {
+            setCategoryLoading(false);
         }
-
-        if (error.status === 403) {
-            navigate("/");
-            return;
-        }
-
-        setCategoryError(
-            error.message ||
-            "Unable to create category."
-        );
-
-    } finally {
-        setCategoryLoading(false);
-    }
     }
 
     async function updateCategory(event) {
-    event.preventDefault();
+        event.preventDefault();
 
-    if (!editingCategory) {
-        return;
-    }
+        if (!editingCategory) {
+            return;
+        }
 
-    if (!categoryName.trim()) {
-        setCategoryError(
-            "Category name is required."
-        );
-        return;
-    }
+        if (!categoryName.trim()) {
+            setCategoryError(
+                "Category name is required."
+            );
+            return;
+        }
 
-    try {
-        setCategoryLoading(true);
-        setCategoryError("");
+        try {
+            setCategoryLoading(true);
+            setCategoryError("");
 
-        const updatedCategory = await apiFetch(
-            `/menu/categories/categories/${editingCategory.category_id}`,
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    category_name: categoryName.trim()
-                })
+            const updatedCategory = await apiFetch(
+                `/menu/categories/categories/${editingCategory.category_id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        category_name: categoryName.trim()
+                    })
+                }
+            );
+
+            setCategories((currentCategories) =>
+                currentCategories.map(category =>
+                    category.category_id ===
+                        editingCategory.category_id
+                        ? {
+                            ...category,
+                            category_name:
+                                updatedCategory.category_name
+                        }
+                        : category
+                )
+            );
+
+            setEditingCategory(null);
+            setCategoryName("");
+
+        } catch (error) {
+            console.error(error);
+
+            if (error.status === 401) {
+                navigate("/login");
+                return;
             }
-        );
 
-        setCategories((currentCategories) =>
-            currentCategories.map(category =>
-                category.category_id ===
-                editingCategory.category_id
-                    ? {
-                        ...category,
-                        category_name:
-                            updatedCategory.category_name
-                    }
-                    : category
-            )
-        );
-
-        setEditingCategory(null);
-        setCategoryName("");
-
-    } catch (error) {
-        console.error(error);
-
-        if (error.status === 401) {
-            navigate("/login");
-            return;
-        }
-
-        if (error.status === 403) {
-            navigate("/");
-            return;
-        }
-
-        setCategoryError(
-            error.message ||
-            "Unable to update category."
-        );
-
-    } finally {
-        setCategoryLoading(false);
-    }
-}
-
-async function confirmDeleteCategory() {
-
-    if (!deleteCategory) {
-        return;
-    }
-
-    try {
-        setCategoryLoading(true);
-        setCategoryError("");
-
-        await apiFetch(
-            `/menu/categories/categories/${deleteCategory.category_id}`,
-            {
-                method: "DELETE"
+            if (error.status === 403) {
+                navigate("/");
+                return;
             }
-        );
 
-        setCategories((currentCategories) =>
-            currentCategories.filter(
-                category =>
-                    category.category_id !==
-                    deleteCategory.category_id
-            )
-        );
+            setCategoryError(
+                error.message ||
+                "Unable to update category."
+            );
 
-        /*
-         * Also remove any items belonging
-         * to this category from local state.
-         */
-        setItems((currentItems) =>
-            currentItems.filter(
-                item =>
-                    item.category_id !==
-                    deleteCategory.category_id
-            )
-        );
-
-        setDeleteCategory(null);
-
-    } catch (error) {
-        console.error(error);
-
-        if (error.status === 401) {
-            navigate("/login");
-            return;
+        } finally {
+            setCategoryLoading(false);
         }
-
-        if (error.status === 403) {
-            navigate("/");
-            return;
-        }
-
-        setCategoryError(
-            error.message ||
-            "Unable to delete category."
-        );
-
-    } finally {
-        setCategoryLoading(false);
     }
-}
+
+    async function confirmDeleteCategory() {
+
+        if (!deleteCategory) {
+            return;
+        }
+
+        try {
+            setCategoryLoading(true);
+            setCategoryError("");
+
+            await apiFetch(
+                `/menu/categories/categories/${deleteCategory.category_id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+            setCategories((currentCategories) =>
+                currentCategories.filter(
+                    category =>
+                        category.category_id !==
+                        deleteCategory.category_id
+                )
+            );
+
+            /*
+             * Also remove any items belonging
+             * to this category from local state.
+             */
+            setItems((currentItems) =>
+                currentItems.filter(
+                    item =>
+                        item.category_id !==
+                        deleteCategory.category_id
+                )
+            );
+
+            setDeleteCategory(null);
+
+        } catch (error) {
+            console.error(error);
+
+            if (error.status === 401) {
+                navigate("/login");
+                return;
+            }
+
+            if (error.status === 403) {
+                navigate("/");
+                return;
+            }
+
+            setCategoryError(
+                error.message ||
+                "Unable to delete category."
+            );
+
+        } finally {
+            setCategoryLoading(false);
+        }
+    }
 
     async function addItem(event) {
-    event.preventDefault();
+        event.preventDefault();
 
-    if (!selectedCategory) {
-        return;
-    }
+        if (!selectedCategory) {
+            return;
+        }
 
-    setItemError("");
+        setItemError("");
 
-    if (!itemForm.name.trim()) {
-        setItemError("Item name is required.");
-        return;
-    }
+        if (!itemForm.name.trim()) {
+            setItemError("Item name is required.");
+            return;
+        }
 
-    if (
-        itemForm.price === "" ||
-        Number(itemForm.price) <= 0
-    ) {
-        setItemError("Price must be greater than 0.");
-        return;
-    }
+        if (
+            itemForm.price === "" ||
+            Number(itemForm.price) <= 0
+        ) {
+            setItemError("Price must be greater than 0.");
+            return;
+        }
 
-    try {
+        try {
 
-        setItemLoading(true);
+            setItemLoading(true);
 
-        const newItem = await apiFetch(
-            "/menu/categories/item",
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    category_id:
-                        selectedCategory.category_id,
-                    name: itemForm.name.trim(),
-                    description:
-                        itemForm.description.trim() || null,
-                    price: Number(itemForm.price)
-                })
+            const newItem = await apiFetch(
+                "/menu/categories/item",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        category_id:
+                            selectedCategory.category_id,
+                        name: itemForm.name.trim(),
+                        description:
+                            itemForm.description.trim() || null,
+                        price: Number(itemForm.price)
+                    })
+                }
+            );
+
+            setItems(currentItems => [
+                ...currentItems,
+                newItem
+            ]);
+
+            setItemForm({
+                name: "",
+                description: "",
+                price: ""
+            });
+
+            setSelectedCategory(null);
+            setShowItemForm(false);
+
+        } catch (error) {
+
+            console.error(error);
+
+            if (error.status === 401) {
+                navigate("/login");
+                return;
             }
-        );
 
-        setItems(currentItems => [
-            ...currentItems,
-            newItem
-        ]);
+            if (error.status === 403) {
+                navigate("/");
+                return;
+            }
 
-        setItemForm({
-            name: "",
-            description: "",
-            price: ""
-        });
+            setItemError(
+                error.message ||
+                "Unable to add item."
+            );
 
-        setSelectedCategory(null);
-        setShowItemForm(false);
+        } finally {
 
-    } catch (error) {
-
-        console.error(error);
-
-        if (error.status === 401) {
-            navigate("/login");
-            return;
+            setItemLoading(false);
         }
-
-        if (error.status === 403) {
-            navigate("/");
-            return;
-        }
-
-        setItemError(
-            error.message ||
-            "Unable to add item."
-        );
-
-    } finally {
-
-        setItemLoading(false);
     }
-}
 
-    async function openEditItem(item){
+    async function openEditItem(item) {
         setSelectedItem(item);
 
         setItemEditForm(
             {
-                name : item.name || "",
-                description : item.description || "",
-                price : item.price ?? "",
-                is_available : item.is_available ?? true
+                name: item.name || "",
+                description: item.description || "",
+                price: item.price ?? "",
+                is_available: item.is_available ?? true
             }
         );
         setItemEditError("");
         setShowItemEditForm(true);
     }
 
-    function handleItemEditChange(){
-        const {name , value , type , checked } = event.target;
-        
+    function handleItemEditChange() {
+        const { name, value, type, checked } = event.target;
+
         setItemEditForm((previous) => ({
             ...previous,
-            [name] : type === "checkbox" ? checked : value
+            [name]: type === "checkbox" ? checked : value
         }));
     }
 
-    async function saveItemChanges(){
+    async function saveItemChanges() {
         if (!selectedItem) return;
 
         setItemEditLoading(true);
         setItemEditError("");
 
-        try{
+        try {
             const changes = {};
 
-            if (itemEditForm.name !== selectedItem.name){
+            if (itemEditForm.name !== selectedItem.name) {
                 changes.name = itemEditForm.name.trim();
             }
-            if (itemEditForm.description !== (selectedItem.description || "")){
+            if (itemEditForm.description !== (selectedItem.description || "")) {
                 changes.description = itemEditForm.description.trim();
             }
 
-            if (Number(itemEditForm.price) !== Number(selectedItem.price)){
+            if (Number(itemEditForm.price) !== Number(selectedItem.price)) {
                 changes.price = Number(itemEditForm.price);
             }
 
             if (
                 itemEditForm.is_available !== selectedItem.is_available
-            ){
+            ) {
                 changes.is_available = itemEditForm.is_available;
             }
 
-            if (Object.keys(changes).length === 0){
+            if (Object.keys(changes).length === 0) {
                 setItemEditError("No changes were made.");
                 return;
             }
 
             const updatedItem = await apiFetch(
-    `/menu/categories/item/${selectedItem.category_id}/${selectedItem.item_id}`,
-    {
-        method: "PUT",
-        body: JSON.stringify(changes)
-    }
-);
+                `/menu/categories/item/${selectedItem.category_id}/${selectedItem.item_id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify(changes)
+                }
+            );
 
-setItems((previousItems) =>
-    previousItems.map((item) =>
-        item.item_id === updatedItem.item_id
-            ? updatedItem
-            : item
-    )
-);
+            setItems((previousItems) =>
+                previousItems.map((item) =>
+                    item.item_id === updatedItem.item_id
+                        ? updatedItem
+                        : item
+                )
+            );
 
 
-        setShowItemEditForm(false);
-        setSelectedItem(null);
+            setShowItemEditForm(false);
+            setSelectedItem(null);
 
-    } catch (error) {
-        setItemEditError(
-            error.data?.detail ||
-            error.message ||
-            "Unable to edit item."
-        );
-    } finally {
-        setItemEditLoading(false);
-    }
+        } catch (error) {
+            setItemEditError(
+                error.data?.detail ||
+                error.message ||
+                "Unable to edit item."
+            );
+        } finally {
+            setItemEditLoading(false);
+        }
 
     }
 
     async function deleteItem() {
-    if (!selectedItem) return;
+        if (!selectedItem) return;
 
-    setItemDeleteLoading(true);
+        setItemDeleteLoading(true);
 
-    try {
-        await apiFetch(`/menu/categories/item/items/${selectedItem.item_id}`, {
-            method: "DELETE"
-        });
+        try {
+            await apiFetch(`/menu/categories/item/items/${selectedItem.item_id}`, {
+                method: "DELETE"
+            });
 
-        setItems((previousItems) =>
-            previousItems.filter(
-                (item) => item.item_id !== selectedItem.item_id
-            )
-        );
+            setItems((previousItems) =>
+                previousItems.filter(
+                    (item) => item.item_id !== selectedItem.item_id
+                )
+            );
 
-        setShowDeleteItemConfirm(false);
-        setShowItemEditForm(false);
-        setSelectedItem(null);
+            setShowDeleteItemConfirm(false);
+            setShowItemEditForm(false);
+            setSelectedItem(null);
 
-    } catch (error) {
-        setItemEditError(
-            error.data?.detail ||
-            error.message ||
-            "Failed to delete item"
-        );
-    } finally {
-        setItemDeleteLoading(false);
+        } catch (error) {
+            setItemEditError(
+                error.data?.detail ||
+                error.message ||
+                "Failed to delete item"
+            );
+        } finally {
+            setItemDeleteLoading(false);
+        }
     }
-}
-
+    const pendingOrders = orders.filter(
+        (order) => order.status.toLowerCase() === "pending"
+    );
     async function toggleItemAvailability(item) {
-    try {
-        const updatedItem = await apiFetch(
-            `/menu/categories/item/${item.category_id}/${item.item_id}`,
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    is_available: !item.is_available
-                })
-            }
-        );
+        try {
+            const updatedItem = await apiFetch(
+                `/menu/categories/item/${item.category_id}/${item.item_id}`,
+                {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        is_available: !item.is_available
+                    })
+                }
+            );
 
-        setItems((previousItems) =>
-            previousItems.map((currentItem) =>
-                currentItem.item_id === updatedItem.item_id
-                    ? updatedItem
-                    : currentItem
-            )
-        );
+            setItems((previousItems) =>
+                previousItems.map((currentItem) =>
+                    currentItem.item_id === updatedItem.item_id
+                        ? updatedItem
+                        : currentItem
+                )
+            );
 
-    } catch (error) {
-        console.error("Failed to update availability:", error);
+        } catch (error) {
+            console.error("Failed to update availability:", error);
+        }
     }
-}
 
     return (
         <div className="shop-dashboard">
@@ -534,20 +537,20 @@ setItems((previousItems) =>
                 <div className="shop-navbar-container">
 
                     <span to="" className="logo">
-                    Foodly
-                    <img
-        src="/logo1.png"
-        alt="Foodly"
-        className="logo-icon"
-    />
-                </span>
-                   
-                    
+                        Foodly
+                        <img
+                            src="/logo1.png"
+                            alt="Foodly"
+                            className="logo-icon"
+                        />
+                    </span>
+
+
 
 
                     <nav className="shop-nav">
 
-                        <button>
+                        <button onClick={() => navigate("/shop/overview")}>
                             Overview
                         </button>
 
@@ -654,34 +657,34 @@ setItems((previousItems) =>
 
                     <div className="menu-section-heading">
 
-    <div className="section-heading">
+                        <div className="section-heading">
 
-        <span className="eyebrow">
-            MENU MANAGEMENT
-        </span>
+                            <span className="eyebrow">
+                                MENU MANAGEMENT
+                            </span>
 
-        <h2>
-            Your Menu
-        </h2>
+                            <h2>
+                                Your Menu
+                            </h2>
 
-        <p>
-            Manage categories and food items.
-        </p>
+                            <p>
+                                Manage categories and food items.
+                            </p>
 
-    </div>
+                        </div>
 
-    <button
-    className="add-category-button"
-    onClick={() => {
-        setCategoryError("");
-        setCategoryName("");
-        setShowCategoryForm(true);
-    }}
->
-    + Add Category
-</button>
+                        <button
+                            className="add-category-button"
+                            onClick={() => {
+                                setCategoryError("");
+                                setCategoryName("");
+                                setShowCategoryForm(true);
+                            }}
+                        >
+                            + Add Category
+                        </button>
 
-</div>
+                    </div>
 
 
                     {loading ? (
@@ -695,188 +698,188 @@ setItems((previousItems) =>
                         <>
                             <div className="shop-category-list">
 
-    {categories.map(category => {
+                                {categories.map(category => {
 
-        const categoryItems = items.filter(
-            item =>
-                item.category_id ===
-                category.category_id
-        );
+                                    const categoryItems = items.filter(
+                                        item =>
+                                            item.category_id ===
+                                            category.category_id
+                                    );
 
-        return (
-            <div
-                key={category.category_id}
-                className="shop-category-card"
-            >
+                                    return (
+                                        <div
+                                            key={category.category_id}
+                                            className="shop-category-card"
+                                        >
 
-                <div
-                    className="shop-category-header"
-                    onClick={() =>
-                        setExpandedCategory(
-                            expandedCategory ===
-                                category.category_id
-                                ? null
-                                : category.category_id
-                        )
-                    }
-                >
+                                            <div
+                                                className="shop-category-header"
+                                                onClick={() =>
+                                                    setExpandedCategory(
+                                                        expandedCategory ===
+                                                            category.category_id
+                                                            ? null
+                                                            : category.category_id
+                                                    )
+                                                }
+                                            >
 
-                    <div className="category-title">
-                        <h3>
-                            {category.category_name}
-                        </h3>
+                                                <div className="category-title">
+                                                    <h3>
+                                                        {category.category_name}
+                                                    </h3>
 
-                        <span className="item-count">
-                            {categoryItems.length} items
-                        </span>
-                    </div>
-
-
-                    <button
-    className="category-edit-button"
-    onClick={(event) => {
-        event.stopPropagation();
-
-        setCategoryError("");
-        setCategoryName(category.category_name);
-        setEditingCategory(category);
-    }}
->
-    Edit
-</button>
-
-                </div>
+                                                    <span className="item-count">
+                                                        {categoryItems.length} items
+                                                    </span>
+                                                </div>
 
 
-                {expandedCategory ===
-                    category.category_id && (
+                                                <button
+                                                    className="category-edit-button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
 
-                    <div
-                        className="category-items"
-                        onClick={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
+                                                        setCategoryError("");
+                                                        setCategoryName(category.category_name);
+                                                        setEditingCategory(category);
+                                                    }}
+                                                >
+                                                    Edit
+                                                </button>
 
-                        {categoryItems.length === 0 ? (
+                                            </div>
 
-                            <div className="category-empty">
-                                <p>
-                                    No items in this category yet.
-                                </p>
+
+                                            {expandedCategory ===
+                                                category.category_id && (
+
+                                                    <div
+                                                        className="category-items"
+                                                        onClick={(event) =>
+                                                            event.stopPropagation()
+                                                        }
+                                                    >
+
+                                                        {categoryItems.length === 0 ? (
+
+                                                            <div className="category-empty">
+                                                                <p>
+                                                                    No items in this category yet.
+                                                                </p>
+                                                            </div>
+
+                                                        ) : (
+
+                                                            categoryItems.map(item => (
+
+                                                                <div
+                                                                    key={item.item_id}
+                                                                    className="shop-item-card"
+                                                                >
+
+                                                                    <div className="shop-item-info">
+
+                                                                        <h4>
+                                                                            {item.name}
+                                                                        </h4>
+
+                                                                        <p>
+                                                                            {item.description ||
+                                                                                "No description"}
+                                                                        </p>
+
+                                                                    </div>
+
+
+                                                                    <div className="shop-item-actions">
+
+                                                                        <strong>
+                                                                            ₹{Number(
+                                                                                item.price
+                                                                            ).toFixed(2)}
+                                                                        </strong>
+
+                                                                        <span
+                                                                            className={
+                                                                                item.is_available
+                                                                                    ? "item-status available"
+                                                                                    : "item-status unavailable"
+                                                                            }
+                                                                        >
+                                                                            {item.is_available
+                                                                                ? "Available"
+                                                                                : "Unavailable"}
+                                                                        </span>
+
+                                                                        <button
+                                                                            className="item-edit-button"
+                                                                            onClick={() =>
+                                                                                openEditItem(item)
+
+                                                                            }
+                                                                        >
+                                                                            Edit
+                                                                        </button>
+
+                                                                        <div className="item-availability">
+                                                                            <button
+                                                                                type="button"
+                                                                                className={
+                                                                                    item.is_available
+                                                                                        ? "availability-status available"
+                                                                                        : "availability-status unavailable"
+                                                                                }
+                                                                                onClick={() => toggleItemAvailability(item)}
+                                                                                title={
+                                                                                    item.is_available
+                                                                                        ? "Mark as unavailable"
+                                                                                        : "Mark as available"
+                                                                                }
+                                                                            >
+                                                                                <span className="availability-icon">
+                                                                                    {item.is_available ? "✓" : "×"}
+                                                                                </span>
+
+                                                                            </button>
+                                                                        </div>
+
+                                                                    </div>
+
+                                                                </div>
+
+                                                            ))
+
+                                                        )}
+
+
+                                                        <button
+                                                            className="add-item-button"
+                                                            onClick={() => {
+                                                                setSelectedCategory(category);
+
+                                                                setItemForm({
+                                                                    name: "",
+                                                                    description: "",
+                                                                    price: ""
+                                                                });
+
+                                                                setItemError("");
+                                                                setShowItemForm(true);
+                                                            }}
+                                                        >
+                                                            + Add Item
+                                                        </button>
+
+                                                    </div>
+
+                                                )}
+
+                                        </div>
+                                    );
+                                })}
+
                             </div>
-
-                        ) : (
-
-                            categoryItems.map(item => (
-
-                                <div
-                                    key={item.item_id}
-                                    className="shop-item-card"
-                                >
-
-                                    <div className="shop-item-info">
-
-                                        <h4>
-                                            {item.name}
-                                        </h4>
-
-                                        <p>
-                                            {item.description ||
-                                                "No description"}
-                                        </p>
-
-                                    </div>
-
-
-                                    <div className="shop-item-actions">
-
-                                        <strong>
-                                            ₹{Number(
-                                                item.price
-                                            ).toFixed(2)}
-                                        </strong>
-
-                                        <span
-                                            className={
-                                                item.is_available
-                                                    ? "item-status available"
-                                                    : "item-status unavailable"
-                                            }
-                                        >
-                                            {item.is_available
-                                                ? "Available"
-                                                : "Unavailable"}
-                                        </span>
-
-                                        <button
-                                            className="item-edit-button"
-                                            onClick={() =>
-                                                openEditItem(item)
-                                            
-                                            }
-                                        >
-                                            Edit
-                                        </button>
-
-                                        <div className="item-availability">
-    <button
-        type="button"
-        className={
-            item.is_available
-                ? "availability-status available"
-                : "availability-status unavailable"
-        }
-        onClick={() => toggleItemAvailability(item)}
-        title={
-            item.is_available
-                ? "Mark as unavailable"
-                : "Mark as available"
-        }
-    >
-        <span className="availability-icon">
-            {item.is_available ? "✓" : "×"}
-        </span>
-
-    </button>
-</div>
-
-                                    </div>
-
-                                </div>
-
-                            ))
-
-                        )}
-
-
-                        <button
-    className="add-item-button"
-    onClick={() => {
-        setSelectedCategory(category);
-
-        setItemForm({
-            name: "",
-            description: "",
-            price: ""
-        });
-
-        setItemError("");
-        setShowItemForm(true);
-    }}
->
-    + Add Item
-</button>
-
-                    </div>
-
-                )}
-
-            </div>
-        );
-    })}
-
-</div>
                         </>
 
                     )}
@@ -886,786 +889,763 @@ setItems((previousItems) =>
 
                 <section className="shop-section">
 
-    <div className="section-header">
-        <div>
-            <h2>Incoming Orders</h2>
-            <p>Manage your recent customer orders</p>
+                    <div className="section-header">
+                        <div>
+                            <h2>Incoming Orders</h2>
+                            <p>Manage your recent customer orders</p>
+                        </div>
+
+                        <span className="order-count">
+                            {orders.length} Orders
+                        </span>
+                        <button
+                            className="view-live-orders-btn"
+                            onClick={() => navigate("/shop/orders")}
+                        >
+                            View Live Orders →
+                        </button>
+
+                    </div>
+
+                    {orders.length === 0 ? (
+
+    <div className="empty-orders">
+        <div className="empty-orders-icon">
+            🧾
         </div>
 
-        <span className="order-count">
-            {orders.length} Orders
-        </span>
-                    <button
-    className="view-live-orders-btn"
-    onClick={() => navigate("/shop/orders")}
->
-    View Live Orders →
-</button>
+        <h3>No orders yet</h3>
+
+        <p>
+            New customer orders will appear here.
+        </p>
+    </div>
+
+) : pendingOrders.length === 0 ? (
+
+    <div className="empty-orders">
+        <div className="empty-orders-icon">
+            🧾
+        </div>
+
+        <h3>No new orders</h3>
+
+        <p>
+            You're all caught up.
+        </p>
+    </div>
+
+) : (
+
+    <div className="orders-list">
+
+        {pendingOrders.map((order) => (
+
+            <div
+                className="order-card"
+                key={order.order_id}
+            >
+
+                <div className="order-card-header">
+
+                    <div>
+                        <h3>
+                            Order #{order.order_id}
+                        </h3>
+                    </div>
+
+                    <span
+                        className={`order-status ${order.status}`}
+                    >
+                        {order.status}
+                    </span>
+
+                </div>
+
+                <div className="customer-details">
+
+                    <p>
+                        <strong>
+                            {order.customer_name}
+                        </strong>
+                    </p>
+
+                    <p>
+                        Phone:{" "}
+                        {order.customer_phone || "Not provided"}
+                    </p>
+
+                </div>
+
+                <div className="order-items">
+
+                    <h4>Items</h4>
+
+                    {order.items.map((item) => (
+
+                        <div
+                            className="order-item-row"
+                            key={item.order_item_id}
+                        >
+
+                            <div>
+                                <span className="order-item-name">
+                                    {item.item_name}
+                                </span>
+
+                                <span className="order-item-quantity">
+                                    × {item.quantity}
+                                </span>
+                            </div>
+
+                            <span>
+                                ₹{item.subtotal}
+                            </span>
+
+                        </div>
+
+                    ))}
+
+                </div>
+
+                <div className="order-card-footer">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ₹{order.total_amount}
+                    </strong>
+
+                </div>
+
+            </div>
+
+        ))}
 
     </div>
 
-    {orders.length === 0 ? (
+)}
 
-        <div className="empty-orders">
-            <div className="empty-orders-icon">
-                🧾
-            </div>
+                </section>
 
-            <h3>No orders yet</h3>
-
-            <p>
-                New customer orders will appear here.
-            </p>
-        </div>
-
-    ) : (
-
-        <div className="orders-list">
-
-            {orders.map((order) => (
-
+            </main>
+            {showCategoryForm && (
                 <div
-                    className="order-card"
-                    key={order.order_id}
+                    className="shop-modal-overlay"
+                    onClick={() => {
+                        if (!categoryLoading) {
+                            setShowCategoryForm(false);
+                        }
+                    }}
                 >
+                    <div
+                        className="shop-modal"
+                        onClick={(event) =>
+                            event.stopPropagation()
+                        }
+                    >
 
-                    <div className="order-card-header">
+                        <div className="shop-modal-header">
 
-                        <div>
-                            <h3>
-                                Order #{order.order_id}
-                            </h3>
+                            <div>
+                                <span className="eyebrow">
+                                    MENU
+                                </span>
 
-                            <p>
-                                Customer ID: {order.customer_id}
-                            </p>
+                                <h2>
+                                    Add Category
+                                </h2>
+                            </div>
+
+                            <button
+                                className="shop-modal-close"
+                                onClick={() =>
+                                    setShowCategoryForm(false)
+                                }
+                                disabled={categoryLoading}
+                            >
+                                ×
+                            </button>
+
                         </div>
 
-                        <span
-                            className={
-                                `order-status ${order.status}`
-                            }
-                        >
-                            {order.status}
-                        </span>
 
-                    </div>
+                        <form onSubmit={addCategory}>
 
-                    <div className="customer-details">
+                            <div className="form-group">
 
-                        <h4>Customer</h4>
+                                <label htmlFor="category_name">
+                                    Category Name
+                                </label>
 
-                        <p>
-                            <strong>
-                                {order.customer_name}
-                            </strong>
-                        </p>
-
-                        <p>
-                            Phone:{" "}
-                            {order.customer_phone || "Not provided"}
-                        </p>
-
-                    </div>
-
-                    <div className="delivery-details">
-
-                        <h4>Delivery Address</h4>
-
-                        <p>
-                            {order.delivery_address.address_line1}
-                        </p>
-
-                        {order.delivery_address.address_line2 && (
-                            <p>
-                                {order.delivery_address.address_line2}
-                            </p>
-                        )}
-
-                        <p>
-                            {order.delivery_address.city},{" "}
-                            {order.delivery_address.state}{" "}
-                            {order.delivery_address.pincode}
-                        </p>
-
-                        {order.delivery_instruction && (
-                            <p className="delivery-instruction">
-                                <strong>Instruction:</strong>{" "}
-                                {order.delivery_instruction}
-                            </p>
-                        )}
-
-                    </div>
-
-                    <div className="order-items">
-
-                        <h4>Items</h4>
-
-                        {order.items.map((item) => (
-
-                            <div
-                                className="order-item-row"
-                                key={item.order_item_id}
-                            >
-
-                                <div>
-                                    <span className="order-item-name">
-                                        {item.item_name}
-                                    </span>
-
-                                    <span className="order-item-quantity">
-                                        × {item.quantity}
-                                    </span>
-                                </div>
-
-                                <span>
-                                    ₹{item.subtotal}
-                                </span>
+                                <input
+                                    id="category_name"
+                                    type="text"
+                                    placeholder="e.g. Main Course"
+                                    value={categoryName}
+                                    onChange={(event) =>
+                                        setCategoryName(
+                                            event.target.value
+                                        )
+                                    }
+                                    required
+                                />
 
                             </div>
 
-                        ))}
+
+                            {categoryError && (
+                                <p className="error-text">
+                                    {categoryError}
+                                </p>
+                            )}
+
+
+                            <div className="shop-modal-actions">
+
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={() =>
+                                        setShowCategoryForm(false)
+                                    }
+                                    disabled={categoryLoading}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="primary-button"
+                                    disabled={categoryLoading}
+                                >
+                                    {categoryLoading
+                                        ? "Adding..."
+                                        : "Add Category"}
+                                </button>
+
+                            </div>
+
+                        </form>
 
                     </div>
-
-                    <div className="order-card-footer">
-
-                        <span>
-                            Total
-                        </span>
-
-                        <strong>
-                            ₹{order.total_amount}
-                        </strong>
-
-                    </div>
-
                 </div>
-
-            ))}
-
-        </div>
-
-    )}
-
-</section>
-
-            </main>
-{showCategoryForm && (
-    <div
-        className="shop-modal-overlay"
-        onClick={() => {
-            if (!categoryLoading) {
-                setShowCategoryForm(false);
-            }
-        }}
-    >
-        <div
-            className="shop-modal"
-            onClick={(event) =>
-                event.stopPropagation()
-            }
-        >
-
-            <div className="shop-modal-header">
-
-                <div>
-                    <span className="eyebrow">
-                        MENU
-                    </span>
-
-                    <h2>
-                        Add Category
-                    </h2>
-                </div>
-
-                <button
-                    className="shop-modal-close"
-                    onClick={() =>
-                        setShowCategoryForm(false)
-                    }
-                    disabled={categoryLoading}
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-            <form onSubmit={addCategory}>
-
-                <div className="form-group">
-
-                    <label htmlFor="category_name">
-                        Category Name
-                    </label>
-
-                    <input
-                        id="category_name"
-                        type="text"
-                        placeholder="e.g. Main Course"
-                        value={categoryName}
-                        onChange={(event) =>
-                            setCategoryName(
-                                event.target.value
-                            )
-                        }
-                        required
-                    />
-
-                </div>
-
-
-                {categoryError && (
-                    <p className="error-text">
-                        {categoryError}
-                    </p>
-                )}
-
-
-                <div className="shop-modal-actions">
-
-                    <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() =>
-                            setShowCategoryForm(false)
-                        }
-                        disabled={categoryLoading}
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        className="primary-button"
-                        disabled={categoryLoading}
-                    >
-                        {categoryLoading
-                            ? "Adding..."
-                            : "Add Category"}
-                    </button>
-
-                </div>
-
-            </form>
-
-        </div>
-    </div>
-)}
-
-{editingCategory && (
-    <div
-        className="shop-modal-overlay"
-        onClick={() => {
-            if (!categoryLoading) {
-                setEditingCategory(null);
-                setCategoryError("");
-            }
-        }}
-    >
-        <div
-            className="shop-modal category-edit-modal"
-            onClick={(event) =>
-                event.stopPropagation()
-            }
-        >
-            <div className="shop-modal-header">
-
-                <div>
-                    <span className="eyebrow">
-                        CATEGORY
-                    </span>
-
-                    <h2>
-                        Edit Category
-                    </h2>
-                </div>
-
-                <button
-                    className="shop-modal-close"
-                    onClick={() =>
-                        setEditingCategory(null)
-                    }
-                    disabled={categoryLoading}
-                >
-                   × 
-                </button>
-
-            </div>
-
-            <form onSubmit={updateCategory}>
-
-                <div className="form-group">
-
-                    <label htmlFor="edit_category_name">
-                        Category Name
-                    </label>
-
-                    <input
-                        id="edit_category_name"
-                        type="text"
-                        value={categoryName}
-                        onChange={(event) =>
-                            setCategoryName(
-                                event.target.value
-                            )
-                        }
-                        required
-                    />
-
-                </div>
-
-                {categoryError && (
-                    <p className="error-text">
-                        {categoryError}
-                    </p>
-                )}
-
-                <div className="shop-modal-actions">
-
-                    <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() =>
-                            setEditingCategory(null)
-                        }
-                        disabled={categoryLoading}
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        className="primary-button"
-                        disabled={categoryLoading}
-                    >
-                        {categoryLoading
-                            ? "Saving..."
-                            : "Save Changes"}
-                    </button>
-
-                </div>
-
-            </form>
-
-
-            <div className="category-danger-zone">
-
-                <span className="danger-label">
-                    DANGER ZONE
-                </span>
-
-                <p>
-                    Deleting this category may fail if
-                    it still contains menu items.
-                </p>
-
-                <button
-                    className="category-delete-button"
-                    onClick={() => {
-                        setCategoryError("");
-                        setDeleteCategory(
-                            editingCategory
-                        );
-                    }}
-                    disabled={categoryLoading}
-                >
-                    Delete Category
-                </button>
-
-            </div>
-
-        </div>
-    </div>
-)}
-
-{deleteCategory && (
-    <div
-        className="shop-modal-overlay"
-        onClick={() => {
-            if (!categoryLoading) {
-                setDeleteCategory(null);
-            }
-        }}
-    >
-        <div
-            className="shop-confirm-modal"
-            onClick={(event) =>
-                event.stopPropagation()
-            }
-        >
-
-            <div className="confirm-icon">
-                !
-            </div>
-
-            <span className="eyebrow">
-                DELETE CATEGORY
-            </span>
-
-            <h2>
-                Delete "{deleteCategory.category_name}"?
-            </h2>
-
-            <p>
-                This action cannot be undone. If this
-                category contains menu items, deletion
-                may be rejected by the server.
-            </p>
-
-            {categoryError && (
-                <p className="error-text">
-                    {categoryError}
-                </p>
             )}
 
-            <div className="shop-modal-actions">
-
-                <button
-                    className="secondary-button"
-                    onClick={() =>
-                        setDeleteCategory(null)
-                    }
-                    disabled={categoryLoading}
-                >
-                    Cancel
-                </button>
-
-                <button
-                    className="category-delete-confirm"
-                    onClick={confirmDeleteCategory}
-                    disabled={categoryLoading}
-                >
-                    {categoryLoading
-                        ? "Deleting..."
-                        : "Yes, Delete"}
-                </button>
-
-            </div>
-
-        </div>
-    </div>
-)}
-
-    {showItemForm && selectedCategory && (
-    <div
-        className="shop-modal-overlay"
-        onClick={() => {
-            if (!itemLoading) {
-                setShowItemForm(false);
-                setSelectedCategory(null);
-            }
-        }}
-    >
-        <div
-            className="shop-modal"
-            onClick={(event) =>
-                event.stopPropagation()
-            }
-        >
-
-            <div className="shop-modal-header">
-
-                <div>
-                    <span className="eyebrow">
-                        ADD MENU ITEM
-                    </span>
-
-                    <h2>
-                        Add Item
-                    </h2>
-                </div>
-
-                <button
-                    className="shop-modal-close"
+            {editingCategory && (
+                <div
+                    className="shop-modal-overlay"
                     onClick={() => {
-                        setShowItemForm(false);
-                        setSelectedCategory(null);
+                        if (!categoryLoading) {
+                            setEditingCategory(null);
+                            setCategoryError("");
+                        }
                     }}
-                    disabled={itemLoading}
                 >
-                    ×
-                </button>
-
-            </div>
-
-
-            <div className="selected-category-display">
-                <span>
-                    Category
-                </span>
-
-                <strong>
-                    {selectedCategory.category_name}
-                </strong>
-            </div>
-
-
-            <form onSubmit={addItem}>
-
-                <div className="form-group">
-
-                    <label htmlFor="item_name">
-                        Item Name
-                    </label>
-
-                    <input
-                        id="item_name"
-                        type="text"
-                        placeholder="Item name."
-                        value={itemForm.name}
-                        onChange={(event) =>
-                            setItemForm({
-                                ...itemForm,
-                                name: event.target.value
-                            })
+                    <div
+                        className="shop-modal category-edit-modal"
+                        onClick={(event) =>
+                            event.stopPropagation()
                         }
-                        required
-                    />
+                    >
+                        <div className="shop-modal-header">
 
+                            <div>
+                                <span className="eyebrow">
+                                    CATEGORY
+                                </span>
+
+                                <h2>
+                                    Edit Category
+                                </h2>
+                            </div>
+
+                            <button
+                                className="shop-modal-close"
+                                onClick={() =>
+                                    setEditingCategory(null)
+                                }
+                                disabled={categoryLoading}
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                        <form onSubmit={updateCategory}>
+
+                            <div className="form-group">
+
+                                <label htmlFor="edit_category_name">
+                                    Category Name
+                                </label>
+
+                                <input
+                                    id="edit_category_name"
+                                    type="text"
+                                    value={categoryName}
+                                    onChange={(event) =>
+                                        setCategoryName(
+                                            event.target.value
+                                        )
+                                    }
+                                    required
+                                />
+
+                            </div>
+
+                            {categoryError && (
+                                <p className="error-text">
+                                    {categoryError}
+                                </p>
+                            )}
+
+                            <div className="shop-modal-actions">
+
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={() =>
+                                        setEditingCategory(null)
+                                    }
+                                    disabled={categoryLoading}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="primary-button"
+                                    disabled={categoryLoading}
+                                >
+                                    {categoryLoading
+                                        ? "Saving..."
+                                        : "Save Changes"}
+                                </button>
+
+                            </div>
+
+                        </form>
+
+
+                        <div className="category-danger-zone">
+
+                            <span className="danger-label">
+                                DANGER ZONE
+                            </span>
+
+                            <p>
+                                Deleting this category may fail if
+                                it still contains menu items.
+                            </p>
+
+                            <button
+                                className="category-delete-button"
+                                onClick={() => {
+                                    setCategoryError("");
+                                    setDeleteCategory(
+                                        editingCategory
+                                    );
+                                }}
+                                disabled={categoryLoading}
+                            >
+                                Delete Category
+                            </button>
+
+                        </div>
+
+                    </div>
                 </div>
+            )}
 
-
-                <div className="form-group">
-
-                    <label htmlFor="item_description">
-                        Description
-                    </label>
-
-                    <textarea
-                        id="item_description"
-                        placeholder="Describe the item..."
-                        rows="4"
-                        value={itemForm.description}
-                        onChange={(event) =>
-                            setItemForm({
-                                ...itemForm,
-                                description:
-                                    event.target.value
-                            })
+            {deleteCategory && (
+                <div
+                    className="shop-modal-overlay"
+                    onClick={() => {
+                        if (!categoryLoading) {
+                            setDeleteCategory(null);
                         }
-                    />
-
-                </div>
-
-
-                <div className="form-group">
-
-                    <label htmlFor="item_price">
-                        Price
-                    </label>
-
-                    <input
-                        id="item_price"
-                        type="number"
-                        min="0.01"
-                        step="0.01"
-                        placeholder="Enter price"
-                        value={itemForm.price}
-                        onChange={(event) =>
-                            setItemForm({
-                                ...itemForm,
-                                price: event.target.value
-                            })
+                    }}
+                >
+                    <div
+                        className="shop-confirm-modal"
+                        onClick={(event) =>
+                            event.stopPropagation()
                         }
-                        required
-                    />
+                    >
 
+                        <div className="confirm-icon">
+                            !
+                        </div>
+
+                        <span className="eyebrow">
+                            DELETE CATEGORY
+                        </span>
+
+                        <h2>
+                            Delete "{deleteCategory.category_name}"?
+                        </h2>
+
+                        <p>
+                            This action cannot be undone. If this
+                            category contains menu items, deletion
+                            may be rejected by the server.
+                        </p>
+
+                        {categoryError && (
+                            <p className="error-text">
+                                {categoryError}
+                            </p>
+                        )}
+
+                        <div className="shop-modal-actions">
+
+                            <button
+                                className="secondary-button"
+                                onClick={() =>
+                                    setDeleteCategory(null)
+                                }
+                                disabled={categoryLoading}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                className="category-delete-confirm"
+                                onClick={confirmDeleteCategory}
+                                disabled={categoryLoading}
+                            >
+                                {categoryLoading
+                                    ? "Deleting..."
+                                    : "Yes, Delete"}
+                            </button>
+
+                        </div>
+
+                    </div>
                 </div>
+            )}
 
-
-                {itemError && (
-                    <p className="error-text">
-                        {itemError}
-                    </p>
-                )}
-
-
-                <div className="shop-modal-actions">
-
-                    <button
-                        type="button"
-                        className="secondary-button"
-                        onClick={() => {
+            {showItemForm && selectedCategory && (
+                <div
+                    className="shop-modal-overlay"
+                    onClick={() => {
+                        if (!itemLoading) {
                             setShowItemForm(false);
                             setSelectedCategory(null);
-                        }}
-                        disabled={itemLoading}
+                        }
+                    }}
+                >
+                    <div
+                        className="shop-modal"
+                        onClick={(event) =>
+                            event.stopPropagation()
+                        }
                     >
-                        Cancel
-                    </button>
 
-                    <button
-                        type="submit"
-                        className="primary-button"
-                        disabled={itemLoading}
-                    >
-                        {itemLoading
-                            ? "Adding..."
-                            : "Add Item"}
-                    </button>
+                        <div className="shop-modal-header">
 
+                            <div>
+                                <span className="eyebrow">
+                                    ADD MENU ITEM
+                                </span>
+
+                                <h2>
+                                    Add Item
+                                </h2>
+                            </div>
+
+                            <button
+                                className="shop-modal-close"
+                                onClick={() => {
+                                    setShowItemForm(false);
+                                    setSelectedCategory(null);
+                                }}
+                                disabled={itemLoading}
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+
+                        <div className="selected-category-display">
+                            <span>
+                                Category
+                            </span>
+
+                            <strong>
+                                {selectedCategory.category_name}
+                            </strong>
+                        </div>
+
+
+                        <form onSubmit={addItem}>
+
+                            <div className="form-group">
+
+                                <label htmlFor="item_name">
+                                    Item Name
+                                </label>
+
+                                <input
+                                    id="item_name"
+                                    type="text"
+                                    placeholder="Item name."
+                                    value={itemForm.name}
+                                    onChange={(event) =>
+                                        setItemForm({
+                                            ...itemForm,
+                                            name: event.target.value
+                                        })
+                                    }
+                                    required
+                                />
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="item_description">
+                                    Description
+                                </label>
+
+                                <textarea
+                                    id="item_description"
+                                    placeholder="Describe the item..."
+                                    rows="4"
+                                    value={itemForm.description}
+                                    onChange={(event) =>
+                                        setItemForm({
+                                            ...itemForm,
+                                            description:
+                                                event.target.value
+                                        })
+                                    }
+                                />
+
+                            </div>
+
+
+                            <div className="form-group">
+
+                                <label htmlFor="item_price">
+                                    Price
+                                </label>
+
+                                <input
+                                    id="item_price"
+                                    type="number"
+                                    min="0.01"
+                                    step="0.01"
+                                    placeholder="Enter price"
+                                    value={itemForm.price}
+                                    onChange={(event) =>
+                                        setItemForm({
+                                            ...itemForm,
+                                            price: event.target.value
+                                        })
+                                    }
+                                    required
+                                />
+
+                            </div>
+
+
+                            {itemError && (
+                                <p className="error-text">
+                                    {itemError}
+                                </p>
+                            )}
+
+
+                            <div className="shop-modal-actions">
+
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={() => {
+                                        setShowItemForm(false);
+                                        setSelectedCategory(null);
+                                    }}
+                                    disabled={itemLoading}
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    className="primary-button"
+                                    disabled={itemLoading}
+                                >
+                                    {itemLoading
+                                        ? "Adding..."
+                                        : "Add Item"}
+                                </button>
+
+                            </div>
+
+                        </form>
+
+                    </div>
                 </div>
+            )}
 
-            </form>
+            {showItemEditForm && selectedItem && (
+                <div className="shop-modal-overlay">
+                    <div className="shop-modal">
 
-        </div>
-    </div>
-)}
+                        <div className="shop-modal-header">
+                            <div>
+                                <h2>Edit Item</h2>
+                                <p>Update your menu item details</p>
+                            </div>
 
-    {showItemEditForm && selectedItem && (
-    <div className="shop-modal-overlay">
-        <div className="shop-modal">
+                            <button
+                                className="shop-modal-close"
+                                onClick={() => setShowItemEditForm(false)}
+                            >
+                                ×
+                            </button>
+                        </div>
 
-            <div className="shop-modal-header">
-                <div>
-                    <h2>Edit Item</h2>
-                    <p>Update your menu item details</p>
+                        <div className="shop-modal-body">
+
+                            <div className="form-group">
+                                <label>Item Name</label>
+
+                                <input
+                                    type="text"
+                                    name="name"
+                                    value={itemEditForm.name}
+                                    onChange={handleItemEditChange}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Description</label>
+
+                                <textarea
+                                    name="description"
+                                    value={itemEditForm.description}
+                                    onChange={handleItemEditChange}
+                                    rows="4"
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label>Price</label>
+
+                                <input
+                                    type="number"
+                                    name="price"
+                                    value={itemEditForm.price}
+                                    onChange={handleItemEditChange}
+                                    min="0"
+                                    step="0.01"
+                                />
+                            </div>
+
+
+
+                            {itemEditError && (
+                                <p className="shop-form-error">
+                                    {itemEditError}
+                                </p>
+                            )}
+
+                            {/* Danger Zone */}
+                            <div className="danger-zone">
+                                <h3>Danger Zone</h3>
+
+                                <p>
+                                    Deleting this item will permanently remove it
+                                    from your menu.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    className="delete-item-btn"
+                                    onClick={() => setShowDeleteItemConfirm(true)}
+                                >
+                                    Delete Item
+                                </button>
+                            </div>
+
+                        </div>
+
+                        <div className="shop-modal-actions">
+
+                            <button
+                                className="shop-cancel-btn"
+                                onClick={() => setShowItemEditForm(false)}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                className="shop-save-btn"
+                                onClick={saveItemChanges}
+                                disabled={itemEditLoading}
+                            >
+                                {itemEditLoading
+                                    ? "Saving..."
+                                    : "Save Changes"}
+                            </button>
+
+                        </div>
+
+                    </div>
                 </div>
+            )}
 
-                <button
-                    className="shop-modal-close"
-                    onClick={() => setShowItemEditForm(false)}
-                >
-                    ×
-                </button>
-            </div>
+            {showDeleteItemConfirm && selectedItem && (
+                <div className="shop-modal-overlay">
+                    <div className="delete-confirm-modal">
 
-            <div className="shop-modal-body">
+                        <div className="delete-confirm-icon">
+                            !
+                        </div>
 
-                <div className="form-group">
-                    <label>Item Name</label>
+                        <h2>Delete Item?</h2>
 
-                    <input
-                        type="text"
-                        name="name"
-                        value={itemEditForm.name}
-                        onChange={handleItemEditChange}
-                    />
+                        <p>
+                            Are you sure you want to delete{" "}
+                            <strong>{selectedItem.name}</strong>?
+                        </p>
+
+                        <p className="delete-warning">
+                            This action cannot be undone.
+                        </p>
+
+                        <div className="delete-confirm-actions">
+
+                            <button
+                                className="shop-cancel-btn"
+                                onClick={() => setShowDeleteItemConfirm(false)}
+                                disabled={itemDeleteLoading}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                className="confirm-delete-btn"
+                                onClick={deleteItem}
+                                disabled={itemDeleteLoading}
+                            >
+                                {itemDeleteLoading
+                                    ? "Deleting..."
+                                    : "Delete Item"}
+                            </button>
+
+                        </div>
+
+                    </div>
                 </div>
-
-                <div className="form-group">
-                    <label>Description</label>
-
-                    <textarea
-                        name="description"
-                        value={itemEditForm.description}
-                        onChange={handleItemEditChange}
-                        rows="4"
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label>Price</label>
-
-                    <input
-                        type="number"
-                        name="price"
-                        value={itemEditForm.price}
-                        onChange={handleItemEditChange}
-                        min="0"
-                        step="0.01"
-                    />
-                </div>
-
-                
-
-                {itemEditError && (
-                    <p className="shop-form-error">
-                        {itemEditError}
-                    </p>
-                )}
-
-                {/* Danger Zone */}
-                <div className="danger-zone">
-                    <h3>Danger Zone</h3>
-
-                    <p>
-                        Deleting this item will permanently remove it
-                        from your menu.
-                    </p>
-
-                    <button
-                        type="button"
-                        className="delete-item-btn"
-                        onClick={() => setShowDeleteItemConfirm(true)}
-                    >
-                        Delete Item
-                    </button>
-                </div>
-
-            </div>
-
-            <div className="shop-modal-actions">
-
-                <button
-                    className="shop-cancel-btn"
-                    onClick={() => setShowItemEditForm(false)}
-                >
-                    Cancel
-                </button>
-
-                <button
-                    className="shop-save-btn"
-                    onClick={saveItemChanges}
-                    disabled={itemEditLoading}
-                >
-                    {itemEditLoading
-                        ? "Saving..."
-                        : "Save Changes"}
-                </button>
-
-            </div>
-
-        </div>
-    </div>
-)}
-
-{showDeleteItemConfirm && selectedItem && (
-    <div className="shop-modal-overlay">
-        <div className="delete-confirm-modal">
-
-            <div className="delete-confirm-icon">
-                !
-            </div>
-
-            <h2>Delete Item?</h2>
-
-            <p>
-                Are you sure you want to delete{" "}
-                <strong>{selectedItem.name}</strong>?
-            </p>
-
-            <p className="delete-warning">
-                This action cannot be undone.
-            </p>
-
-            <div className="delete-confirm-actions">
-
-                <button
-                    className="shop-cancel-btn"
-                    onClick={() => setShowDeleteItemConfirm(false)}
-                    disabled={itemDeleteLoading}
-                >
-                    Cancel
-                </button>
-
-                <button
-                    className="confirm-delete-btn"
-                    onClick={deleteItem}
-                    disabled={itemDeleteLoading}
-                >
-                    {itemDeleteLoading
-                        ? "Deleting..."
-                        : "Delete Item"}
-                </button>
-
-            </div>
-
-        </div>
-    </div>
-)}
+            )}
 
         </div>
     );

@@ -15,6 +15,8 @@ from app.routers.shop_orders import router as shop_orders_router
 from app.routers.customer import router as customer_router
 from app.dependencies import require_page_role,UserRole
 from app.models.user import User
+from app.routers.shop_overview import router as shop_overview_router
+from app.routers.customer_search import router as customer_search_router
 app = FastAPI(
     title="Food Ordering API",
     version="1.0.0"
@@ -51,7 +53,7 @@ def home(request: Request):
             "request": request
         }
     )
-
+app.include_router(shop_overview_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(shop_router)
@@ -62,6 +64,7 @@ app.include_router(customer_cart_router)
 app.include_router(customer_order_router)
 app.include_router(shop_orders_router)
 app.include_router(customer_router)
+app.include_router(customer_search_router)
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(

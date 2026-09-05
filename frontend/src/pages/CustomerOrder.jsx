@@ -116,9 +116,7 @@ function CustomerOrders() {
                             key={order.order_id}
                             className="customer-order-card"
                             onClick={() =>
-                                navigate(
-                                    `/customer/orders/${order.order_id}`
-                                )
+                                navigate(`/customer/orders/${order.order_id}/details`)
                             }
                         >
 
@@ -126,7 +124,7 @@ function CustomerOrders() {
 
                                 <div>
                                     <span className="order-card-label">
-                                        ORDER
+                                        <h1 >{order.shop_name}</h1>
                                     </span>
 
                                     <h3>

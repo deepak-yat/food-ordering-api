@@ -18,6 +18,16 @@ from app.schemas.order import (
     ShopOrderStatusUpdate
 )
 
+from app.schemas.shop_overview import (
+    ShopOverviewResponse,
+    ShopOverviewDetails,
+    ShopOverviewSummary,
+    RevenueTrendItem,
+    OrderTrendItem,
+    ItemDemandItem,
+    StatusDistributionItem,
+)
+
 router = APIRouter(
     prefix="/shop/orders",
     tags=["Shop Orders"]
@@ -176,3 +186,4 @@ def update_shop_order_status(
         "order_id": order.order_id,
         "status": order.status
     }
+

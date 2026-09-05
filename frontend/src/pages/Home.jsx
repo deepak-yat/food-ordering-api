@@ -24,9 +24,42 @@ function Home() {
     const [error, setError] =
         useState("");
 
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState({
+        shops:[],
+        items : [],
+    });
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [ showSearchResults, setShowSearchResults] = useState(false);
+const [searchedItemId, setSearchedItemId] = useState(null);
     useEffect(() => {
         loadShops();
     }, []);
+
+    useEffect(() => {
+    const timeout = setTimeout(() => {
+        searchFoodly(searchQuery);
+    }, 250);
+    
+    return () => clearTimeout(timeout);
+}, [searchQuery]);
+
+useEffect(() => {
+    if (!searchedItemId || !selectedShop) {
+        return;
+    }
+
+    const element = document.getElementById(
+        `searched-food-${searchedItemId}`
+    );
+
+    if (element) {
+        element.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+        });
+    }
+}, [menu, searchedItemId, selectedShop]);
 
 
     async function loadShops() {
@@ -75,6 +108,21 @@ function Home() {
 
             setMenu(data);
 
+if (searchedItemId) {
+    setTimeout(() => {
+        const element = document.getElementById(
+            `searched-food-${searchedItemId}`
+        );
+
+        if (element) {
+            element.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }
+    }, 100);
+}
+
         } catch (error) {
 
             console.error(error);
@@ -93,6 +141,51 @@ function Home() {
     function closeMenu() {
         setSelectedShop(null);
         setMenu([]);
+    }
+
+    async function searchFoodly(query){
+        const value = query.trim();
+        if(!value) {
+            setSearchResults(
+                {
+                    shops:[],
+                    items:[]
+                }
+            );
+            setShowSearchResults(false);
+            return
+        }
+        setSearchLoading(true);
+        setShowSearchResults(true);
+
+        try{
+            const response = await fetch(
+            `http://127.0.0.1:8000/customer/search?q=${encodeURIComponent(value)}`,
+            {
+                credentials: "include",
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok){
+            throw newError(
+                data.detail || "search failed"
+            );
+        }
+        setSearchResults(data);
+        } catch (error){
+            console.error("Search failed : ",error)
+            setSearchResults(
+                {
+                    shops:[],
+                    items:[]
+                }
+            );
+        } finally {
+            setSearchLoading(false);
+        }
+
     }
 
 
@@ -126,18 +219,154 @@ function Home() {
                             order the food you love.
                         </p>
 
-                        <div className="hero-search">
+                        <div className="home-search-wrapper">
 
-                            <input
-                                type="text"
-                                placeholder="Search shops or food..."
-                            />
+    <div className="home-search-box">
 
-                            <button className="primary-button">
-                                Search
-                            </button>
+        <span className="home-search-icon">
+            🔍
+        </span>
+
+        <input
+            type="text"
+            placeholder="Search for food or restaurants"
+            value={searchQuery}
+            onChange={(event) =>
+                setSearchQuery(event.target.value)
+            }
+            onFocus={() => {
+                if (searchQuery.trim()) {
+                    setShowSearchResults(true);
+                }
+            }}
+        />
+
+        {searchQuery && (
+            <button
+                type="button"
+                className="home-search-clear"
+                onClick={() => {
+                    setSearchQuery("");
+                    setSearchResults({
+                        shops: [],
+                        items: [],
+                    });
+                    setShowSearchResults(false);
+                }}
+            >
+                ×
+            </button>
+        )}
+
+    </div>
+
+
+    {showSearchResults && (
+        <div className="home-search-dropdown">
+
+            {searchLoading ? (
+
+                <div className="search-dropdown-loading">
+                    Searching...
+                </div>
+
+            ) : (
+                <>
+                    {searchResults.shops.length > 0 && (
+                        <div className="search-result-group">
+
+                            <span className="search-result-heading">
+                                SHOPS
+                            </span>
+
+                            {searchResults.shops.map((shop) => (
+                                <button
+                                    type="button"
+                                    key={shop.shop_id}
+                                    className="search-result-item"
+                                   onClick={() => {
+    setShowSearchResults(false);
+    setSearchQuery("");
+
+    setSearchedItemId(null);
+
+    viewShopMenu(shop.shop_id);
+}}
+                                >
+                                    <div>
+                                        <strong>
+                                            {shop.shop_name}
+                                        </strong>
+
+                                        <span>
+                                            Restaurant
+                                        </span>
+                                    </div>
+
+                                    <span className="search-result-arrow">
+                                        →
+                                    </span>
+                                </button>
+                            ))}
 
                         </div>
+                    )}
+
+
+                    {searchResults.items.length > 0 && (
+                        <div className="search-result-group">
+
+                            <span className="search-result-heading">
+                                FOOD
+                            </span>
+
+                            {searchResults.items.map((item) => (
+                                <button
+                                    type="button"
+                                    key={item.item_id}
+                                    className="search-result-item"
+                                    onClick={() => {
+    setShowSearchResults(false);
+    setSearchQuery("");
+
+    setSearchedItemId(item.item_id);
+
+    viewShopMenu(item.shop_id);
+}}
+                                >
+                                    <div>
+                                        <strong>
+                                            {item.item_name}
+                                        </strong>
+
+                                        <span>
+                                            {item.shop_name}
+                                        </span>
+                                    </div>
+
+                                    <span className="search-result-arrow">
+                                        →
+                                    </span>
+                                </button>
+                            ))}
+
+                        </div>
+                    )}
+
+
+                    {searchResults.shops.length === 0 &&
+                        searchResults.items.length === 0 && (
+                            <div className="search-dropdown-empty">
+                                No results found
+                            </div>
+                        )}
+                </>
+            )}
+
+        </div>
+    )}
+
+</div>
 
                     </div>
 
@@ -319,7 +548,15 @@ function Home() {
 
                                         {category.items.map(
                                             item => (
-
+<div
+    key={item.item_id}
+    id={`searched-food-${item.item_id}`}
+    className={
+        searchedItemId === item.item_id
+            ? "searched-food-highlight"
+            : ""
+    }
+>
                                                 <FoodCard
                                                     key={
                                                         item.item_id
@@ -335,7 +572,7 @@ function Home() {
                                                             "/login";
                                                     }}
                                                 />
-
+</div>
                                             )
                                         )}
 

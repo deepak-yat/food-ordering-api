@@ -18,6 +18,8 @@ import ShopDashboard from "./pages/ShopDashboard";
 import CustomerOrderPage from "./pages/CustomerOrderPage";
 import CustomerOrders from "./pages/CustomerOrder";
 import ShopOrders from "./pages/ShopOrders";
+import CustomerOrderDetails from "./pages/CustomerOrderDetails";
+import ShopOverview from "./pages/ShopOverview";
 function App() {
 
     return (
@@ -69,6 +71,16 @@ function App() {
         </ProtectedRoute>
     }
 />
+
+<Route
+    path="/customer/orders/:orderId/details"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderDetails />
+        </ProtectedRoute>
+    }
+/>
+
                     <Route
                     path="/admin/users"
                     element={
@@ -91,6 +103,14 @@ function App() {
     element={
         <ProtectedRoute allowedRoles={["customer"]}>
             <CustomerOrderPage />
+        </ProtectedRoute>
+    }
+/>  
+<Route
+    path="/shop/overview"
+    element={
+        <ProtectedRoute allowedRoles={["shop_owner"]}>
+            <ShopOverview />
         </ProtectedRoute>
     }
 />

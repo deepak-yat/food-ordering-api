@@ -8,8 +8,8 @@ function CustomerOrderPage() {
     const { cart, address } = location.state || {};
     const [paymentMethod, setPaymentMethod] = useState("");
     const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
-const [placingOrder, setPlacingOrder] = useState(false);
-const [orderError, setOrderError] = useState("");
+    const [placingOrder, setPlacingOrder] = useState(false);
+    const [orderError, setOrderError] = useState("");
     if (!cart || !address) {
         return (
             <div className="customer-order-page">
@@ -28,42 +28,42 @@ const [orderError, setOrderError] = useState("");
     }
 
     async function confirmAndPlaceOrder() {
-    setPlacingOrder(true);
-    setOrderError("");
+        setPlacingOrder(true);
+        setOrderError("");
 
-    try {
-        const data = await apiFetch(
-            "/customer/orders",
-            {
-                method: "POST",
-                body: JSON.stringify({
-                    cart_id: cart.cart_id,
-                    address_id: address.address_id,
-                }),
-            }
-        );
+        try {
+            const data = await apiFetch(
+                "/customer/orders",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        cart_id: cart.cart_id,
+                        address_id: address.address_id,
+                    }),
+                }
+            );
 
-        console.log("ORDER CREATED:", data);
+            console.log("ORDER CREATED:", data);
 
-        setShowOrderConfirmation(false);
+            setShowOrderConfirmation(false);
 
-        navigate("/customer/dashboard");
+            navigate("/customer/dashboard");
 
-    } catch (error) {
+        } catch (error) {
 
-        console.error(
-            "Order creation failed:",
-            error
-        );
+            console.error(
+                "Order creation failed:",
+                error
+            );
 
-        setOrderError(
-            error.message || "Failed to place order"
-        );
+            setOrderError(
+                error.message || "Failed to place order"
+            );
 
-    } finally {
-        setPlacingOrder(false);
+        } finally {
+            setPlacingOrder(false);
+        }
     }
-}
 
     return (
         <div className="customer-order-page">
@@ -71,12 +71,12 @@ const [orderError, setOrderError] = useState("");
             {/* Header */}
             <div className="customer-order-header">
                 <div>
-                <button
-                    className="back-button"
-                    onClick={() => navigate(-1)}
-                >
-                    ← Go Back
-                </button> 
+                    <button
+                        className="back-button"
+                        onClick={() => navigate(-1)}
+                    >
+                        ← Go Back
+                    </button>
                 </div>
                 <div>
                     <span className="eyebrow">
@@ -170,267 +170,263 @@ const [orderError, setOrderError] = useState("");
 
             </section>
 
-                    {/* Payment Method */}
+            {/* Payment Method */}
 
-<section className="customer-order-section">
+            <section className="customer-order-section">
 
-    <span className="eyebrow">
-        PAYMENT METHOD
-    </span>
-
-    <div className="payment-options">
-
-        <label
-            className={`payment-option ${
-                paymentMethod === "cod"
-                    ? "selected"
-                    : ""
-            }`}
-        >
-            <input
-                type="radio"
-                name="paymentMethod"
-                value="cod"
-                checked={paymentMethod === "cod"}
-                onChange={(event) =>
-                    setPaymentMethod(event.target.value)
-                }
-            />
-
-            <div className="payment-option-content">
-
-                <strong>
-                    Cash on Delivery
-                </strong>
-
-                <span>
-                    Pay when your order arrives
+                <span className="eyebrow">
+                    PAYMENT METHOD
                 </span>
 
-            </div>
+                <div className="payment-options">
 
-        </label>
+                    <label
+                        className={`payment-option ${paymentMethod === "cod"
+                                ? "selected"
+                                : ""
+                            }`}
+                    >
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="cod"
+                            checked={paymentMethod === "cod"}
+                            onChange={(event) =>
+                                setPaymentMethod(event.target.value)
+                            }
+                        />
 
+                        <div className="payment-option-content">
 
-        <label
-            className={`payment-option ${
-                paymentMethod === "upi"
-                    ? "selected"
-                    : ""
-            }`}
-        >
-            <input
-                type="radio"
-                name="paymentMethod"
-                value="upi"
-                checked={paymentMethod === "upi"}
-                onChange={(event) =>
-                    setPaymentMethod(event.target.value)
-                }
-            />
+                            <strong>
+                                Cash on Delivery
+                            </strong>
 
-            <div className="payment-option-content">
+                            <span>
+                                Pay when your order arrives
+                            </span>
 
-                <strong>
-                    UPI
-                </strong>
+                        </div>
 
-                <span>
-                    Pay using your UPI app
-                </span>
-
-            </div>
-
-        </label>
+                    </label>
 
 
-        <label
-            className={`payment-option ${
-                paymentMethod === "card"
-                    ? "selected"
-                    : ""
-            }`}
-        >
-            <input
-                type="radio"
-                name="paymentMethod"
-                value="card"
-                checked={paymentMethod === "card"}
-                onChange={(event) =>
-                    setPaymentMethod(event.target.value)
-                }
-            />
+                    <label
+                        className={`payment-option ${paymentMethod === "upi"
+                                ? "selected"
+                                : ""
+                            }`}
+                    >
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="upi"
+                            checked={paymentMethod === "upi"}
+                            onChange={(event) =>
+                                setPaymentMethod(event.target.value)
+                            }
+                        />
 
-            <div className="payment-option-content">
+                        <div className="payment-option-content">
 
-                <strong>
-                    Credit / Debit Card
-                </strong>
+                            <strong>
+                                UPI
+                            </strong>
 
-                <span>
-                    Pay securely using your card
-                </span>
+                            <span>
+                                Pay using your UPI app
+                            </span>
 
-            </div>
+                        </div>
 
-        </label>
+                    </label>
 
 
-        <label
-            className={`payment-option ${
-                paymentMethod === "net_banking"
-                    ? "selected"
-                    : ""
-            }`}
-        >
-            <input
-                type="radio"
-                name="paymentMethod"
-                value="net_banking"
-                checked={paymentMethod === "net_banking"}
-                onChange={(event) =>
-                    setPaymentMethod(event.target.value)
-                }
-            />
+                    <label
+                        className={`payment-option ${paymentMethod === "card"
+                                ? "selected"
+                                : ""
+                            }`}
+                    >
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="card"
+                            checked={paymentMethod === "card"}
+                            onChange={(event) =>
+                                setPaymentMethod(event.target.value)
+                            }
+                        />
 
-            <div className="payment-option-content">
+                        <div className="payment-option-content">
 
-                <strong>
-                    Net Banking
-                </strong>
+                            <strong>
+                                Credit / Debit Card
+                            </strong>
 
-                <span>
-                    Pay using your bank account
-                </span>
+                            <span>
+                                Pay securely using your card
+                            </span>
 
-            </div>
+                        </div>
 
-        </label>
+                    </label>
 
-    </div>
 
-</section>
-        <div className="customer-order-actions">
+                    <label
+                        className={`payment-option ${paymentMethod === "net_banking"
+                                ? "selected"
+                                : ""
+                            }`}
+                    >
+                        <input
+                            type="radio"
+                            name="paymentMethod"
+                            value="net_banking"
+                            checked={paymentMethod === "net_banking"}
+                            onChange={(event) =>
+                                setPaymentMethod(event.target.value)
+                            }
+                        />
 
-    <button
-        type="button"
-        className="customer-order-edit-btn"
-        onClick={() => navigate(-1)}
-    >
-        Edit Cart
-    </button>
+                        <div className="payment-option-content">
 
-    <button
-        type="button"
-        className="customer-order-place-btn"
-        onClick={() => {
-            setOrderError("");
-            setShowOrderConfirmation(true);
-        }}
-    >
-        Place Order
-    </button>
+                            <strong>
+                                Net Banking
+                            </strong>
 
-</div>
+                            <span>
+                                Pay using your bank account
+                            </span>
 
-{showOrderConfirmation && (
-    <div className="order-confirmation-overlay">
+                        </div>
 
-        <div className="order-confirmation-popup">
+                    </label>
 
-            <div className="order-confirmation-header">
+                </div>
 
-                <h2>
-                    Confirm Your Order
-                </h2>
+            </section>
+            <div className="customer-order-actions">
 
                 <button
                     type="button"
-                    className="order-confirmation-close"
-                    onClick={() =>
-                        setShowOrderConfirmation(false)
-                    }
-                    disabled={placingOrder}
+                    className="customer-order-edit-btn"
+                    onClick={() => navigate(-1)}
                 >
-                    ×
+                    Edit Cart
+                </button>
+
+                <button
+                    type="button"
+                    className="customer-order-place-btn"
+                    onClick={() => {
+                        setOrderError("");
+                        setShowOrderConfirmation(true);
+                    }}
+                >
+                    Place Order
                 </button>
 
             </div>
 
+            {showOrderConfirmation && (
+                <div className="order-confirmation-overlay">
 
-            <div className="order-confirmation-details">
+                    <div className="order-confirmation-popup">
 
-                <div className="confirmation-row">
+                        <div className="order-confirmation-header">
 
-                    <span>
-                        Total
-                    </span>
+                            <h2>
+                                Confirm Your Order
+                            </h2>
 
-                    <strong>
-                        ₹{cart.total}
-                    </strong>
+                            <button
+                                type="button"
+                                className="order-confirmation-close"
+                                onClick={() =>
+                                    setShowOrderConfirmation(false)
+                                }
+                                disabled={placingOrder}
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+
+                        <div className="order-confirmation-details">
+
+                            <div className="confirmation-row">
+
+                                <span>
+                                    Total
+                                </span>
+
+                                <strong>
+                                    ₹{cart.total}
+                                </strong>
+
+                            </div>
+
+
+                            <div className="confirmation-row">
+
+                                <span>
+                                    Payment Method
+                                </span>
+
+                                <strong>
+                                    {paymentMethod === "cod"
+                                        ? "Cash on Delivery"
+                                        : paymentMethod === "upi"
+                                            ? "UPI"
+                                            : paymentMethod === "card"
+                                                ? "Credit / Debit Card"
+                                                : "Net Banking"}
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        {orderError && (
+                            <p className="order-confirmation-error">
+                                {orderError}
+                            </p>
+                        )}
+
+
+                        <div className="order-confirmation-actions">
+
+                            <button
+                                type="button"
+                                className="order-confirmation-cancel-btn"
+                                onClick={() =>
+                                    setShowOrderConfirmation(false)
+                                }
+                                disabled={placingOrder}
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                className="order-confirmation-submit-btn"
+                                onClick={confirmAndPlaceOrder}
+                                disabled={placingOrder}
+                            >
+                                {placingOrder
+                                    ? "Placing Order..."
+                                    : "Confirm Payment & Place Order"}
+                            </button>
+
+                        </div>
+
+                    </div>
 
                 </div>
-
-
-                <div className="confirmation-row">
-
-                    <span>
-                        Payment Method
-                    </span>
-
-                    <strong>
-                        {paymentMethod === "cod"
-                            ? "Cash on Delivery"
-                            : paymentMethod === "upi"
-                            ? "UPI"
-                            : paymentMethod === "card"
-                            ? "Credit / Debit Card"
-                            : "Net Banking"}
-                    </strong>
-
-                </div>
-
-            </div>
-
-
-            {orderError && (
-                <p className="order-confirmation-error">
-                    {orderError}
-                </p>
             )}
-
-
-            <div className="order-confirmation-actions">
-
-                <button
-                    type="button"
-                    className="order-confirmation-cancel-btn"
-                    onClick={() =>
-                        setShowOrderConfirmation(false)
-                    }
-                    disabled={placingOrder}
-                >
-                    Cancel
-                </button>
-
-                <button
-                    type="button"
-                    className="order-confirmation-submit-btn"
-                    onClick={confirmAndPlaceOrder}
-                    disabled={placingOrder}
-                >
-                    {placingOrder
-                        ? "Placing Order..."
-                        : "Confirm Payment & Place Order"}
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-)}
         </div>
     );
 }

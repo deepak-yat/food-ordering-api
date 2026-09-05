@@ -1,28 +1,28 @@
-import {useEffect,useState} from "react";
-import {apiFetch} from "../api/client";
-import {useAuth} from "../context/AuthContext";
-import {useNavigate} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { apiFetch } from "../api/client";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-function AdminDashboard(){
+function AdminDashboard() {
 
-    const {logout} = useAuth();
+    const { logout } = useAuth();
     const navigate = useNavigate();
 
-    const [shops,setShops] = useState([]);
-    const[loading,setLoading] = useState(true);
-    const [error,setError] = useState("");
+    const [shops, setShops] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
     const [selectedShop, setSelectedShop] = useState(null);
     const [shopDetailsLoading, setShopDetailsLoading] = useState(false);
     const [deleteShop, setDeleteShop] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
 
-    useEffect(()=>{
+    useEffect(() => {
         loadShops();
     }, []);
 
-    async function loadShops(){
+    async function loadShops() {
 
-        try{
+        try {
             setLoading(true);
 
             const data = await apiFetch(
@@ -52,16 +52,16 @@ function AdminDashboard(){
     }
 
 
-    async function handleLogout(){
-        try{
+    async function handleLogout() {
+        try {
             await logout();
-        }finally {
+        } finally {
             navigate("/login");
         }
     }
 
-    async function viewShop(shopId){
-        try{
+    async function viewShop(shopId) {
+        try {
             setShopDetailsLoading(true);
             setError("");
             const data = await apiFetch(
@@ -70,11 +70,11 @@ function AdminDashboard(){
             setSelectedShop(data);
         } catch (error) {
             console.error(error);
-            if (error.status === 401){
+            if (error.status === 401) {
                 navigate("/login");
                 return;
             }
-            if (error.status === 403){
+            if (error.status === 403) {
                 navigate("/");
                 return;
             }
@@ -88,34 +88,34 @@ function AdminDashboard(){
         }
     }
 
-    async function approveShop(shopId){
-        try{
+    async function approveShop(shopId) {
+        try {
             const data = await apiFetch(
                 `/admin/shops/${shopId}/approve`,
                 {
-                    method:"PUT"
+                    method: "PUT"
                 }
             );
             console.log(data);
 
             setShops(currentShops =>
                 currentShops.map(shop =>
-                    shop.shop_id=shopId
-                    ?{
-                        ...shop,
-                        is_approved:true,
-                        is_active:true
-                    }
-                    :shop
+                    shop.shop_id = shopId
+                        ? {
+                            ...shop,
+                            is_approved: true,
+                            is_active: true
+                        }
+                        : shop
                 )
             );
-        } catch (error){
+        } catch (error) {
             console.error(error);
             if (error.status === 401) {
                 navigate("/login");
                 return;
             }
-            if (error.status ===403){
+            if (error.status === 403) {
                 navigate("/");
                 return;
             }
@@ -128,55 +128,55 @@ function AdminDashboard(){
 
     async function confirmDeleteShop() {
 
-    if (!deleteShop) {
-        return;
-    }
+        if (!deleteShop) {
+            return;
+        }
 
-    try {
+        try {
 
-        setDeleteLoading(true);
+            setDeleteLoading(true);
 
-        await apiFetch(
-            `/admin/shops/${deleteShop.shop_id}`,
-            {
-                method: "DELETE"
+            await apiFetch(
+                `/admin/shops/${deleteShop.shop_id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+            setShops(currentShops =>
+                currentShops.filter(
+                    shop =>
+                        shop.shop_id !==
+                        deleteShop.shop_id
+                )
+            );
+
+            setDeleteShop(null);
+
+        } catch (error) {
+
+            console.error(error);
+
+            if (error.status === 401) {
+                navigate("/login");
+                return;
             }
-        );
 
-        setShops(currentShops =>
-            currentShops.filter(
-                shop =>
-                    shop.shop_id !==
-                    deleteShop.shop_id
-            )
-        );
+            if (error.status === 403) {
+                navigate("/");
+                return;
+            }
 
-        setDeleteShop(null);
+            setError(
+                error.message ||
+                "Unable to delete shop"
+            );
 
-    } catch (error) {
+        } finally {
 
-        console.error(error);
-
-        if (error.status === 401) {
-            navigate("/login");
-            return;
+            setDeleteLoading(false);
         }
-
-        if (error.status === 403) {
-            navigate("/");
-            return;
-        }
-
-        setError(
-            error.message ||
-            "Unable to delete shop"
-        );
-
-    } finally {
-
-        setDeleteLoading(false);
     }
-}
 
 
     return (
@@ -191,15 +191,15 @@ function AdminDashboard(){
                     </div>
 
                     <nav className="admin-nav">
-                        
+
 
                         <button
-    onClick={() =>
-        navigate("/admin/users")
-    }
->
-    Users
-</button>
+                            onClick={() =>
+                                navigate("/admin/users")
+                            }
+                        >
+                            Users
+                        </button>
                     </nav>
 
                     <button
@@ -396,29 +396,29 @@ function AdminDashboard(){
                                 <div className="admin-shop-actions">
 
                                     <button
-    className="admin-delete-button"
-    onClick={() => viewShop(shop.shop_id)}
->
-    View
-</button>
+                                        className="admin-delete-button"
+                                        onClick={() => viewShop(shop.shop_id)}
+                                    >
+                                        View
+                                    </button>
 
                                     {!shop.is_approved && (
                                         <button
-    className="primary-button"
-    onClick={() =>
-        approveShop(shop.shop_id)
-    }
->
-    Approve
-</button>
+                                            className="primary-button"
+                                            onClick={() =>
+                                                approveShop(shop.shop_id)
+                                            }
+                                        >
+                                            Approve
+                                        </button>
                                     )}
 
                                     <button
-    className="admin-delete-button"
-    onClick={() => setDeleteShop(shop)}
->
-    Delete
-</button>
+                                        className="admin-delete-button"
+                                        onClick={() => setDeleteShop(shop)}
+                                    >
+                                        Delete
+                                    </button>
 
                                 </div>
 
@@ -431,185 +431,185 @@ function AdminDashboard(){
                 </section>
 
                 {selectedShop && (
-    <div
-        className="admin-modal-overlay"
-        onClick={() => setSelectedShop(null)}
-    >
+                    <div
+                        className="admin-modal-overlay"
+                        onClick={() => setSelectedShop(null)}
+                    >
 
-        <div
-            className="admin-modal"
-            onClick={(event) =>
-                event.stopPropagation()
-            }
-        >
-
-            <div className="admin-modal-header">
-
-                <div>
-                    <span className="eyebrow">
-                        SHOP DETAILS
-                    </span>
-
-                    <h2>
-                        {selectedShop.shop_name}
-                    </h2>
-                </div>
-
-                <button
-                    className="admin-modal-close"
-                    onClick={() =>
-                        setSelectedShop(null)
-                    }
-                >
-                    ×
-                </button>
-
-            </div>
-
-
-            {shopDetailsLoading ? (
-
-                <p className="status-text">
-                    Loading shop details...
-                </p>
-
-            ) : (
-
-                <div className="admin-details">
-
-                    <div className="admin-detail-row">
-                        <span>
-                            Shop ID
-                        </span>
-
-                        <strong>
-                            #{selectedShop.shop_id}
-                        </strong>
-                    </div>
-
-
-                    <div className="admin-detail-row">
-                        <span>
-                            Description
-                        </span>
-
-                        <strong>
-                            {
-                                selectedShop.description ||
-                                "No description"
+                        <div
+                            className="admin-modal"
+                            onClick={(event) =>
+                                event.stopPropagation()
                             }
-                        </strong>
+                        >
+
+                            <div className="admin-modal-header">
+
+                                <div>
+                                    <span className="eyebrow">
+                                        SHOP DETAILS
+                                    </span>
+
+                                    <h2>
+                                        {selectedShop.shop_name}
+                                    </h2>
+                                </div>
+
+                                <button
+                                    className="admin-modal-close"
+                                    onClick={() =>
+                                        setSelectedShop(null)
+                                    }
+                                >
+                                    ×
+                                </button>
+
+                            </div>
+
+
+                            {shopDetailsLoading ? (
+
+                                <p className="status-text">
+                                    Loading shop details...
+                                </p>
+
+                            ) : (
+
+                                <div className="admin-details">
+
+                                    <div className="admin-detail-row">
+                                        <span>
+                                            Shop ID
+                                        </span>
+
+                                        <strong>
+                                            #{selectedShop.shop_id}
+                                        </strong>
+                                    </div>
+
+
+                                    <div className="admin-detail-row">
+                                        <span>
+                                            Description
+                                        </span>
+
+                                        <strong>
+                                            {
+                                                selectedShop.description ||
+                                                "No description"
+                                            }
+                                        </strong>
+                                    </div>
+
+
+                                    <div className="admin-detail-row">
+                                        <span>
+                                            Owner User ID
+                                        </span>
+
+                                        <strong>
+                                            #{selectedShop.owner_user_id}
+                                        </strong>
+                                    </div>
+
+
+                                    <div className="admin-detail-row">
+                                        <span>
+                                            Approval
+                                        </span>
+
+                                        <strong>
+                                            {selectedShop.is_approved
+                                                ? "Approved"
+                                                : "Pending"}
+                                        </strong>
+                                    </div>
+
+
+                                    <div className="admin-detail-row">
+                                        <span>
+                                            Shop Status
+                                        </span>
+
+                                        <strong>
+                                            {selectedShop.is_active
+                                                ? "Active"
+                                                : "Inactive"}
+                                        </strong>
+                                    </div>
+
+                                </div>
+
+                            )}
+
+                        </div>
+
                     </div>
+                )}
 
+                {deleteShop && (
+                    <div
+                        className="admin-confirm-overlay"
+                        onClick={() => {
+                            if (!deleteLoading) {
+                                setDeleteShop(null);
+                            }
+                        }}
+                    >
 
-                    <div className="admin-detail-row">
-                        <span>
-                            Owner User ID
-                        </span>
+                        <div
+                            className="admin-confirm-modal"
+                            onClick={(event) =>
+                                event.stopPropagation()
+                            }
+                        >
 
-                        <strong>
-                            #{selectedShop.owner_user_id}
-                        </strong>
+                            <div className="confirm-icon">
+                                !
+                            </div>
+
+                            <span className="eyebrow">
+                                DELETE SHOP
+                            </span>
+
+                            <h2>
+                                Delete {deleteShop.shop_name}?
+                            </h2>
+
+                            <p>
+                                This action will permanently delete
+                                this shop. Make sure you really want
+                                to continue.
+                            </p>
+
+                            <div className="admin-confirm-actions">
+
+                                <button
+                                    className="secondary-button"
+                                    disabled={deleteLoading}
+                                    onClick={() =>
+                                        setDeleteShop(null)
+                                    }
+                                >
+                                    Cancel
+                                </button>
+
+                                <button
+                                    className="admin-delete-confirm"
+                                    disabled={deleteLoading}
+                                    onClick={confirmDeleteShop}
+                                >
+                                    {deleteLoading
+                                        ? "Deleting..."
+                                        : "Yes, Delete Shop"}
+                                </button>
+
+                            </div>
+
+                        </div>
+
                     </div>
-
-
-                    <div className="admin-detail-row">
-                        <span>
-                            Approval
-                        </span>
-
-                        <strong>
-                            {selectedShop.is_approved
-                                ? "Approved"
-                                : "Pending"}
-                        </strong>
-                    </div>
-
-
-                    <div className="admin-detail-row">
-                        <span>
-                            Shop Status
-                        </span>
-
-                        <strong>
-                            {selectedShop.is_active
-                                ? "Active"
-                                : "Inactive"}
-                        </strong>
-                    </div>
-
-                </div>
-
-            )}
-
-        </div>
-
-    </div>
-)}
-
-{deleteShop && (
-    <div
-        className="admin-confirm-overlay"
-        onClick={() => {
-            if (!deleteLoading) {
-                setDeleteShop(null);
-            }
-        }}
-    >
-
-        <div
-            className="admin-confirm-modal"
-            onClick={(event) =>
-                event.stopPropagation()
-            }
-        >
-
-            <div className="confirm-icon">
-                !
-            </div>
-
-            <span className="eyebrow">
-                DELETE SHOP
-            </span>
-
-            <h2>
-                Delete {deleteShop.shop_name}?
-            </h2>
-
-            <p>
-                This action will permanently delete
-                this shop. Make sure you really want
-                to continue.
-            </p>
-
-            <div className="admin-confirm-actions">
-
-                <button
-                    className="secondary-button"
-                    disabled={deleteLoading}
-                    onClick={() =>
-                        setDeleteShop(null)
-                    }
-                >
-                    Cancel
-                </button>
-
-                <button
-                    className="admin-delete-confirm"
-                    disabled={deleteLoading}
-                    onClick={confirmDeleteShop}
-                >
-                    {deleteLoading
-                        ? "Deleting..."
-                        : "Yes, Delete Shop"}
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-)}
+                )}
 
             </main>
 
