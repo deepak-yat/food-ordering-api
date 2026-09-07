@@ -11,40 +11,83 @@ from app.schemas.customer import (
     CustomerAddressResponse,
     CustomerAddressUpdate,
     CustomerProfileResponse,
-    CustomerProfileUpdate
+    CustomerProfileUpdate,
+    CurrentLocationRequest
 )
-
+from app.services.geocoding import geo_code_address,reverse_geocode
+import requests
 router = APIRouter(
     prefix="/customer",
     tags=["Customer Address"]
 )
 
-@router.post("/addresses",
-             response_model=CustomerAddressResponse,
-             status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/addresses",
+    response_model=CustomerAddressResponse,
+    status_code=status.HTTP_201_CREATED
+)
 def create_address(
-    data : CustomerAddressCreate,
-    db : Session = Depends(get_db),
-    current_customer : User = Depends(get_current_customer)
+    data: CustomerAddressCreate,
+    db: Session = Depends(get_db),
+    current_customer: User = Depends(get_current_customer)
 ):
     if data.is_default:
         existing_default = db.exec(
             select(CustomerAddress).where(
-                CustomerAddress.customer_id==current_customer.customer_id,
+                CustomerAddress.customer_id == current_customer.customer_id,
                 CustomerAddress.is_default == True
             )
         ).all()
+
         for address in existing_default:
-            address.is_default=False
+            address.is_default = False
+
+    # Build complete address
+    full_address = ", ".join(
+        part for part in [
+            data.address_line1,
+            data.address_line2,
+            data.city,
+            data.state,
+            data.pincode
+        ]
+        if part
+    )
+
+    # Use provided coordinates if available.
+    # Otherwise, geocode the address.
+    if data.latitude is not None and data.longitude is not None and data.latitude !=0 and data.longitude !=0:
+
+        latitude = data.latitude
+        longitude = data.longitude
+
+    else:
+
+        try:
+            latitude, longitude = geo_code_address(full_address)
+
+        except ValueError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error)
+            )
+
+        except requests.RequestException:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Unable to verify customer location"
+            )
 
     new_address = CustomerAddress(
-        customer_id = current_customer.customer_id,
-        address_line1 = data.address_line1,
-        address_line2 = data.address_line2,
+        customer_id=current_customer.customer_id,
+        address_line1=data.address_line1,
+        address_line2=data.address_line2,
         city=data.city,
-        state = data.state,
+        state=data.state,
         pincode=data.pincode,
-        is_default=data.is_default
+        is_default=data.is_default,
+        latitude=latitude,
+        longitude=longitude
     )
 
     db.add(new_address)
@@ -189,3 +232,26 @@ def get_profile(
     current_customer: Customer = Depends(get_current_customer)
 ):
     return current_customer
+
+@router.post("/addresses/reverse-geocode")
+def reverse_geocode_location(
+    data: CurrentLocationRequest,
+    current_customer: Customer = Depends(get_current_customer)
+):
+    try:
+        return reverse_geocode(
+            data.latitude,
+            data.longitude
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error)
+        )
+
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Unable to determine your address"
+        )

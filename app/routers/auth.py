@@ -15,7 +15,8 @@ from app.schemas.auth import (
 )
 from app.security.jwt import create_access_token
 from app.security.password import hash_password, verify
-
+from app.services.geocoding import geo_code_address
+import requests
 
 router = APIRouter(
     prefix="/auth",
@@ -142,6 +143,30 @@ def register_shop(
             status_code=status.HTTP_409_CONFLICT,
             detail="Shop with this name already exists"
         )
+    shop_address = ", ".join(
+        part for part in[
+            data.address_line1,
+            data.address_line2,
+            data.city,
+            data.state,
+            data.pincode
+        ]
+        if part
+    )
+
+    try :
+        latitude, longitude = geo_code_address(shop_address)
+    except ValueError as error :
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error)
+        )
+    except requests.RequestException:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            datail=str(error)
+        )
+
 
     # Create shop owner user
     new_user = User(
@@ -163,7 +188,16 @@ def register_shop(
         description=data.description,
         owner_user_id=new_user.user_id,
         is_approved=False,
-        is_active=False
+        is_active=False,
+
+        address_line1=data.address_line1,
+        address_line2=data.address_line2,
+        city=data.city,
+        state=data.state,
+        pincode=data.pincode,
+
+        latitude=latitude,
+        longitude=longitude
     )
 
     db.add(new_shop)

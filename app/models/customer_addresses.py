@@ -27,3 +27,6 @@ class CustomerAddress(SQLModel, table=True):
     is_default: bool = Field(
         default=False
     )
+
+    latitude : float | None = None
+    longitude : float | None = None

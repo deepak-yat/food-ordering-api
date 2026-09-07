@@ -7,6 +7,8 @@ class CustomerAddressCreate(BaseModel):
     state : str
     pincode : str
     is_default : bool
+    latitude : float | None = None
+    longitude : float | None = None
 
 
 class CustomerAddressUpdate(BaseModel):
@@ -15,7 +17,9 @@ class CustomerAddressUpdate(BaseModel):
     city : str | None = None
     state : str | None = None
     pincode : str | None = None
-    i_default : bool | None = None
+    is_default : bool | None = None
+    latitude : float | None= None
+    longitude : float | None=None
 
 class CustomerAddressResponse(BaseModel):
     address_id : int
@@ -26,6 +30,8 @@ class CustomerAddressResponse(BaseModel):
     state : str
     pincode : str
     is_default : bool
+    latitude : float
+    longitude : float
 
 class CustomerProfileUpdate(BaseModel):
     customer_name: str | None = None
@@ -36,3 +42,7 @@ class CustomerProfileResponse(BaseModel):
     user_id: int
     customer_name: str
     phone: str | None
+
+class CurrentLocationRequest(BaseModel):
+    latitude: float
+    longitude: float

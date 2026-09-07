@@ -19,6 +19,11 @@ class ShopRegister(BaseModel):
     password: str
     shop_name: str
     description: str | None = None
+    address_line1 : str
+    address_line2 : str | None = None
+    city : str
+    state : str
+    pincode : str    
 
 
 class ShopRegisterResponse(BaseModel):
