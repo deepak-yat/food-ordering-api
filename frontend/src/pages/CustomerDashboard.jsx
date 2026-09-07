@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
+
 import {
     useNavigate
 } from "react-router-dom";
@@ -37,6 +38,8 @@ function CustomerDashboard() {
         state: "",
         pincode: "",
         is_default: false,
+        latitude : null,
+        longitude : null
     });
 
     const [addressSaving, setAddressSaving] = useState(false);
@@ -44,6 +47,13 @@ function CustomerDashboard() {
     const [addressLoading, setAddressLoading] = useState(true);
     const [addressError, setAddressError] = useState("");
     const [profileSaving, setProfileSaving] = useState(false);
+
+    const [locationLoading, setLocationLoading] = useState(false);
+const [locationError, setLocationError] = useState("");
+const [currentLocation, setCurrentLocation] = useState({
+    latitude: null,
+    longitude: null
+});
     useEffect(() => {
         loadShops();
         loadCart();
@@ -431,6 +441,7 @@ function CustomerDashboard() {
         }
     }
 
+ 
     async function saveAddress() {
         setAddressSaving(true);
         setAddressFormError("");
@@ -485,6 +496,8 @@ function CustomerDashboard() {
                 state: "",
                 pincode: "",
                 is_default: false,
+                latitude : null,
+                longitude : null
             });
 
         } catch (error) {
@@ -540,6 +553,133 @@ function CustomerDashboard() {
             );
         }
     }
+
+   function useCurrentLocation() {
+
+    console.log("USE CURRENT LOCATION CALLED");
+
+    setLocationError("");
+    setLocationLoading(true);
+
+    if (!navigator.geolocation) {
+
+        console.log("GEOLOCATION NOT SUPPORTED");
+
+        setLocationError(
+            "Geolocation is not supported by your browser."
+        );
+
+        setLocationLoading(false);
+
+        return;
+    }
+
+    console.log("REQUESTING LOCATION");
+
+    navigator.geolocation.getCurrentPosition(
+
+        async (position) => {
+
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            console.log("LOCATION RECEIVED");
+            console.log("LATITUDE:", latitude);
+            console.log("LONGITUDE:", longitude);
+
+            try {
+
+                const response = await fetch(
+                    "http://127.0.0.1:8000/customer/addresses/reverse-geocode",
+                    {
+                        method: "POST",
+                        credentials: "include",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            latitude: latitude,
+                            longitude: longitude
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.detail ||
+                        "Unable to determine your address"
+                    );
+                }
+
+                console.log(
+                    "REVERSE GEOCODE RESULT:",
+                    data
+                );
+
+                setAddressForm((previous) => ({
+                    ...previous,
+
+                    address_line1:
+                        data.address_line1 ||
+                        previous.address_line1,
+
+                    city:
+                        data.city ||
+                        previous.city,
+
+                    state:
+                        data.state ||
+                        previous.state,
+
+                    pincode:
+                        data.pincode ||
+                        previous.pincode,
+
+                    latitude: latitude,
+                    longitude: longitude
+                }));
+
+            } catch (error) {
+
+                console.error(
+                    "REVERSE GEOCODING ERROR:",
+                    error
+                );
+
+                setLocationError(
+                    error.message ||
+                    "Unable to determine your address"
+                );
+
+            } finally {
+
+                setLocationLoading(false);
+            }
+        },
+
+        (error) => {
+
+            console.error(
+                "GEOLOCATION ERROR:",
+                error
+            );
+
+            setLocationError(
+                "Unable to get your current location. Please allow location access."
+            );
+
+            setLocationLoading(false);
+        },
+
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+        }
+    );
+}
     return (
 
         <div className="customer-dashboard">
@@ -1257,7 +1397,7 @@ function CustomerDashboard() {
                                             {addressFormError}
                                         </p>
                                     )}
-
+                                        
                                     <input
                                         type="text"
                                         placeholder="Address Line 1"
@@ -1619,6 +1759,23 @@ function CustomerDashboard() {
                                         {addressFormError}
                                     </p>
                                 )}
+
+                            <button
+    type="button"
+    className="use-location-btn"
+    onClick={useCurrentLocation}
+    disabled={locationLoading}
+>
+    {locationLoading
+        ? "Getting your location..."
+        : "📍 Use My Current Location"}
+</button>
+
+{locationError && (
+    <p className="profile-address-error">
+        {locationError}
+    </p>
+)}
 
                                 <input
                                     type="text"
