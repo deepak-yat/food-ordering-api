@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import ShopCard from "../components/ShopCard";
@@ -23,7 +24,21 @@ function Home() {
 
     const [error, setError] =
         useState("");
+     const [currentShopPage, setCurrentShopPage] = useState(1);
 
+    const shopsPerPage = 6;
+
+    const totalShopPages = Math.ceil(
+    shops.length / shopsPerPage
+    );
+
+    const startShopIndex =
+    (currentShopPage - 1) * shopsPerPage;
+
+    const visibleShops = shops.slice(
+    startShopIndex,
+    startShopIndex + shopsPerPage
+    );
     const [searchQuery, setSearchQuery] = useState("");
     const [searchResults, setSearchResults] = useState({
         shops:[],
@@ -31,11 +46,35 @@ function Home() {
     });
     const [searchLoading, setSearchLoading] = useState(false);
     const [ showSearchResults, setShowSearchResults] = useState(false);
-const [searchedItemId, setSearchedItemId] = useState(null);
+    const [searchedItemId, setSearchedItemId] = useState(null);
+    const heroImages = [
+    "/hero1.jpg",
+    "/hero8.png",
+    "/hero2.jpg",
+    "/hero3.jpg",
+    "/hero7.png",
+    "/hero4.jpg",
+    "/hero5.jpeg",
+    "/hero6.jpeg"
+];
     useEffect(() => {
         loadShops();
     }, []);
+const [currentHeroImage, setCurrentHeroImage] = useState(0);
+useEffect(() => {
 
+    const interval = setInterval(() => {
+
+        setCurrentHeroImage(
+            (previous) =>
+                (previous + 1) % heroImages.length
+        );
+
+    }, 3000);
+
+    return () => clearInterval(interval);
+
+}, []);
     useEffect(() => {
     const timeout = setTimeout(() => {
         searchFoodly(searchQuery);
@@ -48,7 +87,7 @@ useEffect(() => {
     if (!searchedItemId || !selectedShop) {
         return;
     }
-
+   
     const element = document.getElementById(
         `searched-food-${searchedItemId}`
     );
@@ -372,12 +411,25 @@ if (searchedItemId) {
 
                     <div className="hero-image">
 
-                        <img
-                            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=85"
-                            alt="Food"
-                        />
+    <img
+        src={heroImages[currentHeroImage]}
+        alt="Food"
+        className="hero-carousel-image active"
+        key={`active-${currentHeroImage}`}
+    />
 
-                    </div>
+    <img
+        src={
+            heroImages[
+                (currentHeroImage + 1) % heroImages.length
+            ]
+        }
+        alt="Food"
+        className="hero-carousel-image next"
+        key={`next-${currentHeroImage}`}
+    />
+
+</div>
 
                 </section>
 
@@ -434,7 +486,7 @@ if (searchedItemId) {
 
                     <div className="shops-grid">
 
-                        {shops.map(shop => (
+                        {visibleShops.map(shop => (
 
                             <ShopCard
                                 key={shop.shop_id}
@@ -447,38 +499,272 @@ if (searchedItemId) {
                         ))}
 
                     </div>
+                    {totalShopPages > 1 && (
+    <div className="shop-pagination">
+
+        <button
+            className="shop-pagination-button"
+            disabled={currentShopPage === 1}
+            onClick={() =>
+                setCurrentShopPage(
+                    currentShopPage - 1
+                )
+            }
+        >
+            ‹
+        </button>
+
+        {Array.from(
+            { length: totalShopPages },
+            (_, index) => index + 1
+        ).map((page) => (
+            <button
+                key={page}
+                className={`shop-pagination-button ${
+                    currentShopPage === page
+                        ? "active"
+                        : ""
+                }`}
+                onClick={() =>
+                    setCurrentShopPage(page)
+                }
+            >
+                {page}
+            </button>
+        ))}
+
+        <button
+            className="shop-pagination-button"
+            disabled={
+                currentShopPage === totalShopPages
+            }
+            onClick={() =>
+                setCurrentShopPage(
+                    currentShopPage + 1
+                )
+            }
+        >
+            ›
+        </button>
+
+    </div>
+)}
 
                 </section>
 
 
                 {/* ABOUT */}
 
-                <section
-                    id="about"
-                    className="about-section"
-                >
+               <section
+    id="about"
+    className="about-section"
+>
 
-                    <div>
+    <div className="about-wrapper">
 
-                        <span className="eyebrow">
-                            ABOUT FOODLY
-                        </span>
+        {/* Chef */}
+        <div className="about-chef">
+            <img
+                src="/chef.png"
+                alt="Foodly chef"
+            />
+        </div>
 
-                        <h2>
-                            Simple food ordering.
-                        </h2>
 
+        {/* About Card */}
+        <div className="about-card">
+
+            <span className="eyebrow">
+                ABOUT FOODLY
+            </span>
+
+
+            <h2>
+                Good Food Brings
+                <span>People Together.</span>
+            </h2>
+
+
+            <p className="about-description">
+                Foodly connects customers with
+                amazing local shops through a
+                simple and enjoyable ordering
+                experience. Discover great food,
+                build your cart and get your
+                favorite meals delivered to you.
+            </p>
+
+
+            {/* Features */}
+            <div className="about-features">
+
+                <div className="about-feature">
+
+                    <div className="about-feature-icon">
+                        🍴
                     </div>
 
-                    <p>
-                        Foodly connects customers
-                        with local shops through a
-                        simple ordering experience.
-                        Browse menus, build your cart
-                        and place your order.
-                    </p>
+                    <div>
+                        <h3>
+                            Wide Variety
+                        </h3>
 
-                </section>
+                        <p>
+                            Explore delicious meals
+                            from local restaurants.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div className="about-feature">
+
+                    <div className="about-feature-icon">
+                        ⚡
+                    </div>
+
+                    <div>
+                        <h3>
+                            Fast & Reliable
+                        </h3>
+
+                        <p>
+                            Order your favorite food
+                            with a smooth experience.
+                        </p>
+                    </div>
+
+                </div>
+
+
+                <div className="about-feature">
+
+                    <div className="about-feature-icon">
+                        ♥
+                    </div>
+
+                    <div>
+                        <h3>
+                            Made for Food Lovers
+                        </h3>
+
+                        <p>
+                            Everything is designed
+                            around great food.
+                        </p>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                className="about-learn-button"
+            >
+                Learn More
+                <span>→</span>
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+<footer className="site-footer">
+
+    <div className="footer-container">
+
+        <div className="footer-brand">
+
+            <span className="footer-logo">
+                Foodly
+            </span>
+
+            <p>
+                Good food, great choices, and a
+                simple ordering experience.
+            </p>
+
+        </div>
+
+
+        <div className="footer-column">
+
+            <h3>
+                Explore
+            </h3>
+
+            <a href="#">
+                Home
+            </a>
+
+            <a href="#shops">
+                Restaurants
+            </a>
+
+            <a href="#about">
+                About
+            </a>
+
+        </div>
+
+
+        <div className="footer-column">
+
+            <h3>
+                For Partners
+            </h3>
+
+            <Link to="/register/shop">
+                Register Your Shop
+            </Link>
+
+            <Link to="/login">
+                Shop Login
+            </Link>
+
+        </div>
+
+
+        <div className="footer-column">
+
+            <h3>
+                Support
+            </h3>
+
+            <a href="#">
+                Help Center
+            </a>
+
+            <a href="#">
+                Contact Us
+            </a>
+
+            <a href="#">
+                Privacy Policy
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div className="footer-bottom">
+
+        <span>
+            © 2026 Foodly. All rights reserved.
+        </span>
+
+        <span>
+            Made for food lovers ❤️
+        </span>
+
+    </div>
+
+</footer>
 
             </main>
 

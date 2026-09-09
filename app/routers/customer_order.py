@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
-
+from sqlalchemy import desc
 
 from app.database import get_db
 from app.dependencies import get_current_customer
@@ -20,7 +20,8 @@ from app.schemas.order import (
     OrderItemResponse,
     OrderDeliveryAddressResponse
 )
-
+from app.services.routing import calculate_delivery_distance
+from app.services.delivery import calculate_delivery_fee
 
 router = APIRouter(
     prefix="/customer/orders",
@@ -70,8 +71,46 @@ def create_order(
             detail="Delivery address not found"
         )
 
+    # Make sure customer address has coordinates
+    if (
+        customer_address.latitude is None
+        or customer_address.longitude is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Delivery address does not have valid location coordinates"
+        )
+
     # ----------------------------------------
-    # 3. Get cart items
+    # 3. Get shop
+    # ----------------------------------------
+
+    shop = db.exec(
+        select(Shop).where(
+            Shop.shop_id == cart.shop_id,
+            Shop.is_approved == True,
+            Shop.is_active == True
+        )
+    ).first()
+
+    if shop is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shop not found"
+        )
+
+    # Make sure shop has coordinates
+    if (
+        shop.latitude is None
+        or shop.longitude is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Shop does not have valid location coordinates"
+        )
+
+    # ----------------------------------------
+    # 4. Get cart items
     # ----------------------------------------
 
     cart_items = db.exec(
@@ -87,10 +126,10 @@ def create_order(
         )
 
     # ----------------------------------------
-    # 4. Validate items and calculate total
+    # 5. Validate items and calculate cart total
     # ----------------------------------------
 
-    total_amount = 0.0
+    cart_total = 0.0
 
     menu_items = {}
 
@@ -117,19 +156,53 @@ def create_order(
 
         subtotal = menu_item.price * cart_item.quantity
 
-        total_amount += subtotal
+        cart_total += subtotal
 
         menu_items[cart_item.menu_item_id] = menu_item
 
     # ----------------------------------------
-    # 5. Create Order
+    # 6. Calculate delivery distance
+    # ----------------------------------------
+
+    try:
+
+        delivery_distance = calculate_delivery_distance(
+            shop.latitude,
+            shop.longitude,
+            customer_address.latitude,
+            customer_address.longitude
+        )
+
+        delivery_fee = calculate_delivery_fee(
+            delivery_distance
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error)
+        )
+
+    # ----------------------------------------
+    # 7. Calculate final order total
+    # ----------------------------------------
+
+    total_amount = cart_total + delivery_fee
+
+    # ----------------------------------------
+    # 8. Create Order
     # ----------------------------------------
 
     order = Order(
         customer_id=current_customer.customer_id,
         shop_id=cart.shop_id,
         status=OrderStatus.PENDING,
+
         total_amount=total_amount,
+
+        delivery_distance=delivery_distance,
+        delivery_fee=delivery_fee,
+
         delivery_instruction=data.delivery_instruction
     )
 
@@ -137,7 +210,7 @@ def create_order(
     db.flush()
 
     # ----------------------------------------
-    # 6. Create delivery address snapshot
+    # 9. Create delivery address snapshot
     # ----------------------------------------
 
     delivery_address = OrderDeliveryAddress(
@@ -152,7 +225,7 @@ def create_order(
     db.add(delivery_address)
 
     # ----------------------------------------
-    # 7. Create OrderItems
+    # 10. Create OrderItems
     # ----------------------------------------
 
     for cart_item in cart_items:
@@ -176,28 +249,32 @@ def create_order(
         db.add(order_item)
 
     # ----------------------------------------
-# 8. Remove cart items
-# ----------------------------------------
+    # 11. Remove cart items
+    # ----------------------------------------
 
     for cart_item in cart_items:
         db.delete(cart_item)
 
     db.flush()
 
-# Cart is now empty, so remove the active cart itself.
+    # Remove the active cart
     db.delete(cart)
 
-# ----------------------------------------
-# 9. Commit everything
-# ----------------------------------------
+    # ----------------------------------------
+    # 12. Commit everything
+    # ----------------------------------------
 
     try:
+
         db.commit()
+
     except Exception:
+
         db.rollback()
         raise
+
     # ----------------------------------------
-    # 10. Get created order items
+    # 13. Get created order items
     # ----------------------------------------
 
     order_items = db.exec(
@@ -205,52 +282,73 @@ def create_order(
             OrderItem.order_id == order.order_id
         )
     ).all()
-#GET SHOP
-    shop = db.get(
-        Shop,
-        order.shop_id
-    )
 
-    if shop is None:
-        raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail="Shop not found"
-    )
     # ----------------------------------------
-    # 11. Return response
+    # 14. Refresh objects
+    # ----------------------------------------
+
+    db.refresh(order)
+    db.refresh(delivery_address)
+
+    # ----------------------------------------
+    # 15. Return response
     # ----------------------------------------
 
     return OrderResponse(
         order_id=order.order_id,
+
         customer_id=order.customer_id,
+
         shop_id=order.shop_id,
+
         shop_name=shop.shop_name,
+
         status=order.status,
+
         total_amount=order.total_amount,
+
+        delivery_distance=order.delivery_distance,
+
+        delivery_fee=order.delivery_fee,
+
         created_at=order.created_at,
+
         delivery_instruction=order.delivery_instruction,
+
         delivery_address=OrderDeliveryAddressResponse(
             delivery_address_id=delivery_address.delivery_address_id,
+
             order_id=delivery_address.order_id,
+
             address_line1=delivery_address.address_line1,
+
             address_line2=delivery_address.address_line2,
+
             city=delivery_address.city,
+
             state=delivery_address.state,
+
             pincode=delivery_address.pincode
         ),
+
         items=[
             OrderItemResponse(
                 order_item_id=item.order_item_id,
+
                 menu_item_id=item.menu_item_id,
+
                 item_name=item.item_name,
+
                 unit_price=item.unit_price,
+
                 quantity=item.quantity,
+
                 subtotal=item.subtotal
             )
+
             for item in order_items
         ]
     )
-
 @router.get(
     "",
     response_model=list[OrderResponse]
@@ -262,7 +360,7 @@ def get_customer_orders(
     orders = db.exec(
         select(Order).where(
             Order.customer_id == current_customer.customer_id
-        )
+        ).order_by(desc(Order.created_at))
     ).all()
 
     response = []
@@ -308,6 +406,8 @@ def get_customer_orders(
                 total_amount=order.total_amount,
                 created_at=order.created_at,
                 delivery_instruction=order.delivery_instruction,
+                delivery_distance=order.delivery_distance,
+                delivery_fee=order.delivery_fee,
 
                 delivery_address=OrderDeliveryAddressResponse(
                     delivery_address_id=delivery_address.delivery_address_id,
@@ -398,6 +498,8 @@ def get_customer_order(
         total_amount=order.total_amount,
         created_at=order.created_at,
         delivery_instruction=order.delivery_instruction,
+        delivery_distance=order.delivery_distance,
+        delivery_fee=order.delivery_fee,
 
         delivery_address=OrderDeliveryAddressResponse(
             delivery_address_id=delivery_address.delivery_address_id,

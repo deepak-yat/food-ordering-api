@@ -20,6 +20,7 @@ import CustomerOrders from "./pages/CustomerOrder";
 import ShopOrders from "./pages/ShopOrders";
 import CustomerOrderDetails from "./pages/CustomerOrderDetails";
 import ShopOverview from "./pages/ShopOverview";
+import ShopProfile from "./pages/ShopProfile";
 function App() {
 
     return (
@@ -63,6 +64,10 @@ function App() {
                         </ProtectedRoute>
                     }
                     />
+                    <Route
+    path="/shop/profile"
+    element={<ShopProfile />}
+/>
                     <Route
     path="/shop/orders"
     element={

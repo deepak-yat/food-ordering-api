@@ -18,15 +18,7 @@ from app.schemas.order import (
     ShopOrderStatusUpdate
 )
 
-from app.schemas.shop_overview import (
-    ShopOverviewResponse,
-    ShopOverviewDetails,
-    ShopOverviewSummary,
-    RevenueTrendItem,
-    OrderTrendItem,
-    ItemDemandItem,
-    StatusDistributionItem,
-)
+
 
 router = APIRouter(
     prefix="/shop/orders",
@@ -103,6 +95,8 @@ def get_shop_orders(
                 shop_id=order.shop_id,
                 status=order.status,
                 total_amount=order.total_amount,
+                delivery_distance=order.delivery_distance,
+                delivery_fee=order.delivery_fee,
                 created_at=order.created_at,
                 delivery_instruction=order.delivery_instruction,
                 delivery_address=OrderDeliveryAddressResponse(

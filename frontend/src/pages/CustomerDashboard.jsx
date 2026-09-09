@@ -27,6 +27,25 @@ function CustomerDashboard() {
         customer_name: "",
         phone: ""
     });
+    const [currentShopPage, setCurrentShopPage] = useState(1);
+
+const shopsPerPage = 6;
+
+const totalShopPages = Math.ceil(
+    shops.length / shopsPerPage
+);
+
+const startShopIndex =
+    (currentShopPage - 1) * shopsPerPage;
+
+const visibleShops = shops.slice(
+    startShopIndex,
+    startShopIndex + shopsPerPage
+);
+
+useEffect(() => {
+    setCurrentShopPage(1);
+}, [shops]);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
     const [showAddAddress, setShowAddAddress] = useState(false);
@@ -54,13 +73,21 @@ const [currentLocation, setCurrentLocation] = useState({
     latitude: null,
     longitude: null
 });
+
+const [deliveryCharge, setDeliveryCharge] = useState(null);
+const [deliveryLoading, setDeliveryLoading] = useState(false);
+const [deliveryError, setDeliveryError] = useState("");
     useEffect(() => {
         loadShops();
         loadCart();
         loadAddresses();
     }, []);
 
-
+useEffect(() => {
+    if (showCheckout && selectedAddressId) {
+        calculateDeliveryCharge(selectedAddressId);
+    }
+}, [showCheckout]);
 
     async function loadShops() {
         try {
@@ -680,6 +707,55 @@ const [currentLocation, setCurrentLocation] = useState({
         }
     );
 }
+
+
+    async function calculateDeliveryCharge(addressId){
+        if(!cart || !addressId){
+            return;
+        }
+        setDeliveryLoading(true);
+        setDeliveryError(""); 
+        try {
+            const response = await fetch(
+                "http://127.0.0.1:8000/customer/delivery-charge",
+                {
+                    method: "POST",
+                    credentials:"include",
+                    headers:{
+                        "Content-Type" : "application/json"
+                    },
+                    body: JSON.stringify({
+                        shop_id:cart.shop_id,
+                        address_id:addressId
+                    })
+                }
+            );
+            const data = await response.json();
+            if(!response.ok){
+                throw new Error(
+                    data.detail ||
+                    "Unable to calculate delivery charge"
+                );
+            }   
+            setDeliveryCharge(data);
+        } catch (error){
+            console.error(
+                "Delivery Charge Error :",
+                error
+            );
+             setDeliveryCharge(null);
+
+        setDeliveryError(
+            error.message ||
+            "Unable to calculate delivery charge"
+        );
+        }finally {
+
+        setDeliveryLoading(false);
+    }
+        
+    }
+
     return (
 
         <div className="customer-dashboard">
@@ -822,7 +898,7 @@ const [currentLocation, setCurrentLocation] = useState({
 
                     <div className="shops-grid">
 
-                        {shops.map(shop => (
+                        {visibleShops.map(shop => (
 
                             <article
                                 key={shop.shop_id}
@@ -876,6 +952,56 @@ const [currentLocation, setCurrentLocation] = useState({
                         ))}
 
                     </div>
+                    {totalShopPages > 1 && (
+    <div className="shop-pagination">
+
+        <button
+            className="shop-pagination-button"
+            disabled={currentShopPage === 1}
+            onClick={() =>
+                setCurrentShopPage(
+                    currentShopPage - 1
+                )
+            }
+        >
+            ‹
+        </button>
+
+        {Array.from(
+            { length: totalShopPages },
+            (_, index) => index + 1
+        ).map((page) => (
+            <button
+                key={page}
+                className={`shop-pagination-button ${
+                    currentShopPage === page
+                        ? "active"
+                        : ""
+                }`}
+                onClick={() =>
+                    setCurrentShopPage(page)
+                }
+            >
+                {page}
+            </button>
+        ))}
+
+        <button
+            className="shop-pagination-button"
+            disabled={
+                currentShopPage === totalShopPages
+            }
+            onClick={() =>
+                setCurrentShopPage(
+                    currentShopPage + 1
+                )
+            }
+        >
+            ›
+        </button>
+
+    </div>
+)}
 
                 </section>
 
@@ -1152,7 +1278,17 @@ const [currentLocation, setCurrentLocation] = useState({
 
                         <button
                             className="primary-button checkout-button"
-                            onClick={() => setShowCheckout(true)}
+                            onClick={() => {
+
+    setShowCheckout(true);
+
+    if (selectedAddressId) {
+        calculateDeliveryCharge(
+            selectedAddressId
+        );
+    }
+
+}}
                         >
                             Continue to Checkout
                         </button>
@@ -1293,19 +1429,67 @@ const [currentLocation, setCurrentLocation] = useState({
                         </div>
 
 
-                        <div className="checkout-total">
+                        <div className="checkout-summary">
 
-                            <span>
-                                Total
-                            </span>
+    <div className="checkout-summary-row">
+        <span>Items Total</span>
 
-                            <strong>
-                                ₹{Number(
-                                    cart.total
-                                ).toFixed(2)}
-                            </strong>
+        <strong>
+            ₹{Number(cart.total).toFixed(2)}
+        </strong>
+    </div>
 
-                        </div>
+
+    <div className="checkout-summary-row">
+        <span>Delivery</span>
+
+        {deliveryLoading ? (
+            <span>Calculating...</span>
+        ) : deliveryCharge ? (
+            <strong>
+                ₹{Number(
+                    deliveryCharge.delivery_fee
+                ).toFixed(2)}
+            </strong>
+        ) : (
+            <span>—</span>
+        )}
+    </div>
+
+
+    {deliveryCharge && (
+        <div className="checkout-distance">
+            Delivery distance:{" "}
+            {Number(
+                deliveryCharge.distance_km
+            ).toFixed(2)} km
+        </div>
+    )}
+
+
+    {deliveryError && (
+        <p className="address-form-error">
+            {deliveryError}
+        </p>
+    )}
+
+
+    <div className="checkout-total">
+
+        <span>Grand Total</span>
+
+        <strong>
+            ₹{(
+                Number(cart.total) +
+                Number(
+                    deliveryCharge?.delivery_fee || 0
+                )
+            ).toFixed(2)}
+        </strong>
+
+    </div>
+
+</div>
 
 
                         <div className="checkout-address-section">
@@ -1336,9 +1520,10 @@ const [currentLocation, setCurrentLocation] = useState({
                                                     ? "selected"
                                                     : ""
                                                 }`}
-                                            onClick={() =>
-                                                setSelectedAddressId(address.address_id)
-                                            }
+                                            onClick={() => {
+    setSelectedAddressId(address.address_id);
+    calculateDeliveryCharge(address.address_id);
+}}
                                         >
                                             <div className="address-card-header">
 

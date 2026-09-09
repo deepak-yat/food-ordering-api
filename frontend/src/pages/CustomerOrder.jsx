@@ -8,10 +8,27 @@ function CustomerOrders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
+    const ordersPerPage = 5;
+
+    const totalPages = Math.ceil(
+    orders.length / ordersPerPage
+    );
+
+    const startIndex =
+    (currentPage - 1) * ordersPerPage;
+
+    const visibleOrders = orders.slice(
+    startIndex,
+    startIndex + ordersPerPage
+    );
     useEffect(() => {
         loadOrders();
     }, []);
+    useEffect(() => {
+        setCurrentPage(1);
+    },[orders]);
 
     async function loadOrders() {
 
@@ -46,6 +63,9 @@ function CustomerOrders() {
         }
     }
 
+    
+
+
     if (loading) {
         return (
             <div className="customer-orders-page">
@@ -65,6 +85,8 @@ function CustomerOrders() {
             </div>
         );
     }
+
+    
 
     return (
         <div className="customer-orders-page">
@@ -110,7 +132,7 @@ function CustomerOrders() {
 
                 <div className="customer-orders-list">
 
-                    {orders.map((order) => (
+                    {visibleOrders.map((order) => (
 
                         <div
                             key={order.order_id}
@@ -185,8 +207,53 @@ function CustomerOrders() {
                     ))}
 
                 </div>
+                
 
             )}
+            {totalPages > 1 && (
+    <div className="order-pagination">
+
+        <button
+            className="order-pagination-button"
+            disabled={currentPage === 1}
+            onClick={() =>
+                setCurrentPage(currentPage - 1)
+            }
+        >
+            ‹
+        </button>
+
+        {Array.from(
+            { length: totalPages },
+            (_, index) => index + 1
+        ).map((page) => (
+            <button
+                key={page}
+                className={`order-pagination-button ${
+                    currentPage === page
+                        ? "active"
+                        : ""
+                }`}
+                onClick={() =>
+                    setCurrentPage(page)
+                }
+            >
+                {page}
+            </button>
+        ))}
+
+        <button
+            className="order-pagination-button"
+            disabled={currentPage === totalPages}
+            onClick={() =>
+                setCurrentPage(currentPage + 1)
+            }
+        >
+            ›
+        </button>
+
+    </div>
+)}
 
         </div>
     );

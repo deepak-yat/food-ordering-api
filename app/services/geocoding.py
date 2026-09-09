@@ -39,10 +39,10 @@ def geo_code_address(address : str) -> tuple[float,float]:
     if not point:
         raise ValueError("Location coordinates were not returned")
 
-    latitude = point["lat"]
-    longitude = point["lng"]
+    latitude = float(point["lat"])
+    longitude = float(point["lng"])
 
-    return latitude, longitude
+    return float(latitude), float(longitude)
 
 def reverse_geocode(latitude: float, longitude: float) -> dict:
     url = "https://graphhopper.com/api/1/geocode"

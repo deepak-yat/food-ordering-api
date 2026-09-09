@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from app.models.order import OrderStatus
 
+
 class CreateOrderRequest(BaseModel):
     cart_id: int
     address_id: int
@@ -17,6 +18,7 @@ class OrderItemResponse(BaseModel):
     unit_price: float
     quantity: int
     subtotal: float
+
 
 class OrderDeliveryAddressResponse(BaseModel):
     delivery_address_id: int
@@ -32,12 +34,21 @@ class OrderResponse(BaseModel):
     order_id: int
     customer_id: int
     shop_id: int
-    shop_name : str
+    shop_name: str
+
     status: OrderStatus
+
     total_amount: float
+
+    delivery_distance: float | None
+    delivery_fee: float | None
+
     created_at: datetime
+
     delivery_instruction: str | None
+
     delivery_address: OrderDeliveryAddressResponse
+
     items: list[OrderItemResponse]
 
 
@@ -59,13 +70,20 @@ class ShopOrderResponse(BaseModel):
     shop_id: int
 
     status: OrderStatus
+
     total_amount: float
+
+    delivery_distance: float | None = None
+    delivery_fee: float | None = None
+
     created_at: datetime
 
     delivery_instruction: str | None
+
     delivery_address: OrderDeliveryAddressResponse
 
     items: list[ShopOrderItemResponse]
+
 
 class ShopOrderStatusUpdate(BaseModel):
     status: OrderStatus

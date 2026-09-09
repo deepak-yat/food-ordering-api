@@ -9,3 +9,4 @@ from app.models.order import Order
 from app.models.order_item import OrderItem
 from app.models.customer_addresses import CustomerAddress
 from app.models.order_delivery_address import OrderDeliveryAddress
+from app.models.password_reset_token import PasswordResetToken

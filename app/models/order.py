@@ -50,3 +50,6 @@ class Order(SQLModel, table=True):
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
+
+    delivery_distance: float | None = None
+    delivery_fee: float | None = None

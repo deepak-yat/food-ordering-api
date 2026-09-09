@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { apiFetch } from "../api/client";
 function CustomerOrderPage() {
     const location = useLocation();
@@ -10,6 +10,9 @@ function CustomerOrderPage() {
     const [showOrderConfirmation, setShowOrderConfirmation] = useState(false);
     const [placingOrder, setPlacingOrder] = useState(false);
     const [orderError, setOrderError] = useState("");
+    const [deliveryCharge, setDeliveryCharge] = useState(null);
+    const [deliveryLoading, setDeliveryLoading] = useState(true);
+    const [deliveryError, setDeliveryError] = useState("");
     if (!cart || !address) {
         return (
             <div className="customer-order-page">
@@ -27,6 +30,65 @@ function CustomerOrderPage() {
         );
     }
 
+    async function calculateDeliveryCharge() {
+
+    if (!cart || !address) {
+        return;
+    }
+
+    setDeliveryLoading(true);
+    setDeliveryError("");
+
+    try {
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/customer/delivery-charge",
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    shop_id: cart.shop_id,
+                    address_id: address.address_id
+                })
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail ||
+                "Unable to calculate delivery charge"
+            );
+        }
+
+        setDeliveryCharge(data);
+
+    } catch (error) {
+
+        console.error(
+            "Delivery charge calculation failed:",
+            error
+        );
+
+        setDeliveryCharge(null);
+
+        setDeliveryError(
+            error.message ||
+            "Unable to calculate delivery charge"
+        );
+
+    } finally {
+
+        setDeliveryLoading(false);
+    }
+}
+useEffect(() => {
+    calculateDeliveryCharge();
+}, [cart, address]);
     async function confirmAndPlaceOrder() {
         setPlacingOrder(true);
         setOrderError("");
@@ -127,17 +189,77 @@ function CustomerOrderPage() {
 
                 </div>
 
-                <div className="customer-order-total">
+                <div className="customer-order-summary">
 
-                    <span>
-                        Total
-                    </span>
+    <div className="customer-order-summary-row">
+        <span>
+            Items Total
+        </span>
 
-                    <strong>
-                        ₹{cart.total}
-                    </strong>
+        <strong>
+            ₹{Number(cart.total).toFixed(2)}
+        </strong>
+    </div>
 
-                </div>
+
+    <div className="customer-order-summary-row">
+        <span>
+            Delivery
+        </span>
+
+        {deliveryLoading ? (
+            <span>
+                Calculating...
+            </span>
+        ) : deliveryCharge ? (
+            <strong>
+                ₹{Number(
+                    deliveryCharge.delivery_fee
+                ).toFixed(2)}
+            </strong>
+        ) : (
+            <span>
+                —
+            </span>
+        )}
+    </div>
+
+
+    {deliveryCharge && (
+        <div className="customer-order-distance">
+            Delivery distance:{" "}
+            {Number(
+                deliveryCharge.distance_km
+            ).toFixed(2)} km
+        </div>
+    )}
+
+
+    {deliveryError && (
+        <p className="customer-order-delivery-error">
+            {deliveryError}
+        </p>
+    )}
+
+
+    <div className="customer-order-total">
+
+        <span>
+            Grand Total
+        </span>
+
+        <strong>
+            ₹{(
+                Number(cart.total) +
+                Number(
+                    deliveryCharge?.delivery_fee || 0
+                )
+            ).toFixed(2)}
+        </strong>
+
+    </div>
+
+</div>
 
             </section>
 
@@ -320,9 +442,22 @@ function CustomerOrderPage() {
                     type="button"
                     className="customer-order-place-btn"
                     onClick={() => {
-                        setOrderError("");
-                        setShowOrderConfirmation(true);
-                    }}
+
+    if (deliveryLoading) {
+        return;
+    }
+
+    if (!deliveryCharge) {
+        setOrderError(
+            deliveryError ||
+            "Unable to calculate delivery charge"
+        );
+        return;
+    }
+
+    setOrderError("");
+    setShowOrderConfirmation(true);
+}}
                 >
                     Place Order
                 </button>
@@ -363,8 +498,26 @@ function CustomerOrderPage() {
                                 </span>
 
                                 <strong>
-                                    ₹{cart.total}
-                                </strong>
+    ₹{(
+        Number(cart.total) +
+        Number(
+            deliveryCharge?.delivery_fee || 0
+        )
+    ).toFixed(2)}
+</strong>
+<div className="confirmation-row">
+
+    <span>
+        Delivery
+    </span>
+
+    <strong>
+        ₹{Number(
+            deliveryCharge?.delivery_fee || 0
+        ).toFixed(2)}
+    </strong>
+
+</div>
 
                             </div>
 

@@ -30,8 +30,8 @@ class CustomerAddressResponse(BaseModel):
     state : str
     pincode : str
     is_default : bool
-    latitude : float
-    longitude : float
+    latitude : float | None = None
+    longitude : float | None = None
 
 class CustomerProfileUpdate(BaseModel):
     customer_name: str | None = None
@@ -46,3 +46,15 @@ class CustomerProfileResponse(BaseModel):
 class CurrentLocationRequest(BaseModel):
     latitude: float
     longitude: float
+
+class DeliveryChargeResponse(BaseModel):
+    shop_id : int
+    address_id : int
+
+    distance_km : float
+    delivery_fee : float
+
+class DeliveryChargeRequest(BaseModel):
+
+    shop_id: int
+    address_id: int

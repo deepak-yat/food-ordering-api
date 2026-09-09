@@ -12,8 +12,13 @@ from app.schemas.customer import (
     CustomerAddressUpdate,
     CustomerProfileResponse,
     CustomerProfileUpdate,
-    CurrentLocationRequest
+    CurrentLocationRequest,
+    DeliveryChargeRequest,
+    DeliveryChargeResponse
 )
+from app.models.shop import Shop
+from app.services.routing import calculate_delivery_distance
+from app.services.delivery import calculate_delivery_fee
 from app.services.geocoding import geo_code_address,reverse_geocode
 import requests
 router = APIRouter(
@@ -98,21 +103,22 @@ def create_address(
 
     return new_address
 
-@router.get("/addresses",
-            response_model=list[CustomerAddressResponse],
-            status_code=status.HTTP_200_OK)
-def get_address(
+@router.get(
+    "/addresses",
+    response_model=list[CustomerAddressResponse],
+    status_code=status.HTTP_200_OK
+)
+def get_addresses(
     db: Session = Depends(get_db),
-    current_customer : User = Depends(
-        get_current_customer
-    )
+    current_customer: Customer = Depends(get_current_customer)
 ):
-    addressess = db.exec(
+    addresses = db.exec(
         select(CustomerAddress).where(
-            CustomerAddress.customer_id== current_customer.customer_id
+            CustomerAddress.customer_id == current_customer.customer_id
         )
     ).all()
-    return addressess
+
+    return addresses
 
 
 
@@ -255,3 +261,83 @@ def reverse_geocode_location(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Unable to determine your address"
         )
+
+@router.post("/delivery-charge",
+             response_model=DeliveryChargeResponse)
+def get_delivery_charge(
+    data : DeliveryChargeRequest,
+    db : Session = Depends(get_db),
+    current_customer: Customer = Depends(
+        get_current_customer
+    )
+):
+    address = db.exec(
+        select(CustomerAddress).where(
+            CustomerAddress.address_id==data.address_id,
+            CustomerAddress.customer_id==current_customer.customer_id
+
+        )
+    ).first()
+
+    if not address:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Address not Found"
+        )
+    if (
+        address.latitude is None
+        or address.longitude is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Address has no valid coordinates"
+        )
+
+    shop = db.exec(
+        select(Shop).where(
+            Shop.shop_id == data.shop_id,
+            Shop.is_approved == True,
+            Shop.is_active == True
+        )
+    ).first()
+
+    if not shop:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shop not found"
+        )
+
+    # Make sure shop location exists
+    if (
+        shop.latitude is None
+        or shop.longitude is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Shop does not have a valid location"
+        )
+
+    try:
+        distance_km = calculate_delivery_distance(
+            shop.latitude,
+            shop.longitude,
+            address.latitude,
+            address.longitude
+        )
+
+        delivery_fee=calculate_delivery_fee(
+            distance_km
+        )
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(error)
+        )
+    
+    return {
+        "shop_id" : shop.shop_id,
+        "address_id" : address.address_id,
+        "distance_km" : distance_km,
+        "delivery_fee" : delivery_fee
+    }

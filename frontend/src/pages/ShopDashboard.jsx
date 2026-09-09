@@ -558,8 +558,14 @@ function ShopDashboard() {
                             Menu
                         </button>
 
-                        <button>
+                        <button
+                        onClick={() => navigate("/shop/orders")}>
                             Orders
+                        </button>
+                        <button
+                         className="shop-profile-nav-button"
+    onClick={() => navigate("/shop/profile")}>
+                            Profile
                         </button>
 
                     </nav>

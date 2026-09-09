@@ -105,11 +105,7 @@ def get_current_shop(
             detail="Shop is not approved"
         )
 
-    if not shop.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Shop is inactive"
-        )
+    
 
     return shop
 
