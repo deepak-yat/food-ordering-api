@@ -1,6 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlmodel import Session, select
+from datetime import datetime, timedelta
+import hashlib
+import secrets
+import os
 
+from app.services.email import send_password_reset_email
+from app.models.password_reset_token import PasswordResetToken
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.customer import Customer
@@ -11,7 +17,9 @@ from app.schemas.auth import (
     CustomerRegisterResponse,
     LoginRequest,
     ShopRegister,
-    ShopRegisterResponse
+    ShopRegisterResponse,
+    ResetPasswordRequest,
+    ForgotPasswordRequest
 )
 from app.security.jwt import create_access_token
 from app.security.password import hash_password, verify
@@ -22,6 +30,10 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+def hash_reset_token(token: str) -> str:
+    return hashlib.sha256(
+        token.encode("utf-8")
+    ).hexdigest()
 
 
 # =========================================================
@@ -309,4 +321,135 @@ def logout(response: Response):
 
     return {
         "message": "Logged out successfully"
+    }
+
+@router.post("/forgot-password")
+def forgot_password(
+    data : ForgotPasswordRequest,
+    db : Session = Depends(get_db)
+):
+    generic_message = (
+        "If a account exists with this email, "
+        "a password reset link has been send."
+    )
+
+    user = db.exec(
+        select(User).where(
+            User.user_email==data.user_email
+        )
+    ).first()
+
+    if user is None:
+        return{
+            "generic_message":generic_message
+        }
+
+    existing_tokens = db.exec(
+    select(PasswordResetToken).where(
+        PasswordResetToken.user_id == user.user_id,
+        PasswordResetToken.used_at.is_(None),
+        PasswordResetToken.expires_at > datetime.utcnow()
+    )
+    ).all()
+
+    for existing_token in existing_tokens:
+        existing_token.used_at = datetime.utcnow()
+        db.add(existing_token)
+    
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hash_reset_token(raw_token)
+    expires_at = datetime.utcnow() + timedelta(
+        minutes=15
+    )
+
+    reset_token = PasswordResetToken(
+        user_id = user.user_id,
+        token_hash = token_hash,
+        expires_at=expires_at
+    )
+
+    db.add(reset_token)
+    db.commit()
+    frontend_url = os.getenv(
+    "FRONTEND_URL",
+    "http://127.0.0.1:5173"
+)
+
+    reset_link = (
+    f"{frontend_url}/reset-password"
+    f"?token={raw_token}"
+)
+
+    try:
+        send_password_reset_email(
+        recipient_email=user.user_email,
+        reset_link=reset_link
+    )
+
+    except Exception:
+    # Do not reveal email-delivery problems
+    # to the user.
+        print("Failed to send password reset email")
+    return {
+        "message": generic_message
+    }
+
+@router.post("/reset-password")
+def reset_password(
+    data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    token_hash = hash_reset_token(data.token)
+
+    reset_token = db.exec(
+        select(PasswordResetToken).where(
+            PasswordResetToken.token_hash == token_hash
+        )
+    ).first()
+
+    if reset_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link"
+        )
+
+    now = datetime.utcnow()
+
+    if reset_token.used_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link"
+        )
+
+    if reset_token.expires_at <= now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link"
+        )
+
+    user = db.exec(
+        select(User).where(
+            User.user_id == reset_token.user_id
+        )
+    ).first()
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired password reset link"
+        )
+
+    # Update password
+    user.password_hash = hash_password(data.new_password)
+
+    # Invalidate token immediately
+    reset_token.used_at = now
+
+    db.add(user)
+    db.add(reset_token)
+
+    db.commit()
+
+    return {
+        "message": "Password reset successfully"
     }

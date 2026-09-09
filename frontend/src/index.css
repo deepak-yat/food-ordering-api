@@ -8497,6 +8497,8 @@ background: var(--primary-dark);
     border-radius: 12px;
     background: #fff;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 10px;
+    margin-top: 5px;
 }
 
 .home-search-box input {
@@ -9757,5 +9759,410 @@ background: var(--primary-dark);
 
     .shop-profile-actions {
         padding: 18px;
+    }
+}
+
+/* =========================================================
+   FORGOT PASSWORD
+========================================================= */
+
+.forgot-password-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px 20px;
+
+    background: var(--background);
+}
+
+.forgot-password-card {
+    width: 100%;
+    max-width: 470px;
+
+    padding: 40px;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+    border-radius: 22px;
+
+    box-shadow: var(--shadow);
+}
+
+.forgot-password-card h1 {
+    margin: 8px 0 12px;
+
+    font-size: 2rem;
+    line-height: 1.2;
+
+    color: var(--text);
+}
+
+.forgot-password-card > p {
+    margin-bottom: 28px;
+
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+
+/* Back to Login */
+
+.forgot-password-back {
+    display: inline-block;
+
+    margin-bottom: 28px;
+
+    border: none;
+    padding: 0;
+
+    background: transparent;
+
+    color: var(--muted);
+
+    font-size: 0.9rem;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: color 0.2s ease;
+}
+
+.forgot-password-back:hover {
+    color: var(--text);
+}
+
+
+/* Form */
+
+.forgot-password-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    margin-bottom: 20px;
+}
+
+.forgot-password-form-group label {
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    color: var(--text);
+}
+
+.forgot-password-form-group input {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 13px 15px;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    background: var(--background);
+    color: var(--text);
+
+    font: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.forgot-password-form-group input:focus {
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(255, 140, 0, 0.12);
+}
+
+
+/* Submit */
+
+.forgot-password-submit {
+    width: 100%;
+    margin-top: 6px;
+}
+
+
+/* Messages */
+
+.forgot-password-success {
+    margin: 15px 0;
+
+    padding: 13px 15px;
+
+    border-radius: 12px;
+
+    background: #e8f7ed;
+    border: 1px solid #c9ebd4;
+
+    color: #1f7a3d;
+
+    line-height: 1.5;
+}
+
+.forgot-password-error {
+    margin: 15px 0;
+
+    padding: 13px 15px;
+
+    border-radius: 12px;
+
+    background: #fbe9e9;
+    border: 1px solid #f1caca;
+
+    color: #b42318;
+}
+
+
+/* Responsive */
+
+@media (max-width: 500px) {
+
+    .forgot-password-page {
+        padding: 20px 14px;
+    }
+
+    .forgot-password-card {
+        padding: 28px 22px;
+        border-radius: 18px;
+    }
+
+    .forgot-password-card h1 {
+        font-size: 1.7rem;
+    }
+}
+
+.forgot-password-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    margin-bottom: 18px;
+}
+
+.forgot-password-link {
+    color: var(--primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.forgot-password-link:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+/* =========================================================
+   RESET PASSWORD PAGE
+========================================================= */
+
+.reset-password-page {
+    min-height: 100vh;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    padding: 30px 20px;
+
+    background: var(--background);
+}
+
+
+/* =========================
+   CARD
+========================= */
+
+.reset-password-card {
+    width: 100%;
+    max-width: 460px;
+
+    padding: 42px;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+    border-radius: 24px;
+
+    box-shadow: var(--shadow);
+}
+
+
+/* =========================
+   EYEBROW
+========================= */
+
+.reset-password-card .eyebrow {
+    display: block;
+    margin-bottom: 8px;
+}
+
+
+/* =========================
+   HEADING
+========================= */
+
+.reset-password-card h1 {
+    margin: 0 0 12px;
+
+    color: var(--text);
+
+    font-size: 2rem;
+    line-height: 1.2;
+}
+
+
+/* Description */
+
+.reset-password-card > p {
+    margin: 0 0 30px;
+
+    color: var(--muted);
+
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+
+/* =========================
+   FORM
+========================= */
+
+.reset-password-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    margin-bottom: 20px;
+}
+
+.reset-password-form-group label {
+    color: var(--text);
+
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.reset-password-form-group input {
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 14px 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    background: var(--background);
+    color: var(--text);
+
+    font: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.reset-password-form-group input::placeholder {
+    color: var(--muted);
+}
+
+.reset-password-form-group input:focus {
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(255, 140, 0, 0.10);
+}
+
+
+/* =========================
+   RESET BUTTON
+========================= */
+
+.reset-password-submit {
+    width: 100%;
+
+    min-height: 48px;
+
+    margin-top: 6px;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+.reset-password-error {
+    margin: 15px 0;
+
+    padding: 14px 16px;
+
+    border: 1px solid #f1caca;
+    border-radius: 12px;
+
+    background: #fbe9e9;
+
+    color: #b42318;
+
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+
+/* =========================
+   SUCCESS
+========================= */
+
+.reset-password-success {
+    margin-top: 20px;
+
+    padding: 18px;
+
+    border: 1px solid #c9ebd4;
+    border-radius: 14px;
+
+    background: #e8f7ed;
+
+    color: #1f7a3d;
+}
+
+.reset-password-success p {
+    margin: 0 0 16px;
+
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.reset-password-success .primary-button {
+    width: 100%;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 600px) {
+
+    .reset-password-page {
+        padding: 20px 14px;
+    }
+
+    .reset-password-card {
+        padding: 30px 22px;
+
+        border-radius: 20px;
+    }
+
+    .reset-password-card h1 {
+        font-size: 1.7rem;
     }
 }

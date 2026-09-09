@@ -11,7 +11,6 @@ import {
 import { apiFetch } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
-
 function Login() {
 
     const navigate = useNavigate();
@@ -210,7 +209,14 @@ function Login() {
                             ? "Signing in..."
                             : "Login"}
                     </button>
-
+                            <p className="forgot-password-wrapper">
+    <Link
+        to="/forgot-password"
+        className="forgot-password-link"
+    >
+        Forgot Password?
+    </Link>
+</p>
                 </form>
 
 

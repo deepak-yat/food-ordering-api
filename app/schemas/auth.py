@@ -35,3 +35,10 @@ class ShopRegisterResponse(BaseModel):
 class LoginRequest(BaseModel):
     user_name: str
     password: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class ForgotPasswordRequest(BaseModel):
+    user_email: str

@@ -21,6 +21,8 @@ import ShopOrders from "./pages/ShopOrders";
 import CustomerOrderDetails from "./pages/CustomerOrderDetails";
 import ShopOverview from "./pages/ShopOverview";
 import ShopProfile from "./pages/ShopProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 function App() {
 
     return (
@@ -64,6 +66,15 @@ function App() {
                         </ProtectedRoute>
                     }
                     />
+                    <Route
+    path="/forgot-password"
+    element={<ForgotPassword />}
+/>
+
+<Route
+    path="/reset-password"
+    element={<ResetPassword />}
+/>
                     <Route
     path="/shop/profile"
     element={<ShopProfile />}

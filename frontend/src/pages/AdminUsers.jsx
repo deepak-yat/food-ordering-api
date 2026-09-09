@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 import { apiFetch } from "../api/client";
 
@@ -7,6 +8,7 @@ import { apiFetch } from "../api/client";
 function AdminUsers() {
 
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     const [users, setUsers] = useState({
         customers: [],
