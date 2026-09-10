@@ -2,12 +2,22 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-
+import {
+    LineChart,
+    Line,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    ResponsiveContainer
+} from "recharts";
 function AdminDashboard() {
 
     const { logout } = useAuth();
     const navigate = useNavigate();
-
+    const [activeSection, setActiveSection] = useState("overview");
     const [shops, setShops] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -15,10 +25,42 @@ function AdminDashboard() {
     const [shopDetailsLoading, setShopDetailsLoading] = useState(false);
     const [deleteShop, setDeleteShop] = useState(null);
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [currentShopPage, setCurrentShopPage] = useState(1);
+    const [overview, setOverview] = useState(null);
+const [overviewLoading, setOverviewLoading] = useState(true);
+const [overviewError, setOverviewError] = useState("");
+    const shopsPerPage = 6;
+
+    const approvedShops = shops.filter(
+    shop => shop.is_approved
+        );
+const [pendingShops, setPendingShops] = useState([]);
+const [pendingLoading, setPendingLoading] = useState(false);
+const [pendingError, setPendingError] = useState("");
+    const totalShopPages = Math.ceil(
+    approvedShops.length / shopsPerPage
+    );
+
+    const startShopIndex =
+    (currentShopPage - 1) * shopsPerPage;
+
+    const visibleShops = approvedShops.slice(
+    startShopIndex,
+    startShopIndex + shopsPerPage
+    );
 
     useEffect(() => {
         loadShops();
+        loadOverview();
     }, []);
+    useEffect(() => {
+    setCurrentShopPage(1);
+}, [shops]);
+useEffect(() => {
+    if (activeSection === "pending-shops") {
+        loadPendingShops();
+    }
+}, [activeSection]);
 
     async function loadShops() {
 
@@ -51,6 +93,123 @@ function AdminDashboard() {
         }
     }
 
+    async function loadOverview() {
+    try {
+        setOverviewLoading(true);
+        setOverviewError("");
+
+        const data = await apiFetch(
+            "/admin/overview"
+        );
+
+        setOverview(data);
+
+    } catch (error) {
+        console.error(error);
+
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setOverviewError(
+            error.message ||
+            "Unable to load overview analytics"
+        );
+
+    } finally {
+        setOverviewLoading(false);
+    }
+}
+
+async function loadPendingShops() {
+    try {
+        setPendingLoading(true);
+        setPendingError("");
+
+        const data = await apiFetch(
+            "/admin/pending-shops"
+        );
+
+        console.log("Pending shops:", data);
+
+        setPendingShops(data);
+
+    } catch (error) {
+        console.error("Pending shops error:", error);
+
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setPendingError(
+            error.message ||
+            "Unable to load pending shops"
+        );
+
+    } finally {
+        setPendingLoading(false);
+    }
+}
+async function approvePendingShop(shopId) {
+    try {
+
+        await apiFetch(
+            `/admin/shops/${shopId}/approve`,
+            {
+                method: "PUT"
+            }
+        );
+
+        setPendingShops(currentShops =>
+            currentShops.filter(
+                shop => shop.shop_id !== shopId
+            )
+        );
+
+        setShops(currentShops =>
+            currentShops.map(shop =>
+                shop.shop_id === shopId
+                    ? {
+                        ...shop,
+                        is_approved: true,
+                        is_active: true
+                    }
+                    : shop
+            )
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setPendingError(
+            error.message ||
+            "Unable to approve shop"
+        );
+    }
+}
 
     async function handleLogout() {
         try {
@@ -213,9 +372,45 @@ function AdminDashboard() {
 
             </header>
 
+                            <aside className="admin-sidebar">
+
+    <div className="admin-sidebar-menu">
+
+        <button
+    className={`admin-sidebar-item ${
+        activeSection === "overview" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("overview")}
+>
+    <span>Overview</span>
+</button>
+
+<button
+    className={`admin-sidebar-item ${
+        activeSection === "pending-shops" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("pending-shops")}
+>
+    <span>Pending Shops</span>
+</button>
+
+        <div className="admin-sidebar-item disabled">
+            <span>Analytics</span>
+            <small>Coming Soon</small>
+        </div>
+
+        <div className="admin-sidebar-item disabled">
+            <span>Messages</span>
+            <small>Coming Soon</small>
+        </div>
+
+    </div>
+
+</aside>
 
             <main className="admin-content">
-
+ {activeSection === "overview" && (
+        <>
                 <section className="admin-welcome">
 
                     <span className="eyebrow">
@@ -335,101 +530,508 @@ function AdminDashboard() {
                         )
                     }
 
+<div className="admin-shop-grid">
 
-                    <div className="admin-shop-grid">
+    {visibleShops.map(shop => (
 
-                        {shops.map(shop => (
+        <article
+            className="admin-shop-card"
+            key={shop.shop_id}
+        >
 
-                            <article
-                                className="admin-shop-card"
-                                key={shop.shop_id}
-                            >
+            <div className="admin-shop-card-top">
 
-                                <div className="admin-shop-card-top">
+                <div className="shop-image-small">
+                    {shop.shop_name
+                        .charAt(0)
+                        .toUpperCase()}
+                </div>
 
-                                    <div className="shop-image-small">
-                                        {shop.shop_name
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                    </div>
+                <span
+                    className={
+                        shop.is_approved
+                            ? "status-approved"
+                            : "status-pending"
+                    }
+                >
+                    {
+                        shop.is_approved
+                            ? "Approved"
+                            : "Pending"
+                    }
+                </span>
 
-                                    <span
-                                        className={
-                                            shop.is_approved
-                                                ? "status-approved"
-                                                : "status-pending"
-                                        }
-                                    >
-                                        {
-                                            shop.is_approved
-                                                ? "Approved"
-                                                : "Pending"
-                                        }
-                                    </span>
+            </div>
 
-                                </div>
+            <h3>
+                {shop.shop_name}
+            </h3>
+
+            <p>
+                {shop.description ||
+                    "No description available."}
+            </p>
+
+            <div className="admin-shop-meta">
+
+                <span>
+                    Shop ID
+                </span>
+
+                <strong>
+                    #{shop.shop_id}
+                </strong>
+
+            </div>
+
+            <div className="admin-shop-actions">
+
+                <button
+                    className="admin-delete-button"
+                    onClick={() =>
+                        viewShop(shop.shop_id)
+                    }
+                >
+                    View
+                </button>
+
+                {!shop.is_approved && (
+                    <button
+                        className="primary-button"
+                        onClick={() =>
+                            approveShop(shop.shop_id)
+                        }
+                    >
+                        Approve
+                    </button>
+                )}
+
+                <button
+                    className="admin-delete-button"
+                    onClick={() =>
+                        setDeleteShop(shop)
+                    }
+                >
+                    Delete
+                </button>
+
+            </div>
+
+        </article>
+
+    ))}
+
+</div>
+{totalShopPages > 1 && (
+    <div className="admin-shop-pagination">
+
+        <button
+            className="admin-shop-pagination-button"
+            disabled={currentShopPage === 1}
+            onClick={() =>
+                setCurrentShopPage(
+                    currentShopPage - 1
+                )
+            }
+        >
+            ‹
+        </button>
+
+        {Array.from(
+            { length: totalShopPages },
+            (_, index) => index + 1
+        ).map(page => (
+            <button
+                key={page}
+                className={`admin-shop-pagination-button ${
+                    currentShopPage === page
+                        ? "active"
+                        : ""
+                }`}
+                onClick={() =>
+                    setCurrentShopPage(page)
+                }
+            >
+                {page}
+            </button>
+        ))}
+
+        <button
+            className="admin-shop-pagination-button"
+            disabled={
+                currentShopPage === totalShopPages
+            }
+            onClick={() =>
+                setCurrentShopPage(
+                    currentShopPage + 1
+                )
+            }
+        >
+            ›
+        </button>
+
+    </div>
+)}
+
+<section className="admin-business-overview">
+
+    <div className="section-heading">
+
+        <span className="eyebrow">
+            BUSINESS ANALYTICS
+        </span>
+
+        <h2>
+            Revenue Overview
+        </h2>
+
+        <p>
+            Current month revenue and Foodly platform earnings.
+        </p>
+
+    </div>
+
+    {overviewLoading && (
+        <p className="status-text">
+            Loading business analytics...
+        </p>
+    )}
+
+    {overviewError && (
+        <p className="error-text">
+            {overviewError}
+        </p>
+    )}
+
+    {!overviewLoading &&
+        !overviewError &&
+        overview && (
+
+        <>
+
+            <div className="admin-business-stats">
+
+                <div className="admin-business-card">
+                    <span>
+                        Monthly Revenue
+                    </span>
+
+                    <strong>
+                        ₹
+                        {overview.monthly_business.total_shop_revenue.toLocaleString()}
+                    </strong>
+
+                    <small>
+                        {overview.monthly_business.month}
+                    </small>
+                </div>
 
 
-                                <h3>
-                                    {shop.shop_name}
-                                </h3>
+                <div className="admin-business-card">
+                    <span>
+                        Foodly Revenue
+                    </span>
 
-                                <p>
-                                    {shop.description ||
-                                        "No description available."}
-                                </p>
+                    <strong>
+                        ₹
+                        {overview.monthly_business.foodly_fee.toLocaleString()}
+                    </strong>
 
-
-                                <div className="admin-shop-meta">
-
-                                    <span>
-                                        Shop ID
-                                    </span>
-
-                                    <strong>
-                                        #{shop.shop_id}
-                                    </strong>
-
-                                </div>
+                    <small>
+                        {overview.monthly_business.fee_rate}% platform fee
+                    </small>
+                </div>
 
 
-                                <div className="admin-shop-actions">
+                <div className="admin-business-card">
+                    <span>
+                        Shop Earnings
+                    </span>
 
-                                    <button
-                                        className="admin-delete-button"
-                                        onClick={() => viewShop(shop.shop_id)}
-                                    >
-                                        View
-                                    </button>
+                    <strong>
+                        ₹
+                        {overview.monthly_business.shop_earnings.toLocaleString()}
+                    </strong>
 
-                                    {!shop.is_approved && (
-                                        <button
-                                            className="primary-button"
-                                            onClick={() =>
-                                                approveShop(shop.shop_id)
-                                            }
-                                        >
-                                            Approve
-                                        </button>
-                                    )}
+                    <small>
+                        After Foodly fee
+                    </small>
+                </div>
 
-                                    <button
-                                        className="admin-delete-button"
-                                        onClick={() => setDeleteShop(shop)}
-                                    >
-                                        Delete
-                                    </button>
+            </div>
+            <div className="admin-chart-card">
 
-                                </div>
+    <div className="admin-chart-header">
+        <div>
+            <span className="eyebrow">
+                REVENUE
+            </span>
 
-                            </article>
+            <h3>
+                Last 7 Days
+            </h3>
+        </div>
 
-                        ))}
+        <span className="admin-chart-period">
+            Completed orders
+        </span>
+    </div>
+
+    <div className="admin-chart">
+        <ResponsiveContainer
+            width="100%"
+            height={320}
+        >
+            <LineChart
+                data={overview.daily_revenue}
+            >
+                <CartesianGrid strokeDasharray="3 3" />
+
+                <XAxis
+                    dataKey="date"
+                />
+
+                <YAxis />
+
+                <Tooltip
+                    formatter={(value) =>
+                        `₹${Number(value).toLocaleString()}`
+                    }
+                />
+
+                <Line
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 6 }}
+                />
+            </LineChart>
+        </ResponsiveContainer>
+    </div>
+
+</div>
+<div className="admin-chart-card">
+
+    <div className="admin-chart-header">
+        <div>
+            <span className="eyebrow">
+                SHOP PERFORMANCE
+            </span>
+
+            <h3>
+                Top Shops by Revenue
+            </h3>
+        </div>
+    </div>
+
+    <div className="admin-chart">
+        <ResponsiveContainer
+            width="100%"
+            height={350}
+        >
+            <BarChart
+                data={overview.shop_performance.slice(0, 6)}
+                layout="vertical"
+                margin={{
+                    left: 20,
+                    right: 20
+                }}
+            >
+                <CartesianGrid strokeDasharray="3 3" />
+
+                <XAxis
+                    type="number"
+                />
+
+                <YAxis
+                    type="category"
+                    dataKey="shop_name"
+                    width={100}
+                />
+
+                <Tooltip
+                    formatter={(value) =>
+                        `₹${Number(value).toLocaleString()}`
+                    }
+                />
+
+                <Bar
+                    dataKey="revenue"
+                    radius={[0, 6, 6, 0]}
+                />
+            </BarChart>
+        </ResponsiveContainer>
+    </div>
+
+</div>
+
+        </>
+    )}
+
+</section>
+
+                </section>
+                </>
+    )}
+{activeSection === "pending-shops" && (
+        <>
+           <section className="admin-welcome">
+
+    <span className="eyebrow">
+        SHOP APPROVALS
+    </span>
+
+    <h1>
+        Pending Shops
+    </h1>
+
+    <p>
+        Review and manage shops waiting for approval.
+    </p>
+
+</section>
+
+<section className="admin-shops">
+
+    <div className="section-heading">
+
+        <span className="eyebrow">
+            PENDING REQUESTS
+        </span>
+
+        <h2>
+            Shop Requests
+        </h2>
+
+        <p>
+            Approve or reject new shop registrations.
+        </p>
+
+    </div>
+
+    {pendingLoading && (
+        <p className="status-text">
+            Loading pending shops...
+        </p>
+    )}
+
+    {pendingError && (
+        <p className="error-text">
+            {pendingError}
+        </p>
+    )}
+
+    {!pendingLoading &&
+        !pendingError &&
+        pendingShops.length === 0 && (
+            <div className="empty-state">
+
+                <h3>
+                    No pending shops
+                </h3>
+
+                <p>
+                    There are currently no shops waiting
+                    for approval.
+                </p>
+
+            </div>
+        )
+    }
+
+    {!pendingLoading &&
+        !pendingError &&
+        pendingShops.length > 0 && (
+
+        <div className="admin-shop-grid">
+
+            {pendingShops.map(shop => (
+
+                <article
+                    className="admin-shop-card"
+                    key={shop.shop_id}
+                >
+
+                    <div className="admin-shop-card-top">
+
+                        <div className="shop-image-small">
+                            {shop.shop_name
+                                .charAt(0)
+                                .toUpperCase()}
+                        </div>
+
+                        <span className="status-pending">
+                            Pending
+                        </span>
 
                     </div>
 
-                </section>
+                    <h3>
+                        {shop.shop_name}
+                    </h3>
 
+                    <p>
+                        {shop.description ||
+                            "No description available."}
+                    </p>
+
+                    <div className="admin-shop-meta">
+
+                        <span>
+                            Shop ID
+                        </span>
+
+                        <strong>
+                            #{shop.shop_id}
+                        </strong>
+
+                    </div>
+
+                    <div className="admin-shop-actions">
+
+                        <button
+                            className="admin-delete-button"
+                            onClick={() =>
+                                viewShop(shop.shop_id)
+                            }
+                        >
+                            View
+                        </button>
+
+                        <button
+                            className="primary-button"
+                            onClick={() =>
+                                approvePendingShop(
+                                    shop.shop_id
+                                )
+                            }
+                        >
+                            Approve
+                        </button>
+
+                        <button
+                            className="admin-delete-button"
+                            onClick={() =>
+                                rejectShop(shop.shop_id)
+                            }
+                        >
+                            Reject
+                        </button>
+
+                    </div>
+
+                </article>
+
+            ))}
+
+        </div>
+    )}
+
+</section>
+        </>
+    )}
                 {selectedShop && (
                     <div
                         className="admin-modal-overlay"

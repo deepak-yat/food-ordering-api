@@ -104,9 +104,6 @@ function AdminUsers() {
                         >
                             Shops
                         </button>
-
-
-
                     </nav>
 
                     <button

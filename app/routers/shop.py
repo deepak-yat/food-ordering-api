@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException,status
-from sqlmodel import Session
+from sqlmodel import Session, select
 from app.dependencies import get_current_shop
 from app.models.shop import Shop
 from app.database import get_db
@@ -7,12 +7,14 @@ from app.schemas.shop import (
     ShopProfileResponse,
     ShopProfileUpdate
 )
+from app.models.message_recipient import MessageRecipient
 from app.services.geocoding import geo_code_address
-
+from app.models.message import Message
 router = APIRouter(
     prefix="/shop",
     tags=["Shop"]
 )
+from datetime import datetime, timezone
 
 
 @router.get("/my-shop")
@@ -111,3 +113,74 @@ def change_status(
         "is_active": current_shop.is_active
     }
 
+@router.get("/messages")
+def get_shop_messages(
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    message_records = db.exec(
+        select(MessageRecipient, Message)
+        .join(
+            Message,
+            Message.message_id == MessageRecipient.message_id
+        )
+        .where(
+            MessageRecipient.shop_id == current_shop.shop_id
+        )
+        .order_by(
+            Message.created_at.desc()
+        )
+    ).all()
+
+    messages = []
+
+    for recipient, message in message_records:
+        messages.append({
+            "recipient_id": recipient.recipient_id,
+            "message_id": message.message_id,
+            "subject": message.subject,
+            "content": message.content,
+            "is_read": recipient.is_read,
+            "read_at": recipient.read_at,
+            "created_at": message.created_at
+        })
+
+    return {
+        "messages": messages
+    }
+
+@router.put("messages/{recipient_id}/read")
+def mark_message_as_read(
+    recipient_id : int ,
+    current_shop : Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    recipient= db.get(
+        MessageRecipient,
+        recipient_id
+    )
+    if recipient is None:
+        raise HTTPException(
+            status_code = status.HTTP_404_NOT_FOUND,
+            detail="Message not found"
+        )
+
+    if recipient.shop_id != current_shop.shop_id:
+        raise HTTPException (
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to access this message.."
+        ) 
+
+    recipient.is_read = True
+    recipient.read_at = datetime.now(timezone.utc)
+
+    db.add(recipient)
+    db.commit()
+    db.refresh(recipient)
+
+    return {
+        "message": "Message marked as read",
+        "recipient_id": recipient.recipient_id,
+        "is_read": recipient.is_read,
+        "read_at": recipient.read_at
+    }

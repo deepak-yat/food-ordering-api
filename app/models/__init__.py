@@ -10,3 +10,6 @@ from app.models.order_item import OrderItem
 from app.models.customer_addresses import CustomerAddress
 from app.models.order_delivery_address import OrderDeliveryAddress
 from app.models.password_reset_token import PasswordResetToken
+from app.models.shop_billing import ShopMonthlyBilling
+from app.models.message import Message
+from app.models.message_recipient import MessageRecipient

@@ -76,9 +76,9 @@ function ShopOrders() {
                 previousOrders.map((order) =>
                     order.order_id === orderId
                         ? {
-                              ...order,
-                              status: data.status,
-                          }
+                            ...order,
+                            status: data.status,
+                        }
                         : order
                 )
             );
@@ -322,14 +322,14 @@ function ShopOrders() {
 
                                     {order.delivery_address
                                         .address_line2 && (
-                                        <p>
-                                            {
-                                                order
-                                                    .delivery_address
-                                                    .address_line2
-                                            }
-                                        </p>
-                                    )}
+                                            <p>
+                                                {
+                                                    order
+                                                        .delivery_address
+                                                        .address_line2
+                                                }
+                                            </p>
+                                        )}
 
                                     <p>
                                         {
@@ -423,10 +423,10 @@ function ShopOrders() {
 
                                 {updatingOrderId ===
                                     order.order_id && (
-                                    <span className="shop-order-updating">
-                                        Updating...
-                                    </span>
-                                )}
+                                        <span className="shop-order-updating">
+                                            Updating...
+                                        </span>
+                                    )}
 
                                 <div className="shop-live-order-action-buttons">
                                     {getNextAction(order)}
