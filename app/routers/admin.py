@@ -12,7 +12,8 @@ from app.schemas.admin import (
     AdminUserResponse,
     AdminUsersResponse,
     BillingStatusUpdate,
-    AdminBroadcastMessage
+    AdminBroadcastMessage,
+    AdminSelectiveMessage
 )
 from datetime import datetime, timezone
 import calendar
@@ -704,4 +705,120 @@ def broadcast_message(
             }
             for shop in shops
         ]
+    }
+
+@router.post("/messages/send")
+def send_message_to_selected_shops(
+    message_data: AdminSelectiveMessage,
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db: Session = Depends(get_db)
+):
+    if not message_data.shop_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one shop must be selected"
+        )
+
+    shops = db.exec(
+        select(Shop).where(
+            Shop.shop_id.in_(message_data.shop_ids),
+            Shop.is_approved == True
+        )
+    ).all()
+
+    found_shop_ids = {
+        shop.shop_id
+        for shop in shops
+    }
+
+    missing_shop_ids = [
+        shop_id
+        for shop_id in message_data.shop_ids
+        if shop_id not in found_shop_ids
+    ]
+
+    if missing_shop_ids:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "message": "Some shops were not found or are not approved",
+                "shop_ids": missing_shop_ids
+            }
+        )
+
+    message = Message(
+        sender_user_id=current_user.user_id,
+        subject=message_data.subject,
+        content=message_data.content
+    )
+
+    db.add(message)
+    db.flush()
+
+    for shop in shops:
+        recipient = MessageRecipient(
+            message_id=message.message_id,
+            shop_id=shop.shop_id
+        )
+
+        db.add(recipient)
+
+    db.commit()
+    db.refresh(message)
+
+    return {
+        "message": "Message sent successfully",
+        "message_id": message.message_id,
+        "subject": message.subject,
+        "recipient_count": len(shops),
+        "sent_to": [
+            {
+                "shop_id": shop.shop_id,
+                "shop_name": shop.shop_name
+            }
+            for shop in shops
+        ]
+    }
+
+@router.get("/messages")
+def get_admin_messages(
+    current_user : User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db : Session = Depends(
+        get_db
+    )
+):
+    message_records = db.exec(
+        select(
+            Message,
+            func.count(MessageRecipient.recipient_id)
+        )
+        .outerjoin(
+            MessageRecipient,
+            MessageRecipient.message_id == Message.message_id
+        )
+        .group_by(
+            Message.message_id
+        )
+        .order_by(
+            Message.created_at.desc()
+        )
+    ).all()
+
+    messages=[]
+
+    for message, recipient_count in message_records:
+        messages.append({
+            "message_id": message.message_id,
+            "subject":message.subject,
+            "content":message.content,
+            "created_at":message.created_at,
+            "recipient_count":recipient_count
+        })
+
+    return {
+        "Messages":messages
     }

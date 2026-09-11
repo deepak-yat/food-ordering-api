@@ -19,3 +19,8 @@ class BillingStatusUpdate(BaseModel):
 class AdminBroadcastMessage(SQLModel):
     subject: str
     content: str
+
+class AdminSelectiveMessage(SQLModel):
+    subject: str
+    content: str
+    shop_ids: list[int]

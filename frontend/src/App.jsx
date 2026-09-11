@@ -23,6 +23,8 @@ import ShopOverview from "./pages/ShopOverview";
 import ShopProfile from "./pages/ShopProfile";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import ShopMessages from "./pages/ShopMessages";
+import ShopMessageDetails from "./pages/ShopMessageDetails";
 function App() {
 
     return (
@@ -95,6 +97,16 @@ function App() {
             <CustomerOrderDetails />
         </ProtectedRoute>
     }
+/>
+
+<Route
+    path="/shop/messages"
+    element={<ShopMessages />}
+/>
+
+<Route
+    path="/shop/messages/:recipientId"
+    element={<ShopMessageDetails />}
 />
 
                     <Route

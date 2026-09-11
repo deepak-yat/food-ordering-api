@@ -57,9 +57,10 @@ function ShopDashboard() {
     const [showDeleteItemConfirm, setShowDeleteItemConfirm] = useState(false);
     const [itemDeleteLoading, setItemDeleteLoading] = useState(false);
 
-    
+    const [unreadMessageCount, setUnreadMessageCount] = useState(0);
     useEffect(() => {
         loadDashboard();
+        loadUnreadMessages();
     }, []);
     async function loadDashboard() {
 
@@ -107,7 +108,10 @@ function ShopDashboard() {
         }
     }
 
-
+async function loadCategories() {
+    const data = await apiFetch("/menu/categories");
+    setCategories(data);
+}
 
     async function handleLogout() {
 
@@ -145,10 +149,7 @@ function ShopDashboard() {
             );
             console.log("Category created:", newCategory);
 
-            setCategories((currentCategories) => [
-                ...currentCategories,
-                newCategory
-            ]);
+            await loadCategories();
 
             setCategoryName("");
             setShowCategoryForm(false);
@@ -258,7 +259,7 @@ function ShopDashboard() {
                     method: "DELETE"
                 }
             );
-
+            navigate("/shop/dashboard");
             setCategories((currentCategories) =>
                 currentCategories.filter(
                     category =>
@@ -278,7 +279,7 @@ function ShopDashboard() {
                         deleteCategory.category_id
                 )
             );
-
+            setEditingCategory(null)
             setDeleteCategory(null);
 
         } catch (error) {
@@ -384,6 +385,28 @@ function ShopDashboard() {
         }
     }
 
+    async function loadUnreadMessages() {
+    try {
+        const data = await apiFetch(
+            "/shop/messages"
+        );
+
+        const messages = data.messages || [];
+
+        const unreadCount = messages.filter(
+            message => !message.is_read
+        ).length;
+
+        setUnreadMessageCount(unreadCount);
+
+    } catch (error) {
+        console.error(
+            "Unable to load unread messages:",
+            error
+        );
+    }
+}
+
     async function openEditItem(item) {
         setSelectedItem(item);
 
@@ -480,7 +503,7 @@ function ShopDashboard() {
             await apiFetch(`/menu/categories/item/items/${selectedItem.item_id}`, {
                 method: "DELETE"
             });
-
+            setEditingCategory(null);
             setItems((previousItems) =>
                 previousItems.filter(
                     (item) => item.item_id !== selectedItem.item_id
@@ -490,7 +513,7 @@ function ShopDashboard() {
             setShowDeleteItemConfirm(false);
             setShowItemEditForm(false);
             setSelectedItem(null);
-
+            
         } catch (error) {
             setItemEditError(
                 error.data?.detail ||
@@ -550,25 +573,46 @@ function ShopDashboard() {
 
                     <nav className="shop-nav">
 
-                        <button onClick={() => navigate("/shop/overview")}>
-                            Overview
-                        </button>
+    <button onClick={() => navigate("/shop/overview")}>
+        Overview
+    </button>
 
-                        <button>
-                            Menu
-                        </button>
+    <button>
+        Menu
+    </button>
 
-                        <button
-                        onClick={() => navigate("/shop/orders")}>
-                            Orders
-                        </button>
-                        <button
-                         className="shop-profile-nav-button"
-    onClick={() => navigate("/shop/profile")}>
-                            Profile
-                        </button>
+    <button
+        onClick={() => navigate("/shop/orders")}
+    >
+        Orders
+    </button>
 
-                    </nav>
+    <button
+        className="shop-profile-nav-button"
+        onClick={() => navigate("/shop/profile")}
+    >
+        Profile
+    </button>
+
+    <button
+        className="shop-notification-button"
+        onClick={() => navigate("/shop/messages")}
+        aria-label="Messages"
+    >
+        <span className="shop-notification-icon">
+            🔔
+        </span>
+
+        {unreadMessageCount > 0 && (
+            <span className="shop-notification-badge">
+                {unreadMessageCount > 99
+                    ? "99+"
+                    : unreadMessageCount}
+            </span>
+        )}
+    </button>
+
+</nav>
 
 
                     <button

@@ -40,7 +40,7 @@ const [pendingError, setPendingError] = useState("");
     const totalShopPages = Math.ceil(
     approvedShops.length / shopsPerPage
     );
-
+const [messageView, setMessageView] = useState("history");
     const startShopIndex =
     (currentShopPage - 1) * shopsPerPage;
 
@@ -48,6 +48,36 @@ const [pendingError, setPendingError] = useState("");
     startShopIndex,
     startShopIndex + shopsPerPage
     );
+    
+    const [messageSubject, setMessageSubject] = useState("");
+const [messageContent, setMessageContent] = useState("");
+const [messageLoading, setMessageLoading] = useState(false);
+const [messageError, setMessageError] = useState("");
+const [messageSuccess, setMessageSuccess] = useState("");
+const [messageAudience, setMessageAudience] = useState("all");
+const [selectedShopIds, setSelectedShopIds] = useState([]);
+const [adminMessages, setAdminMessages] = useState([]);
+const [messageHistoryLoading, setMessageHistoryLoading] = useState(false);
+const [messageHistoryError, setMessageHistoryError] = useState("");
+const [messageHistoryPage, setMessageHistoryPage] = useState(1);
+
+const messagesPerPage = 5;
+const approvedMessageShops = shops.filter(
+    shop => shop.is_approved
+);
+
+const totalMessagePages = Math.ceil(
+    adminMessages.length / messagesPerPage
+);
+const [selectedAdminMessage, setSelectedAdminMessage] = useState(null);
+const messageStartIndex =
+    (messageHistoryPage - 1) * messagesPerPage;
+
+const visibleAdminMessages = adminMessages.slice(
+    messageStartIndex,
+    messageStartIndex + messagesPerPage
+);
+
 
     useEffect(() => {
         loadShops();
@@ -59,6 +89,10 @@ const [pendingError, setPendingError] = useState("");
 useEffect(() => {
     if (activeSection === "pending-shops") {
         loadPendingShops();
+    }
+
+    if (activeSection === "messages") {
+        loadAdminMessages();
     }
 }, [activeSection]);
 
@@ -337,6 +371,144 @@ async function approvePendingShop(shopId) {
         }
     }
 
+    function toggleShopSelection(shopId) {
+    setSelectedShopIds((currentIds) =>
+        currentIds.includes(shopId)
+            ? currentIds.filter(id => id !== shopId)
+            : [...currentIds, shopId]
+    );
+}
+
+   async function sendMessage(event) {
+    event.preventDefault();
+
+    setMessageError("");
+    setMessageSuccess("");
+
+    if (!messageSubject.trim()) {
+        setMessageError("Subject is required.");
+        return;
+    }
+
+    if (!messageContent.trim()) {
+        setMessageError("Message content is required.");
+        return;
+    }
+
+    if (
+        messageAudience === "selected" &&
+        selectedShopIds.length === 0
+    ) {
+        setMessageError(
+            "Please select at least one shop."
+        );
+        return;
+    }
+
+    try {
+        setMessageLoading(true);
+
+        let data;
+
+        if (messageAudience === "all") {
+
+            data = await apiFetch(
+                "/admin/messages/broadcast",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        subject: messageSubject.trim(),
+                        content: messageContent.trim()
+                    })
+                }
+            );
+
+        } else {
+
+            data = await apiFetch(
+                "/admin/messages/send",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        subject: messageSubject.trim(),
+                        content: messageContent.trim(),
+                        shop_ids: selectedShopIds
+                    })
+                }
+            );
+        }
+
+        setMessageSuccess(
+            `Message sent successfully to ${data.recipient_count} shops.`
+        );
+
+        setMessageSubject("");
+        setMessageContent("");
+        setSelectedShopIds([]);
+        setMessageAudience("all");
+
+    } catch (error) {
+        console.error(error);
+
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setMessageError(
+            error.message ||
+            "Unable to send message."
+        );
+
+    } finally {
+        setMessageLoading(false);
+    }
+}
+
+function changeMessageView(view) {
+    setMessageView(view);
+
+    if (view === "history") {
+        setMessageHistoryPage(1);
+    }
+}
+
+
+async function loadAdminMessages() {
+    try {
+        setMessageHistoryLoading(true);
+        setMessageHistoryError("");
+
+        const data = await apiFetch("/admin/messages");
+
+        setAdminMessages(data.Messages || []);
+        setMessageHistoryPage(1);
+
+    } catch (error) {
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setMessageHistoryError(
+            error.message || "Unable to load message history."
+        );
+
+    } finally {
+        setMessageHistoryLoading(false);
+    }
+}
+
 
     return (
         <div className="admin-dashboard">
@@ -399,10 +571,14 @@ async function approvePendingShop(shopId) {
             <small>Coming Soon</small>
         </div>
 
-        <div className="admin-sidebar-item disabled">
-            <span>Messages</span>
-            <small>Coming Soon</small>
-        </div>
+        <button
+    className={`admin-sidebar-item ${
+        activeSection === "messages" ? "active" : ""
+    }`}
+    onClick={() => setActiveSection("messages")}
+>
+    <span>Messages</span>
+</button>
 
     </div>
 
@@ -1032,6 +1208,568 @@ async function approvePendingShop(shopId) {
 </section>
         </>
     )}
+   {activeSection === "messages" && (
+    <>
+        <section className="admin-welcome">
+
+            <span className="eyebrow">
+                COMMUNICATION
+            </span>
+
+            <h1>
+                Messages
+            </h1>
+
+            <p>
+                Manage announcements and communication
+                with Foodly shop owners.
+            </p>
+
+        </section>
+
+
+        <div className="admin-message-navigation">
+
+            <button
+                className={
+                    messageView === "history"
+                        ? "admin-message-nav-button active"
+                        : "admin-message-nav-button"
+                }
+                onClick={() =>
+                    changeMessageView("history")
+                }
+            >
+                Message History
+            </button>
+
+            <button
+                className={
+                    messageView === "compose"
+                        ? "admin-message-nav-button active"
+                        : "admin-message-nav-button"
+                }
+                onClick={() =>
+                    changeMessageView("compose")
+                }
+            >
+                Send Message
+            </button>
+
+        </div>
+
+
+        {/* ===================================== */}
+        {/* MESSAGE HISTORY */}
+        {/* ===================================== */}
+
+        {messageView === "history" && (
+
+            <section className="admin-message-history">
+
+                <div className="section-heading">
+
+                    <span className="eyebrow">
+                        HISTORY
+                    </span>
+
+                    <h2>
+                        Sent Messages
+                    </h2>
+
+                    <p>
+                        Review messages previously sent
+                        to shop owners.
+                    </p>
+
+                </div>
+
+
+                {messageHistoryLoading && (
+                    <p className="status-text">
+                        Loading message history...
+                    </p>
+                )}
+
+
+                {messageHistoryError && (
+                    <p className="error-text">
+                        {messageHistoryError}
+                    </p>
+                )}
+
+
+                {!messageHistoryLoading &&
+                    !messageHistoryError &&
+                    adminMessages.length === 0 && (
+
+                    <div className="empty-state">
+
+                        <h3>
+                            No messages sent yet
+                        </h3>
+
+                        <p>
+                            Messages you send to shops
+                            will appear here.
+                        </p>
+
+                    </div>
+                )}
+
+
+                {!messageHistoryLoading &&
+                    !messageHistoryError &&
+                    adminMessages.length > 0 && (
+                    
+                    <>
+
+                        <div className="admin-message-history-list">
+
+                            {visibleAdminMessages.map(message => (
+
+                                <article
+                                    key={message.message_id}
+                                    className="admin-message-history-card"
+                                >
+
+                                    <div className="admin-message-history-header">
+
+                                        <div>
+
+                                            <h3>
+                                                {message.subject}
+                                            </h3>
+
+                                            <span>
+                                                {message.recipient_count}{" "}
+                                                {message.recipient_count === 1
+                                                    ? "recipient"
+                                                    : "recipients"}
+                                            </span>
+
+                                        </div>
+
+
+                                        <span className="admin-message-date">
+
+                                            {new Date(
+                                                message.created_at
+                                            ).toLocaleDateString(
+                                                "en-IN",
+                                                {
+                                                    day: "numeric",
+                                                    month: "short",
+                                                    year: "numeric"
+                                                }
+                                            )}
+
+                                        </span>
+
+                                    </div>
+
+
+                                    <p>
+                                        {message.content.length > 120
+                                            ? `${message.content.slice(0, 120)}...`
+                                            : message.content}
+                                    </p>
+
+
+                                    <button
+                                        type="button"
+                                        className="admin-message-view-button"
+                                        onClick={() =>
+                                            setSelectedAdminMessage(
+                                                message
+                                            )
+                                        }
+                                    >
+                                        View Message →
+                                    </button>
+
+                                </article>
+
+                            ))}
+
+                        </div>
+
+
+                        {totalMessagePages > 1 && (
+
+                            <div className="admin-message-pagination">
+
+                                <button
+                                    disabled={
+                                        messageHistoryPage === 1
+                                    }
+                                    onClick={() =>
+                                        setMessageHistoryPage(
+                                            currentPage =>
+                                                currentPage - 1
+                                        )
+                                    }
+                                >
+                                    ‹
+                                </button>
+
+
+                                {Array.from(
+                                    {
+                                        length:
+                                            totalMessagePages
+                                    },
+                                    (_, index) =>
+                                        index + 1
+                                ).map(page => (
+
+                                    <button
+                                        key={page}
+                                        className={
+                                            messageHistoryPage === page
+                                                ? "active"
+                                                : ""
+                                        }
+                                        onClick={() =>
+                                            setMessageHistoryPage(
+                                                page
+                                            )
+                                        }
+                                    >
+                                        {page}
+                                    </button>
+
+                                ))}
+
+
+                                <button
+                                    disabled={
+                                        messageHistoryPage ===
+                                        totalMessagePages
+                                    }
+                                    onClick={() =>
+                                        setMessageHistoryPage(
+                                            currentPage =>
+                                                currentPage + 1
+                                        )
+                                    }
+                                >
+                                    ›
+                                </button>
+
+                            </div>
+
+                        )}
+
+                    </>
+                )}
+
+            </section>
+
+        )}
+
+
+        {/* ===================================== */}
+        {/* COMPOSE MESSAGE */}
+        {/* ===================================== */}
+
+        {messageView === "compose" && (
+
+            <section className="admin-message-section">
+
+                <div className="section-heading">
+
+                    <span className="eyebrow">
+                        COMPOSE
+                    </span>
+
+                    <h2>
+                        Send Message
+                    </h2>
+
+                    <p>
+                        Send announcements and important
+                        updates to Foodly shop owners.
+                    </p>
+
+                </div>
+
+
+                <form
+                    className="admin-message-form"
+                    onSubmit={sendMessage}
+                >
+
+                    <div className="admin-message-recipient-section">
+
+                        <span className="admin-message-recipient-label">
+                            Recipients
+                        </span>
+
+
+                        <div className="admin-message-audience-options">
+
+                            <label className="admin-message-radio">
+
+                                <input
+                                    type="radio"
+                                    name="messageAudience"
+                                    value="all"
+                                    checked={
+                                        messageAudience === "all"
+                                    }
+                                    onChange={() => {
+                                        setMessageAudience("all");
+                                        setSelectedShopIds([]);
+                                    }}
+                                    disabled={messageLoading}
+                                />
+
+                                <span>
+                                    All Approved Shops
+                                </span>
+
+                            </label>
+
+
+                            <label className="admin-message-radio">
+
+                                <input
+                                    type="radio"
+                                    name="messageAudience"
+                                    value="selected"
+                                    checked={
+                                        messageAudience === "selected"
+                                    }
+                                    onChange={() =>
+                                        setMessageAudience("selected")
+                                    }
+                                    disabled={messageLoading}
+                                />
+
+                                <span>
+                                    Selected Shops
+                                </span>
+
+                            </label>
+
+                        </div>
+
+
+                        {messageAudience === "selected" && (
+
+                            <div className="admin-message-shop-selector">
+
+                                <div className="admin-message-shop-selector-header">
+
+                                    <strong>
+                                        Select Shops
+                                    </strong>
+
+                                    <span>
+                                        {selectedShopIds.length} selected
+                                    </span>
+
+                                </div>
+
+
+                                <div className="admin-message-shop-list">
+
+                                    {approvedMessageShops.map(
+                                        shop => (
+
+                                        <label
+                                            key={shop.shop_id}
+                                            className="admin-message-shop-option"
+                                        >
+
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    selectedShopIds.includes(
+                                                        shop.shop_id
+                                                    )
+                                                }
+                                                onChange={() =>
+                                                    toggleShopSelection(
+                                                        shop.shop_id
+                                                    )
+                                                }
+                                                disabled={
+                                                    messageLoading
+                                                }
+                                            />
+
+                                            <span>
+                                                {shop.shop_name}
+                                            </span>
+
+                                        </label>
+
+                                    ))}
+
+                                </div>
+
+                            </div>
+                        )}
+
+                    </div>
+
+
+                    <div className="admin-message-field">
+
+                        <label htmlFor="message-subject">
+                            Subject
+                        </label>
+
+                        <input
+                            id="message-subject"
+                            type="text"
+                            value={messageSubject}
+                            onChange={(event) =>
+                                setMessageSubject(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="Enter message subject"
+                            disabled={messageLoading}
+                        />
+
+                    </div>
+
+
+                    <div className="admin-message-field">
+
+                        <label htmlFor="message-content">
+                            Message
+                        </label>
+
+                        <textarea
+                            id="message-content"
+                            value={messageContent}
+                            onChange={(event) =>
+                                setMessageContent(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="Write your message..."
+                            rows={7}
+                            disabled={messageLoading}
+                        />
+
+                    </div>
+
+
+                    {messageError && (
+                        <p className="error-text">
+                            {messageError}
+                        </p>
+                    )}
+
+
+                    {messageSuccess && (
+                        <p className="admin-message-success">
+                            {messageSuccess}
+                        </p>
+                    )}
+
+
+                    <button
+                        type="submit"
+                        className="primary-button"
+                        disabled={messageLoading}
+                    >
+                        {messageLoading
+                            ? "Sending..."
+                            : messageAudience === "all"
+                                ? "Send to All Shops"
+                                : "Send to Selected Shops"}
+                    </button>
+
+                </form>
+
+            </section>
+
+        )}
+
+    </>
+)}
+
+{selectedAdminMessage && (
+    <div
+        className="admin-modal-overlay"
+        onClick={() =>
+            setSelectedAdminMessage(null)
+        }
+    >
+
+        <div
+            className="admin-message-history-modal"
+            onClick={(event) =>
+                event.stopPropagation()
+            }
+        >
+
+            <div className="admin-modal-header">
+
+                <div>
+
+                    <span className="eyebrow">
+                        SENT MESSAGE
+                    </span>
+
+                    <h2>
+                        {selectedAdminMessage.subject}
+                    </h2>
+
+                </div>
+
+                <button
+                    className="admin-modal-close"
+                    onClick={() =>
+                        setSelectedAdminMessage(null)
+                    }
+                >
+                    ×
+                </button>
+
+            </div>
+
+
+            <div className="admin-message-history-meta">
+
+                <span>
+                    Recipients
+                </span>
+
+                <strong>
+                    {selectedAdminMessage.recipient_count}
+                </strong>
+
+            </div>
+
+
+            <div className="admin-message-history-content">
+
+                {selectedAdminMessage.content}
+
+            </div>
+
+
+            <div className="admin-message-history-time">
+
+                Sent{" "}
+                {new Date(
+                    selectedAdminMessage.created_at
+                ).toLocaleString("en-IN")}
+
+            </div>
+
+        </div>
+
+    </div>
+)}
+
                 {selectedShop && (
                     <div
                         className="admin-modal-overlay"
