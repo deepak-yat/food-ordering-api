@@ -6,13 +6,23 @@ export async function apiFetch(endpoint, options = {}) {
 
     console.log("API REQUEST:", url);
 
+    const isFormData =
+        options.body instanceof FormData;
+
+    const headers = {
+        ...(options.headers || {})
+    };
+
+    // Only set JSON content type for normal JSON requests.
+    // Let the browser set the multipart boundary for FormData.
+    if (!isFormData) {
+        headers["Content-Type"] = "application/json";
+    }
+
     const response = await fetch(url, {
         ...options,
         credentials: "include",
-        headers: {
-            "Content-Type": "application/json",
-            ...(options.headers || {})
-        }
+        headers
     });
 
     console.log(
@@ -31,9 +41,12 @@ export async function apiFetch(endpoint, options = {}) {
     }
 
     if (!response.ok) {
-        const error = new Error(
-            data?.detail || "Request failed"
-        );
+        const detail =
+            typeof data?.detail === "string"
+                ? data.detail
+                : "Request failed";
+
+        const error = new Error(detail);
 
         error.status = response.status;
         error.data = data;

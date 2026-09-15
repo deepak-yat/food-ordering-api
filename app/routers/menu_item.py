@@ -1,4 +1,16 @@
-from fastapi import APIRouter,Depends,HTTPException,status
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    UploadFile,
+    File,
+) 
+from pathlib import Path
+from uuid import uuid4
+import os
+
+from PIL import Image
 from sqlmodel import Session,select
 
 from app.database import get_db
@@ -86,6 +98,147 @@ def get_menu_item(
     ).all()
 
     return items
+
+
+
+@router.post(
+        "/{item_id}/image",
+        response_model=MenuItemResponse
+)
+async def upload_menu_item_image(
+    item_id : int,
+    image : UploadFile = File(...),
+    db : Session = Depends(get_db),
+    current_shop : Shop = Depends(get_current_shop)
+):
+    item = db.exec(
+        select(MenuItem).where(
+            MenuItem.item_id == item_id,
+            MenuItem.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    #------------------
+    # validate contend
+    #------------------
+    allowed_types = {
+        "image/jpeg":".jpg",
+        "image/png":".png",
+        "image/webp":".webp"
+    }
+
+    if image.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only jpg ,png and webp images are allowed"
+        )
+
+    max_size = 5 * 1024 *1024
+    image_bytes = await image.read(max_size+1)
+
+    if len(image_bytes) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="Image must be smaller than 5 mb"
+        )
+    if not image_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image file is empty"
+        )
+    # -------------------------------------------------
+    # 4. Verify that the file is actually an image
+    # -------------------------------------------------
+    temp_path = None
+
+    try:
+        upload_dir = Path("uploads/menu-items")
+        upload_dir.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        temp_name = f"temp-{uuid4().hex}"
+        temp_path = upload_dir / temp_name
+
+        with open(temp_path, "wb") as file:
+            file.write(image_bytes)
+
+        try:
+            with Image.open(temp_path) as img:
+                img.verify()
+
+        except Exception:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid image file"
+            )
+
+        # -------------------------------------------------
+        # 5. Generate our own filename
+        # -------------------------------------------------
+        extension = allowed_types[image.content_type]
+
+        filename = f"{uuid4().hex}{extension}"
+
+        final_path = upload_dir / filename
+
+        os.replace(
+            temp_path,
+            final_path
+        )
+
+        temp_path = None
+
+        # -------------------------------------------------
+        # 6. Save the public URL in the database
+        # -------------------------------------------------
+        old_image_url = item.image_url
+        if item is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Menu item not found"
+                )
+        item.image_url = (
+            f"/uploads/menu-items/{filename}"
+        )
+
+        db.add(item)
+        db.commit()
+        db.refresh(item)
+
+        # -------------------------------------------------
+        # 7. Remove the old image only after DB success
+        # -------------------------------------------------
+        if old_image_url:
+            old_filename = Path(
+                old_image_url
+            ).name
+
+            old_path = upload_dir / old_filename
+
+            if old_path.exists():
+                old_path.unlink()
+
+        return item
+
+    except HTTPException:
+        raise
+
+    except Exception as error:
+        db.rollback()
+
+        # Remove newly created file if DB operation failed
+        if temp_path and temp_path.exists():
+            temp_path.unlink()
+
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unable to upload menu item image"
+        ) from error
+
+    
+
 
 @router.put(
     "/{category_id}/{item_id}",

@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request , Depends
+from fastapi.staticfiles import StaticFiles  
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -20,6 +21,11 @@ from app.routers.customer_search import router as customer_search_router
 app = FastAPI(
     title="Food Ordering API",
     version="1.0.0"
+)
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
 )
 
 app.add_middleware(

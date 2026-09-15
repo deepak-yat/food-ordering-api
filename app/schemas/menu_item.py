@@ -22,3 +22,4 @@ class MenuItemResponse(BaseModel):
     description : str
     price : float
     is_available : bool 
+    image_url: str | None = None

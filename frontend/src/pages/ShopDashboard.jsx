@@ -31,7 +31,8 @@ function ShopDashboard() {
     const [deleteCategory, setDeleteCategory] = useState(null);
     const [showItemForm, setShowItemForm] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
-
+    const [itemImage, setItemImage] = useState(null);
+    const [itemImagePreview, setItemImagePreview] = useState("");
     const [itemForm, setItemForm] = useState({
         name: "",
         description: "",
@@ -44,7 +45,9 @@ function ShopDashboard() {
 
     const [showItemEditForm, setShowItemEditForm] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
-
+    const [itemEditImage, setItemEditImage] = useState(null);
+    const [itemEditImagePreview, setItemEditImagePreview] = useState("");
+    const [itemImageUploading, setItemImageUploading] = useState(false);
     const [itemEditForm, setItemEditForm] = useState({
         name: "",
         description: "",
@@ -62,6 +65,15 @@ function ShopDashboard() {
         loadDashboard();
         loadUnreadMessages();
     }, []);
+
+    useEffect(() => {
+    return () => {
+        if (itemImagePreview) {
+            URL.revokeObjectURL(itemImagePreview);
+        }
+    };
+}, [itemImagePreview]);
+
     async function loadDashboard() {
 
         try {
@@ -305,6 +317,87 @@ async function loadCategories() {
         }
     }
 
+    function validateImage(file) {
+    if (!file) {
+        return "Please select an image.";
+    }
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+        return "Only JPG, PNG and WEBP images are allowed.";
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+        return "Image must be smaller than 5 MB.";
+    }
+
+    return "";
+}
+
+
+    function handleItemImageChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    const validationError = validateImage(file);
+
+    if (validationError) {
+        setItemError(validationError);
+        return;
+    }
+
+    setItemError("");
+    setItemImage(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setItemImagePreview(previewUrl);
+    }
+
+    function handleItemEditImageChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    const validationError = validateImage(file);
+
+    if (validationError) {
+        setItemEditError(validationError);
+        return;
+    }
+
+    setItemEditError("");
+    setItemEditImage(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setItemEditImagePreview(previewUrl);
+    }
+
+    async function uploadMenuItemImage(itemId, file) {
+    const formData = new FormData();
+
+    formData.append("image", file);
+
+    return await apiFetch(
+        `/menu/categories/item/${itemId}/image`,
+        {
+            method: "POST",
+            body: formData
+        }
+    );
+    }
+
     async function addItem(event) {
         event.preventDefault();
 
@@ -331,32 +424,59 @@ async function loadCategories() {
 
             setItemLoading(true);
 
-            const newItem = await apiFetch(
-                "/menu/categories/item",
+const newItem = await apiFetch(
+    "/menu/categories/item",
+    {
+        method: "POST",
+        body: JSON.stringify({
+            category_id: selectedCategory.category_id,
+            name: itemForm.name.trim(),
+            description:
+                itemForm.description.trim() || null,
+            price: Number(itemForm.price)
+        })
+    }
+);
+
+let finalItem = newItem;
+
+if (itemImage) {
+    setItemImageUploading(true);
+
+    try {
+        finalItem = await uploadMenuItemImage(
+            newItem.item_id,
+            itemImage
+        );
+    } catch (uploadError) {
+        try {
+            await apiFetch(
+                `/menu/categories/item/items/${newItem.item_id}`,
                 {
-                    method: "POST",
-                    body: JSON.stringify({
-                        category_id:
-                            selectedCategory.category_id,
-                        name: itemForm.name.trim(),
-                        description:
-                            itemForm.description.trim() || null,
-                        price: Number(itemForm.price)
-                    })
+                    method: "DELETE"
                 }
             );
+        } catch (rollbackError) {
+            console.error(
+                "Failed to rollback menu item:",
+                rollbackError
+            );
+        }
 
-            setItems(currentItems => [
-                ...currentItems,
-                newItem
-            ]);
+        throw uploadError;
 
-            setItemForm({
-                name: "",
-                description: "",
-                price: ""
-            });
+    } finally {
+        setItemImageUploading(false);
+    }
+}
 
+setItems(currentItems => [
+    ...currentItems,
+    finalItem
+]);
+
+            setItemImage(null);
+            setItemImagePreview("");
             setSelectedCategory(null);
             setShowItemForm(false);
 
@@ -823,80 +943,87 @@ async function loadCategories() {
 
                                                             categoryItems.map(item => (
 
-                                                                <div
-                                                                    key={item.item_id}
-                                                                    className="shop-item-card"
-                                                                >
+                                                               <div
+    key={item.item_id}
+    className="shop-item-card"
+>
 
-                                                                    <div className="shop-item-info">
+    <div className="shop-item-image">
+        {item.image_url ? (
+            <img
+                src={`http://127.0.0.1:8000${item.image_url}`}
+                alt={item.name}
+            />
+        ) : (
+            <div className="shop-item-image-placeholder">
+                No Image
+            </div>
+        )}
+    </div>
 
-                                                                        <h4>
-                                                                            {item.name}
-                                                                        </h4>
+    <div className="shop-item-info">
 
-                                                                        <p>
-                                                                            {item.description ||
-                                                                                "No description"}
-                                                                        </p>
+        <h4>
+            {item.name}
+        </h4>
 
-                                                                    </div>
+        <p>
+            {item.description || "No description"}
+        </p>
 
+    </div>
 
-                                                                    <div className="shop-item-actions">
+    <div className="shop-item-actions">
 
-                                                                        <strong>
-                                                                            ₹{Number(
-                                                                                item.price
-                                                                            ).toFixed(2)}
-                                                                        </strong>
+        <strong>
+            ₹{Number(item.price).toFixed(2)}
+        </strong>
 
-                                                                        <span
-                                                                            className={
-                                                                                item.is_available
-                                                                                    ? "item-status available"
-                                                                                    : "item-status unavailable"
-                                                                            }
-                                                                        >
-                                                                            {item.is_available
-                                                                                ? "Available"
-                                                                                : "Unavailable"}
-                                                                        </span>
+        <span
+            className={
+                item.is_available
+                    ? "item-status available"
+                    : "item-status unavailable"
+            }
+        >
+            {item.is_available
+                ? "Available"
+                : "Unavailable"}
+        </span>
 
-                                                                        <button
-                                                                            className="item-edit-button"
-                                                                            onClick={() =>
-                                                                                openEditItem(item)
+        <button
+            className="item-edit-button"
+            onClick={() => openEditItem(item)}
+        >
+            Edit
+        </button>
 
-                                                                            }
-                                                                        >
-                                                                            Edit
-                                                                        </button>
+        <div className="item-availability">
+            <button
+                type="button"
+                className={
+                    item.is_available
+                        ? "availability-status available"
+                        : "availability-status unavailable"
+                }
+                onClick={() =>
+                    toggleItemAvailability(item)
+                }
+                title={
+                    item.is_available
+                        ? "Mark as unavailable"
+                        : "Mark as available"
+                }
+            >
+                <span className="availability-icon">
+                    {item.is_available ? "✓" : "×"}
+                </span>
+            </button>
+        </div>
 
-                                                                        <div className="item-availability">
-                                                                            <button
-                                                                                type="button"
-                                                                                className={
-                                                                                    item.is_available
-                                                                                        ? "availability-status available"
-                                                                                        : "availability-status unavailable"
-                                                                                }
-                                                                                onClick={() => toggleItemAvailability(item)}
-                                                                                title={
-                                                                                    item.is_available
-                                                                                        ? "Mark as unavailable"
-                                                                                        : "Mark as available"
-                                                                                }
-                                                                            >
-                                                                                <span className="availability-icon">
-                                                                                    {item.is_available ? "✓" : "×"}
-                                                                                </span>
+    </div>
 
-                                                                            </button>
-                                                                        </div>
-
-                                                                    </div>
-
-                                                                </div>
+</div>
 
                                                             ))
 
@@ -913,7 +1040,8 @@ async function loadCategories() {
                                                                     description: "",
                                                                     price: ""
                                                                 });
-
+                                                                setItemImage(null);
+setItemImagePreview("");
                                                                 setItemError("");
                                                                 setShowItemForm(true);
                                                             }}
@@ -1121,7 +1249,7 @@ async function loadCategories() {
 
                         </div>
 
-
+<div className="shop-modal-body">
                         <form onSubmit={addCategory}>
 
                             <div className="form-group">
@@ -1179,7 +1307,7 @@ async function loadCategories() {
                             </div>
 
                         </form>
-
+    </div>
                     </div>
                 </div>
             )}
@@ -1504,6 +1632,31 @@ async function loadCategories() {
 
                             </div>
 
+                            <div className="form-group">
+
+    <label htmlFor="item_image">
+        Food Image
+    </label>
+
+    <input
+        id="item_image"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleItemImageChange}
+        disabled={itemLoading || itemImageUploading}
+    />
+
+    {itemImagePreview && (
+        <div className="item-image-preview">
+            <img
+                src={itemImagePreview}
+                alt="Food preview"
+            />
+        </div>
+    )}
+
+</div>
+
 
                             {itemError && (
                                 <p className="error-text">
@@ -1529,11 +1682,12 @@ async function loadCategories() {
                                 <button
                                     type="submit"
                                     className="primary-button"
-                                    disabled={itemLoading}
-                                >
-                                    {itemLoading
-                                        ? "Adding..."
-                                        : "Add Item"}
+disabled={itemLoading || itemImageUploading}                                >
+                                    {itemImageUploading
+    ? "Uploading Image..."
+    : itemLoading
+        ? "Adding..."
+        : "Add Item"}
                                 </button>
 
                             </div>

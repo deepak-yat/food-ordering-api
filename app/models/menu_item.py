@@ -28,3 +28,4 @@ class MenuItem(SQLModel,table=True):
     is_available: bool = Field(
         default=True
     )
+    image_url : str | None =  None

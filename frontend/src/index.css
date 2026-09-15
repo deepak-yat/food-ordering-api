@@ -11492,3 +11492,158 @@ background: var(--primary-dark);
     opacity: 0.45;
     cursor: not-allowed;
 }
+
+.shop-item-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+
+    width: 100%;
+    padding: 16px 18px;
+
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+
+    box-sizing: border-box;
+}
+
+.shop-item-image {
+    width: 150px;
+    height: 100px;
+
+    flex: 0 0 150px;
+
+    border-radius: 8px;
+    overflow: hidden;
+
+    background: #f1f1f1;
+}
+
+.shop-item-image img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+    object-position: center;
+}
+
+.shop-item-image-placeholder {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #888;
+    font-size: 13px;
+}
+
+.shop-item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.shop-item-info h4 {
+    margin: 0 0 6px;
+
+    font-size: 17px;
+    line-height: 1.3;
+}
+
+.shop-item-info p {
+    margin: 0;
+
+    color: #777;
+    font-size: 14px;
+    line-height: 1.45;
+
+    max-width: 600px;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+}
+
+.shop-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    flex-shrink: 0;
+
+    white-space: nowrap;
+}
+
+.shop-item-actions strong {
+    font-size: 16px;
+}
+
+.shop-modal-overlay {
+    position: fixed;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0, 0, 0, 0.55);
+
+    overflow-y: auto;
+
+    z-index: 1000;
+
+    box-sizing: border-box;
+}
+
+.shop-modal {
+    width: 100%;
+    max-width: 520px;
+
+    max-height: calc(100vh - 40px);
+
+    background: var(--card);
+    border-radius: 14px;
+
+    display: flex;
+    flex-direction: column;
+
+    box-sizing: border-box;
+}
+.shop-modal-body {
+    padding: 0 24px 24px;
+
+    overflow-y: auto;
+
+    flex: 1;
+
+    min-height: 0;
+}
+
+.item-image-preview {
+    width: 100%;
+    height: 180px;
+
+    margin-top: 12px;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+
+    background: #f3f3f3;
+}
+
+.item-image-preview img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+}
