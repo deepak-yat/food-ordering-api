@@ -10,9 +10,47 @@ function ShopOrders() {
     const [error, setError] = useState("");
     const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
+ const [selectedStatus, setSelectedStatus] = useState("pending");
+const [currentPage, setCurrentPage] = useState(1);
+
+const ordersPerPage = 5;
+
+const orderStatuses = [
+    "pending",
+    "accepted",
+    "preparing",
+    "ready",
+    "completed",
+    "rejected",
+    "cancelled",
+];
+    const filteredOrders  =  orders.filter(
+        (order) => 
+            order.status.toLowerCase() === selectedStatus
+    );
+
+    const totalPages = Math.ceil(
+        filteredOrders.length / ordersPerPage
+    );
+
+    const startIndex = (currentPage-1)*ordersPerPage;
+
+    const visibleOrders = filteredOrders.slice(
+        startIndex,
+        startIndex + ordersPerPage
+    )
+
+
+
     useEffect(() => {
         loadOrders();
     }, []);
+
+
+    function changeOrderStatus(status) {
+    setSelectedStatus(status);
+    setCurrentPage(1);
+}
 
     async function loadOrders() {
         setLoading(true);
@@ -82,6 +120,7 @@ function ShopOrders() {
                         : order
                 )
             );
+            setCurrentPage(1);
 
         } catch (error) {
             console.error(
@@ -235,204 +274,201 @@ function ShopOrders() {
                     {error}
                 </p>
             )}
+            <div className="shop-order-status-tabs">
 
-            {orders.length === 0 ? (
+    {orderStatuses.map((status) => {
 
-                <div className="shop-orders-empty">
-                    <h2>
-                        No orders yet
-                    </h2>
+        const statusCount = orders.filter(
+            (order) =>
+                order.status.toLowerCase() === status
+        ).length;
 
-                    <p>
-                        New customer orders will appear here.
-                    </p>
+        return (
+            <button
+                key={status}
+                type="button"
+                className={`shop-order-status-tab ${
+                    selectedStatus === status
+                        ? "active"
+                        : ""
+                }`}
+                onClick={() => changeOrderStatus(status)}
+            >
+                <span>
+                    {status.charAt(0).toUpperCase() +
+                        status.slice(1)}
+                </span>
+
+                <strong>
+                    {statusCount}
+                </strong>
+            </button>
+        );
+    })}
+
+</div>
+
+           {orders.length === 0 ? (
+
+    <div className="shop-orders-empty">
+
+        <h2>
+            No orders yet
+        </h2>
+
+        <p>
+            New customer orders will appear here.
+        </p>
+
+    </div>
+
+) : filteredOrders.length === 0 ? (
+
+    <div className="shop-orders-empty">
+
+        <h2>
+            No {selectedStatus} orders
+        </h2>
+
+        <p>
+            There are currently no orders in this status.
+        </p>
+
+    </div>
+
+) : (
+
+    <div className="shop-orders-list">
+
+        {visibleOrders.map((order) => (
+
+            <div
+                key={order.order_id}
+                className="shop-live-order-card"
+            >
+
+                {/* Header */}
+
+                <div className="shop-live-order-header">
+
+                    <div>
+
+                        <span className="shop-order-label">
+                            ORDER
+                        </span>
+
+                        <h2>
+                            #{order.order_id}
+                        </h2>
+
+                    </div>
+
+                    <span
+                        className={`shop-order-status ${order.status.toLowerCase()}`}
+                    >
+                        {order.status}
+                    </span>
 
                 </div>
 
-            ) : (
 
-                <div className="shop-orders-list">
+                {/* Customer */}
 
-                    {orders.map((order) => (
+                <div className="shop-order-customer">
+
+                    <span className="shop-order-section-title">
+                        CUSTOMER
+                    </span>
+
+                    <strong>
+                        {order.customer_name}
+                    </strong>
+
+                    {order.customer_phone && (
+                        <span>
+                            {order.customer_phone}
+                        </span>
+                    )}
+
+                </div>
+
+
+                {/* Address */}
+
+                {order.delivery_address && (
+                    <div className="shop-order-address">
+
+                        <span className="shop-order-section-title">
+                            DELIVERY ADDRESS
+                        </span>
+
+                        <p>
+                            {order.delivery_address.address_line1}
+                        </p>
+
+                        {order.delivery_address.address_line2 && (
+                            <p>
+                                {order.delivery_address.address_line2}
+                            </p>
+                        )}
+
+                        <p>
+                            {order.delivery_address.city},{" "}
+                            {order.delivery_address.state} -{" "}
+                            {order.delivery_address.pincode}
+                        </p>
+
+                    </div>
+                )}
+
+
+                {/* Instructions */}
+
+                {order.delivery_instruction && (
+                    <div className="shop-order-instruction">
+
+                        <span className="shop-order-section-title">
+                            DELIVERY INSTRUCTION
+                        </span>
+
+                        <p>
+                            {order.delivery_instruction}
+                        </p>
+
+                    </div>
+                )}
+
+
+                {/* Items */}
+
+                <div className="shop-live-order-items">
+
+                    <span className="shop-order-section-title">
+                        ITEMS
+                    </span>
+
+                    {order.items.map((item) => (
 
                         <div
-                            key={order.order_id}
-                            className="shop-live-order-card"
+                            key={item.order_item_id}
+                            className="shop-live-order-item"
                         >
 
-                            {/* Header */}
-
-                            <div className="shop-live-order-header">
-
-                                <div>
-                                    <span className="shop-order-label">
-                                        ORDER
-                                    </span>
-
-                                    <h2>
-                                        #{order.order_id}
-                                    </h2>
-                                </div>
-
-                                <span
-                                    className={`shop-order-status ${order.status.toLowerCase()}`}
-                                >
-                                    {order.status}
-                                </span>
-
-                            </div>
-
-
-                            {/* Customer */}
-
-                            <div className="shop-order-customer">
-
-                                <span className="shop-order-section-title">
-                                    CUSTOMER
-                                </span>
+                            <div>
 
                                 <strong>
-                                    {order.customer_name}
+                                    {item.item_name}
                                 </strong>
-
-                                {order.customer_phone && (
-                                    <span>
-                                        {order.customer_phone}
-                                    </span>
-                                )}
-
-                            </div>
-
-
-                            {/* Address */}
-
-                            {order.delivery_address && (
-                                <div className="shop-order-address">
-
-                                    <span className="shop-order-section-title">
-                                        DELIVERY ADDRESS
-                                    </span>
-
-                                    <p>
-                                        {
-                                            order.delivery_address
-                                                .address_line1
-                                        }
-                                    </p>
-
-                                    {order.delivery_address
-                                        .address_line2 && (
-                                            <p>
-                                                {
-                                                    order
-                                                        .delivery_address
-                                                        .address_line2
-                                                }
-                                            </p>
-                                        )}
-
-                                    <p>
-                                        {
-                                            order.delivery_address.city
-                                        }
-                                        ,{" "}
-                                        {
-                                            order.delivery_address.state
-                                        }{" "}
-                                        -{" "}
-                                        {
-                                            order.delivery_address.pincode
-                                        }
-                                    </p>
-
-                                </div>
-                            )}
-
-
-                            {/* Instructions */}
-
-                            {order.delivery_instruction && (
-                                <div className="shop-order-instruction">
-
-                                    <span className="shop-order-section-title">
-                                        DELIVERY INSTRUCTION
-                                    </span>
-
-                                    <p>
-                                        {order.delivery_instruction}
-                                    </p>
-
-                                </div>
-                            )}
-
-
-                            {/* Items */}
-
-                            <div className="shop-live-order-items">
-
-                                <span className="shop-order-section-title">
-                                    ITEMS
-                                </span>
-
-                                {order.items.map((item) => (
-
-                                    <div
-                                        key={item.order_item_id}
-                                        className="shop-live-order-item"
-                                    >
-
-                                        <div>
-                                            <strong>
-                                                {item.item_name}
-                                            </strong>
-
-                                            <span>
-                                                × {item.quantity}
-                                            </span>
-                                        </div>
-
-                                        <strong>
-                                            ₹{item.subtotal}
-                                        </strong>
-
-                                    </div>
-
-                                ))}
-
-                            </div>
-
-
-                            {/* Total */}
-
-                            <div className="shop-live-order-total">
 
                                 <span>
-                                    Total
+                                    × {item.quantity}
                                 </span>
 
-                                <strong>
-                                    ₹{order.total_amount}
-                                </strong>
-
                             </div>
 
-
-                            {/* Actions */}
-
-                            <div className="shop-live-order-actions">
-
-                                {updatingOrderId ===
-                                    order.order_id && (
-                                        <span className="shop-order-updating">
-                                            Updating...
-                                        </span>
-                                    )}
-
-                                <div className="shop-live-order-action-buttons">
-                                    {getNextAction(order)}
-                                </div>
-
-                            </div>
+                            <strong>
+                                ₹{item.subtotal}
+                            </strong>
 
                         </div>
 
@@ -440,7 +476,102 @@ function ShopOrders() {
 
                 </div>
 
-            )}
+
+                {/* Total */}
+
+                <div className="shop-live-order-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ₹{order.total_amount}
+                    </strong>
+
+                </div>
+
+
+                {/* Actions */}
+
+                <div className="shop-live-order-actions">
+
+                    {updatingOrderId === order.order_id && (
+                        <span className="shop-order-updating">
+                            Updating...
+                        </span>
+                    )}
+
+                    <div className="shop-live-order-action-buttons">
+
+                        {getNextAction(order)}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        ))}
+
+    </div>
+
+)}
+            {totalPages > 1 && (
+    <div className="shop-orders-pagination">
+
+        <button
+            type="button"
+            disabled={currentPage === 1}
+            onClick={() =>
+                setCurrentPage(
+                    (page) => page - 1
+                )
+            }
+        >
+            ← Previous
+        </button>
+
+        <div className="shop-orders-page-numbers">
+
+            {Array.from(
+                { length: totalPages },
+                (_, index) => index + 1
+            ).map((page) => (
+                <button
+                    key={page}
+                    type="button"
+                    className={
+                        currentPage === page
+                            ? "active"
+                            : ""
+                    }
+                    onClick={() =>
+                        setCurrentPage(page)
+                    }
+                >
+                    {page}
+                </button>
+            ))}
+
+        </div>
+
+        <button
+            type="button"
+            disabled={
+                currentPage === totalPages
+            }
+            onClick={() =>
+                setCurrentPage(
+                    (page) => page + 1
+                )
+            }
+        >
+            Next →
+        </button>
+
+    </div>
+)}
 
         </div>
     );

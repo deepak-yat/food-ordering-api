@@ -11390,3 +11390,105 @@ background: var(--primary-dark);
 .admin-message-navigation button:active {
     transform: scale(0.98);
 }
+
+.shop-order-status-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 25px 0;
+}
+
+.shop-order-status-tab {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 11px 16px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--card);
+    color: var(--text);
+
+    cursor: pointer;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: 0.2s ease;
+}
+
+.shop-order-status-tab strong {
+    min-width: 22px;
+    height: 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eee;
+    color: #333;
+
+    font-size: 12px;
+}
+
+.shop-order-status-tab:hover {
+    border-color: #ffb800;
+}
+
+.shop-order-status-tab.active {
+    background: #ffb800;
+    border-color: #ffb800;
+    color: #111;
+}
+
+.shop-order-status-tab.active strong {
+    background: #111;
+    color: #fff;
+}
+
+.shop-orders-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 18px;
+
+    margin-top: 30px;
+    padding-bottom: 30px;
+}
+
+.shop-orders-pagination > button,
+.shop-orders-page-numbers button {
+    min-width: 40px;
+    height: 40px;
+
+    padding: 0 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 7px;
+
+    background: var(--card);
+    color: var(--text);
+
+    cursor: pointer;
+}
+
+.shop-orders-page-numbers {
+    display: flex;
+    gap: 8px;
+}
+
+.shop-orders-page-numbers button.active {
+    background: #ffb800;
+    border-color: #ffb800;
+    color: #111;
+}
+
+.shop-orders-pagination button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
