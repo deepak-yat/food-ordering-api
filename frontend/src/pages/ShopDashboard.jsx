@@ -526,21 +526,29 @@ setItems(currentItems => [
         );
     }
 }
+async function openEditItem(item) {
+    setSelectedItem(item);
 
-    async function openEditItem(item) {
-        setSelectedItem(item);
+    setItemEditForm({
+        name: item.name || "",
+        description: item.description || "",
+        price: item.price ?? "",
+        is_available: item.is_available ?? true
+    });
 
-        setItemEditForm(
-            {
-                name: item.name || "",
-                description: item.description || "",
-                price: item.price ?? "",
-                is_available: item.is_available ?? true
-            }
+    setItemEditImage(null);
+    setItemEditError("");
+
+    if (item.image_url) {
+        setItemEditImagePreview(
+            `http://127.0.0.1:8000${item.image_url}`
         );
-        setItemEditError("");
-        setShowItemEditForm(true);
+    } else {
+        setItemEditImagePreview("");
     }
+
+    setShowItemEditForm(true);
+}
 
     function handleItemEditChange() {
         const { name, value, type, checked } = event.target;
@@ -551,68 +559,129 @@ setItems(currentItems => [
         }));
     }
 
-    async function saveItemChanges() {
-        if (!selectedItem) return;
+   async function saveItemChanges() {
+    if (!selectedItem) {
+        return;
+    }
 
-        setItemEditLoading(true);
-        setItemEditError("");
+    setItemEditLoading(true);
+    setItemEditError("");
 
-        try {
-            const changes = {};
+    try {
+        const changes = {};
 
-            if (itemEditForm.name !== selectedItem.name) {
-                changes.name = itemEditForm.name.trim();
-            }
-            if (itemEditForm.description !== (selectedItem.description || "")) {
-                changes.description = itemEditForm.description.trim();
-            }
+        if (itemEditForm.name !== selectedItem.name) {
+            changes.name = itemEditForm.name.trim();
+        }
 
-            if (Number(itemEditForm.price) !== Number(selectedItem.price)) {
-                changes.price = Number(itemEditForm.price);
-            }
+        if (
+            itemEditForm.description !==
+            (selectedItem.description || "")
+        ) {
+            changes.description =
+                itemEditForm.description.trim();
+        }
 
-            if (
-                itemEditForm.is_available !== selectedItem.is_available
-            ) {
-                changes.is_available = itemEditForm.is_available;
-            }
+        if (
+            Number(itemEditForm.price) !==
+            Number(selectedItem.price)
+        ) {
+            changes.price = Number(itemEditForm.price);
+        }
 
-            if (Object.keys(changes).length === 0) {
-                setItemEditError("No changes were made.");
-                return;
-            }
+        if (
+            itemEditForm.is_available !==
+            selectedItem.is_available
+        ) {
+            changes.is_available =
+                itemEditForm.is_available;
+        }
 
-            const updatedItem = await apiFetch(
+        let updatedItem = selectedItem;
+
+        // -----------------------------------------
+        // Update normal item fields if changed
+        // -----------------------------------------
+        if (Object.keys(changes).length > 0) {
+            updatedItem = await apiFetch(
                 `/menu/categories/item/${selectedItem.category_id}/${selectedItem.item_id}`,
                 {
                     method: "PUT",
                     body: JSON.stringify(changes)
                 }
             );
-
-            setItems((previousItems) =>
-                previousItems.map((item) =>
-                    item.item_id === updatedItem.item_id
-                        ? updatedItem
-                        : item
-                )
-            );
-
-
-            setShowItemEditForm(false);
-            setSelectedItem(null);
-
-        } catch (error) {
-            setItemEditError(
-                error.data?.detail ||
-                error.message ||
-                "Unable to edit item."
-            );
-        } finally {
-            setItemEditLoading(false);
         }
 
+        // -----------------------------------------
+        // Add / replace image if selected
+        // -----------------------------------------
+        if (itemEditImage) {
+            setItemImageUploading(true);
+
+            try {
+                updatedItem = await uploadMenuItemImage(
+                    selectedItem.item_id,
+                    itemEditImage
+                );
+            } finally {
+                setItemImageUploading(false);
+            }
+        }
+
+        // -----------------------------------------
+        // Nothing changed at all
+        // -----------------------------------------
+        if (
+            Object.keys(changes).length === 0 &&
+            !itemEditImage
+        ) {
+            setItemEditError("No changes were made.");
+            return;
+        }
+
+        // -----------------------------------------
+        // Update local item state
+        // -----------------------------------------
+        setItems((previousItems) =>
+            previousItems.map((item) =>
+                item.item_id === updatedItem.item_id
+                    ? updatedItem
+                    : item
+            )
+        );
+
+        setShowItemEditForm(false);
+        setSelectedItem(null);
+        setItemEditImage(null);
+        setItemEditImagePreview("");
+
+    } catch (error) {
+        console.error(
+            "Unable to edit menu item:",
+            error
+        );
+
+        if (error.status === 401) {
+            navigate("/login");
+            return;
+        }
+
+        if (error.status === 403) {
+            navigate("/");
+            return;
+        }
+
+        setItemEditError(
+            error.data?.detail ||
+            error.message ||
+            "Unable to edit item."
+        );
+
+    } finally {
+        setItemEditLoading(false);
+        setItemImageUploading(false);
     }
+}
 
     async function deleteItem() {
         if (!selectedItem) return;
@@ -1710,7 +1779,13 @@ disabled={itemLoading || itemImageUploading}                                >
 
                             <button
                                 className="shop-modal-close"
-                                onClick={() => setShowItemEditForm(false)}
+                                onClick={() => {
+    setShowItemEditForm(false);
+    setSelectedItem(null);
+    setItemEditImage(null);
+    setItemEditImagePreview("");
+    setItemEditError("");
+}}  
                             >
                                 ×
                             </button>
@@ -1754,6 +1829,35 @@ disabled={itemLoading || itemImageUploading}                                >
                             </div>
 
 
+                            <div className="form-group">
+
+    <label htmlFor="edit_item_image">
+        Food Image
+    </label>
+
+    <input
+        id="edit_item_image"
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handleItemEditImageChange}
+        disabled={
+            itemEditLoading ||
+            itemImageUploading
+        }
+    />
+
+    {itemEditImagePreview && (
+        <div className="item-image-preview">
+            <img
+                src={itemEditImagePreview}
+                alt={selectedItem.name}
+            />
+        </div>
+    )}
+
+</div>
+
+
 
                             {itemEditError && (
                                 <p className="shop-form-error">
@@ -1791,14 +1895,19 @@ disabled={itemLoading || itemImageUploading}                                >
                             </button>
 
                             <button
-                                className="shop-save-btn"
-                                onClick={saveItemChanges}
-                                disabled={itemEditLoading}
-                            >
-                                {itemEditLoading
-                                    ? "Saving..."
-                                    : "Save Changes"}
-                            </button>
+    className="shop-save-btn"
+    onClick={saveItemChanges}
+    disabled={
+        itemEditLoading ||
+        itemImageUploading
+    }
+>
+    {itemImageUploading
+        ? "Uploading Image..."
+        : itemEditLoading
+            ? "Saving..."
+            : "Save Changes"}
+</button>
 
                         </div>
 

@@ -76,7 +76,9 @@ def get_shop_menu(
                         name=item.name,
                         description=item.description,
                         price=item.price,
-                        is_available=item.is_available
+                        is_available=item.is_available,
+                        image_url=item.image_url
+
                     )
                     for item in items
                 ]

@@ -335,6 +335,69 @@ useEffect(() => {
             );
         }
     }
+
+    function getMenuItemQuantity(itemId) {
+    if (!cart || !cart.items) {
+        return 0;
+    }
+
+    const cartItem = cart.items.find(
+        (cartItem) =>
+            cartItem.menu_item_id === itemId
+    );
+
+    return cartItem ? cartItem.quantity : 0;
+}
+
+async function increaseMenuItem(item) {
+    const currentQuantity =
+        getMenuItemQuantity(item.item_id);
+
+    if (currentQuantity === 0) {
+        await addToCart(item.item_id);
+        return;
+    }
+
+    const cartItem = cart.items.find(
+        (cartItem) =>
+            cartItem.menu_item_id === item.item_id
+    );
+
+    if (!cartItem) {
+        return;
+    }
+
+    await updateCartQuantity(
+        cartItem.cart_item_id,
+        currentQuantity + 1
+    );
+}
+
+
+async function decreaseMenuItem(item) {
+    const cartItem = cart?.items?.find(
+        (cartItem) =>
+            cartItem.menu_item_id === item.item_id
+    );
+
+    if (!cartItem) {
+        return;
+    }
+
+    if (cartItem.quantity === 1) {
+        await removeFromCart(
+            cartItem.cart_item_id
+        );
+        return;
+    }
+
+    await updateCartQuantity(
+        cartItem.cart_item_id,
+        cartItem.quantity - 1
+    );
+}
+
+
     async function logout() {
 
         try {
@@ -1325,36 +1388,69 @@ useEffect(() => {
                                     {category.items.map(item => (
 
                                         <div
-                                            key={item.item_id}
-                                            className="food-card"
-                                        >
+    key={item.item_id}
+    className="food-card"
+>
+    <div className="food-item-image">
+        {item.image_url ? (
+            <img
+                src={`http://127.0.0.1:8000${item.image_url}`}
+                alt={item.name}
+            />
+        ) : (
+            <div className="food-item-image-placeholder">
+                No Image
+            </div>
+        )}
+    </div>
 
-                                            <div className="food-card-info">
+    <div className="food-card-info">
+        <h4>
+            {item.name}
+        </h4>
 
-                                                <h4>
-                                                    {item.name}
-                                                </h4>
+        <p>
+            {item.description || "No description"}
+        </p>
 
-                                                <p>
-                                                    {item.description}
-                                                </p>
+        <strong>
+            ₹{Number(
+                item.price
+            ).toFixed(2)}
+        </strong>
+    </div>
 
-                                                <strong>
-                                                    ₹{Number(
-                                                        item.price
-                                                    ).toFixed(2)}
-                                                </strong>
+    <div className="menu-quantity-control">
 
-                                            </div>
+    <button
+        type="button"
+        className="menu-quantity-button"
+        disabled={
+            getMenuItemQuantity(item.item_id) === 0
+        }
+        onClick={() =>
+            decreaseMenuItem(item)
+        }
+    >
+        −
+    </button>
 
-                                            <button
-                                                className="add-button"
-                                                onClick={() => addToCart(item.item_id)}
-                                            >
-                                                Add
-                                            </button>
+    <span className="menu-quantity-value">
+        {getMenuItemQuantity(item.item_id)}
+    </span>
 
-                                        </div>
+    <button
+        type="button"
+        className="menu-quantity-button"
+        onClick={() =>
+            increaseMenuItem(item)
+        }
+    >
+        +
+    </button>
+
+</div>
+</div>
 
                                     ))}
 

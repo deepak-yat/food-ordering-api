@@ -8,6 +8,7 @@ class CustomerMenuItemResponse(BaseModel):
     description: str | None
     price: float
     is_available: bool
+    image_url:str|None =  None
 
 
 class CustomerMenuCategoryResponse(BaseModel):
