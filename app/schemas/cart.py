@@ -1,26 +1,48 @@
 from pydantic import BaseModel, Field
-
+from app.schemas.menu_item_option import MenuItemOptionResponse
 
 class AddCartItem(BaseModel):
+
     menu_item_id: int
+
     quantity: int = Field(
         gt=0
     )
 
+    option_ids: list[int] = Field(
+        default_factory=list
+    )
+    option_quantities: dict[int, int] = Field(
+        default_factory=dict
+    )
 
 class UpdateCartItem(BaseModel):
     quantity: int = Field(
         gt=0
     )
+class CartItemOptionResponse(BaseModel):
+
+    option_id: int
+    group_id: int
+    name: str
+    price: float
+    quantity:int
+    is_available: bool
+    display_order: int
+
 
 class CartItemResponse(BaseModel):
+
     cart_item_id: int
     menu_item_id: int
     name: str
     quantity: int
     unit_price: float
     subtotal: float
-
+    options: list[CartItemOptionResponse] = Field(
+        default_factory=list
+    )
+    option_ids: list[int] = []
 
 class CartResponse(BaseModel):
 

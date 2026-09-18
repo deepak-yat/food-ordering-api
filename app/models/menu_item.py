@@ -29,3 +29,7 @@ class MenuItem(SQLModel,table=True):
         default=True
     )
     image_url : str | None =  None
+
+    has_options: bool = Field(default=False)
+    allow_parent_purchase: bool = Field(default=True)
+

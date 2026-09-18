@@ -13,3 +13,6 @@ from app.models.password_reset_token import PasswordResetToken
 from app.models.shop_billing import ShopMonthlyBilling
 from app.models.message import Message
 from app.models.message_recipient import MessageRecipient
+from app.models.menu_item_option_group import MenuItemOptionGroup
+from app.models.menu_item_option import MenuItemOption
+from app.models.cart_item_option import CartItemOption

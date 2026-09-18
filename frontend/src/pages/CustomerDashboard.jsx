@@ -9,12 +9,12 @@ function CustomerDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
-const [searchResults, setSearchResults] = useState({
-    shops: [],
-    items: [],
-});
-const [searchLoading, setSearchLoading] = useState(false);
-const [showSearchResults, setShowSearchResults] = useState(false);
+    const [searchResults, setSearchResults] = useState({
+        shops: [],
+        items: [],
+    });
+    const [searchLoading, setSearchLoading] = useState(false);
+    const [showSearchResults, setShowSearchResults] = useState(false);
     const [searchedItemId, setSearchedItemId] = useState(null);
 
     const [selectedShop, setSelectedShop] = useState(null);
@@ -22,8 +22,13 @@ const [showSearchResults, setShowSearchResults] = useState(false);
     const [menuLoading, setMenuLoading] = useState(false);
     const navigate = useNavigate();
     const [cart, setCart] = useState(null);
+    const [expandedItems, setExpandedItems] = useState({});
     const [cartLoading, setCartLoading] = useState(true);
     const [cartConflict, setCartConflict] = useState(null);
+    const [selectedConfigItem, setSelectedConfigItem] = useState(null);
+    const [selectedOptions, setSelectedOptions] = useState({});
+    const [configQuantity, setConfigQuantity] = useState(1);
+    const [configError, setConfigError] = useState("");
     const [showCheckout, setShowCheckout] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
 
@@ -38,47 +43,47 @@ const [showSearchResults, setShowSearchResults] = useState(false);
     });
     const [currentShopPage, setCurrentShopPage] = useState(1);
 
-const shopsPerPage = 6;
+    const shopsPerPage = 6;
 
-const totalShopPages = Math.ceil(
-    shops.length / shopsPerPage
-);
-
-const startShopIndex =
-    (currentShopPage - 1) * shopsPerPage;
-
-const visibleShops = shops.slice(
-    startShopIndex,
-    startShopIndex + shopsPerPage
-);
-
-useEffect(() => {
-    setCurrentShopPage(1);
-}, [shops]);
-useEffect(() => {
-    const timeout = setTimeout(() => {
-        searchFoodly(searchQuery);
-    }, 250);
-    
-    return () => clearTimeout(timeout);
-}, [searchQuery]);
-
-useEffect(() => {
-    if (!searchedItemId || !selectedShop) {
-        return;
-    }
-   
-    const element = document.getElementById(
-        `searched-food-${searchedItemId}`
+    const totalShopPages = Math.ceil(
+        shops.length / shopsPerPage
     );
 
-    if (element) {
-        element.scrollIntoView({
-            behavior: "smooth",
-            block: "center",
-        });
-    }
-}, [menu, searchedItemId, selectedShop]);
+    const startShopIndex =
+        (currentShopPage - 1) * shopsPerPage;
+
+    const visibleShops = shops.slice(
+        startShopIndex,
+        startShopIndex + shopsPerPage
+    );
+
+    useEffect(() => {
+        setCurrentShopPage(1);
+    }, [shops]);
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            searchFoodly(searchQuery);
+        }, 250);
+
+        return () => clearTimeout(timeout);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (!searchedItemId || !selectedShop) {
+            return;
+        }
+
+        const element = document.getElementById(
+            `searched-food-${searchedItemId}`
+        );
+
+        if (element) {
+            element.scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+            });
+        }
+    }, [menu, searchedItemId, selectedShop]);
     const [addresses, setAddresses] = useState([]);
     const [selectedAddressId, setSelectedAddressId] = useState(null);
     const [showAddAddress, setShowAddAddress] = useState(false);
@@ -90,8 +95,8 @@ useEffect(() => {
         state: "",
         pincode: "",
         is_default: false,
-        latitude : null,
-        longitude : null
+        latitude: null,
+        longitude: null
     });
 
     const [addressSaving, setAddressSaving] = useState(false);
@@ -103,8 +108,8 @@ useEffect(() => {
     const [locationLoading, setLocationLoading] = useState(false);
     const [locationError, setLocationError] = useState("");
     const [currentLocation, setCurrentLocation] = useState({
-    latitude: null,
-    longitude: null
+        latitude: null,
+        longitude: null
     });
 
     const [deliveryCharge, setDeliveryCharge] = useState(null);
@@ -116,11 +121,11 @@ useEffect(() => {
         loadAddresses();
     }, []);
 
-useEffect(() => {
-    if (showCheckout && selectedAddressId) {
-        calculateDeliveryCharge(selectedAddressId);
-    }
-}, [showCheckout]);
+    useEffect(() => {
+        if (showCheckout && selectedAddressId) {
+            calculateDeliveryCharge(selectedAddressId);
+        }
+    }, [showCheckout]);
 
     async function loadShops() {
         try {
@@ -172,16 +177,17 @@ useEffect(() => {
         setError("");
     }
 
-    async function addToCart(itemId) {
+    async function addToCart(itemId, optionIds = [], quantity = 1)  {
         try {
             await apiFetch(
                 "/customer/cart/items",
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        menu_item_id: itemId,
-                        quantity: 1
-                    })
+    menu_item_id: itemId,
+    quantity: quantity,
+    option_ids: optionIds
+})
                 }
             );
 
@@ -217,6 +223,83 @@ useEffect(() => {
             );
         }
     }
+
+    function openItemConfiguration(item){
+        setSelectedConfigItem(item);
+        setSelectedOptions({});
+        setConfigQuantity(1);
+        setConfigError("");
+    }
+
+    function toggleItemOptions(itemId) {
+    setExpandedItems((previous) => ({
+        ...previous,
+        [itemId]: !previous[itemId]
+    }));
+    }
+
+    function closeItemConfiguration(){
+        setSelectedConfigItem(null);
+        setSelectedOptions({});
+        setConfigQuantity(1);
+        setConfigError("");
+    }
+
+
+    function handleOptionSelection(group, optionId) {
+    setSelectedOptions((previous) => {
+
+        const currentSelection =
+            previous[group.group_id] || [];
+
+        if (group.selection_type === "SINGLE") {
+
+            return {
+                ...previous,
+                [group.group_id]: [optionId]
+            };
+        }
+
+        const alreadySelected =
+            currentSelection.includes(optionId);
+
+        if (alreadySelected) {
+
+            return {
+                ...previous,
+                [group.group_id]:
+                    currentSelection.filter(
+                        (id) => id !== optionId
+                    )
+            };
+        }
+
+        return {
+            ...previous,
+            [group.group_id]: [
+                ...currentSelection,
+                optionId
+            ]
+        };
+    });
+}
+
+async function addConfiguredItem(item) {
+    const optionIds = Object.values(selectedOptions).flat();
+
+    if (optionIds.length === 0) {
+        setConfigError("Please select an option.");
+        return;
+    }
+
+    await addToCart(
+        item.item_id,
+        optionIds,
+        configQuantity
+    );
+
+    setConfigError("");
+}
 
     async function replaceCartAndAddItem() {
         if (!cartConflict) {
@@ -267,6 +350,8 @@ useEffect(() => {
             );
 
             setCart(data);
+            console.log("CART DATA:", data);
+console.log("CART ITEMS:", data.items);
 
         } catch (error) {
 
@@ -337,65 +422,93 @@ useEffect(() => {
     }
 
     function getMenuItemQuantity(itemId) {
+        if (!cart || !cart.items) {
+            return 0;
+        }
+
+        const cartItem = cart.items.find(
+            (cartItem) =>
+                cartItem.menu_item_id === itemId
+        );
+
+        return cartItem ? cartItem.quantity : 0;
+    }
+
+
+    function getConfiguredItemQuantity(itemId, optionIds) {
     if (!cart || !cart.items) {
         return 0;
     }
 
-    const cartItem = cart.items.find(
-        (cartItem) =>
-            cartItem.menu_item_id === itemId
-    );
+    const sortedOptionIds = [...optionIds].sort();
+
+    const cartItem = cart.items.find((cartItem) => {
+        if (cartItem.menu_item_id !== itemId) {
+            return false;
+        }
+
+        const cartOptionIds = (cartItem.option_ids || [])
+            .slice()
+            .sort();
+
+        return (
+            cartOptionIds.length === sortedOptionIds.length &&
+            cartOptionIds.every(
+                (id, index) => id === sortedOptionIds[index]
+            )
+        );
+    });
 
     return cartItem ? cartItem.quantity : 0;
 }
 
-async function increaseMenuItem(item) {
-    const currentQuantity =
-        getMenuItemQuantity(item.item_id);
+    async function increaseMenuItem(item) {
+        const currentQuantity =
+            getMenuItemQuantity(item.item_id);
 
-    if (currentQuantity === 0) {
-        await addToCart(item.item_id);
-        return;
-    }
+        if (currentQuantity === 0) {
+            await addToCart(item.item_id);
+            return;
+        }
 
-    const cartItem = cart.items.find(
-        (cartItem) =>
-            cartItem.menu_item_id === item.item_id
-    );
-
-    if (!cartItem) {
-        return;
-    }
-
-    await updateCartQuantity(
-        cartItem.cart_item_id,
-        currentQuantity + 1
-    );
-}
-
-
-async function decreaseMenuItem(item) {
-    const cartItem = cart?.items?.find(
-        (cartItem) =>
-            cartItem.menu_item_id === item.item_id
-    );
-
-    if (!cartItem) {
-        return;
-    }
-
-    if (cartItem.quantity === 1) {
-        await removeFromCart(
-            cartItem.cart_item_id
+        const cartItem = cart.items.find(
+            (cartItem) =>
+                cartItem.menu_item_id === item.item_id
         );
-        return;
+
+        if (!cartItem) {
+            return;
+        }
+
+        await updateCartQuantity(
+            cartItem.cart_item_id,
+            currentQuantity + 1
+        );
     }
 
-    await updateCartQuantity(
-        cartItem.cart_item_id,
-        cartItem.quantity - 1
-    );
-}
+
+    async function decreaseMenuItem(item) {
+        const cartItem = cart?.items?.find(
+            (cartItem) =>
+                cartItem.menu_item_id === item.item_id
+        );
+
+        if (!cartItem) {
+            return;
+        }
+
+        if (cartItem.quantity === 1) {
+            await removeFromCart(
+                cartItem.cart_item_id
+            );
+            return;
+        }
+
+        await updateCartQuantity(
+            cartItem.cart_item_id,
+            cartItem.quantity - 1
+        );
+    }
 
 
     async function logout() {
@@ -564,7 +677,7 @@ async function decreaseMenuItem(item) {
         }
     }
 
- 
+
     async function saveAddress() {
         setAddressSaving(true);
         setAddressFormError("");
@@ -619,8 +732,8 @@ async function decreaseMenuItem(item) {
                 state: "",
                 pincode: "",
                 is_default: false,
-                latitude : null,
-                longitude : null
+                latitude: null,
+                longitude: null
             });
 
         } catch (error) {
@@ -677,188 +790,188 @@ async function decreaseMenuItem(item) {
         }
     }
 
-   function useCurrentLocation() {
+    function useCurrentLocation() {
 
-    console.log("USE CURRENT LOCATION CALLED");
+        console.log("USE CURRENT LOCATION CALLED");
 
-    setLocationError("");
-    setLocationLoading(true);
+        setLocationError("");
+        setLocationLoading(true);
 
-    if (!navigator.geolocation) {
+        if (!navigator.geolocation) {
 
-        console.log("GEOLOCATION NOT SUPPORTED");
+            console.log("GEOLOCATION NOT SUPPORTED");
 
-        setLocationError(
-            "Geolocation is not supported by your browser."
-        );
+            setLocationError(
+                "Geolocation is not supported by your browser."
+            );
 
-        setLocationLoading(false);
+            setLocationLoading(false);
 
-        return;
-    }
+            return;
+        }
 
-    console.log("REQUESTING LOCATION");
+        console.log("REQUESTING LOCATION");
 
-    navigator.geolocation.getCurrentPosition(
+        navigator.geolocation.getCurrentPosition(
 
-        async (position) => {
+            async (position) => {
 
-            const latitude = position.coords.latitude;
-            const longitude = position.coords.longitude;
+                const latitude = position.coords.latitude;
+                const longitude = position.coords.longitude;
 
-            console.log("LOCATION RECEIVED");
-            console.log("LATITUDE:", latitude);
-            console.log("LONGITUDE:", longitude);
+                console.log("LOCATION RECEIVED");
+                console.log("LATITUDE:", latitude);
+                console.log("LONGITUDE:", longitude);
 
-            try {
+                try {
 
-                const response = await fetch(
-                    "http://127.0.0.1:8000/customer/addresses/reverse-geocode",
-                    {
-                        method: "POST",
-                        credentials: "include",
-                        headers: {
-                            "Content-Type": "application/json"
-                        },
-                        body: JSON.stringify({
-                            latitude: latitude,
-                            longitude: longitude
-                        })
+                    const response = await fetch(
+                        "http://127.0.0.1:8000/customer/addresses/reverse-geocode",
+                        {
+                            method: "POST",
+                            credentials: "include",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                latitude: latitude,
+                                longitude: longitude
+                            })
+                        }
+                    );
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(
+                            data.detail ||
+                            "Unable to determine your address"
+                        );
                     }
-                );
 
-                const data = await response.json();
+                    console.log(
+                        "REVERSE GEOCODE RESULT:",
+                        data
+                    );
 
-                if (!response.ok) {
-                    throw new Error(
-                        data.detail ||
+                    setAddressForm((previous) => ({
+                        ...previous,
+
+                        address_line1:
+                            data.address_line1 ||
+                            previous.address_line1,
+
+                        city:
+                            data.city ||
+                            previous.city,
+
+                        state:
+                            data.state ||
+                            previous.state,
+
+                        pincode:
+                            data.pincode ||
+                            previous.pincode,
+
+                        latitude: latitude,
+                        longitude: longitude
+                    }));
+
+                } catch (error) {
+
+                    console.error(
+                        "REVERSE GEOCODING ERROR:",
+                        error
+                    );
+
+                    setLocationError(
+                        error.message ||
                         "Unable to determine your address"
                     );
+
+                } finally {
+
+                    setLocationLoading(false);
                 }
+            },
 
-                console.log(
-                    "REVERSE GEOCODE RESULT:",
-                    data
-                );
-
-                setAddressForm((previous) => ({
-                    ...previous,
-
-                    address_line1:
-                        data.address_line1 ||
-                        previous.address_line1,
-
-                    city:
-                        data.city ||
-                        previous.city,
-
-                    state:
-                        data.state ||
-                        previous.state,
-
-                    pincode:
-                        data.pincode ||
-                        previous.pincode,
-
-                    latitude: latitude,
-                    longitude: longitude
-                }));
-
-            } catch (error) {
+            (error) => {
 
                 console.error(
-                    "REVERSE GEOCODING ERROR:",
+                    "GEOLOCATION ERROR:",
                     error
                 );
 
                 setLocationError(
-                    error.message ||
-                    "Unable to determine your address"
+                    "Unable to get your current location. Please allow location access."
                 );
 
-            } finally {
-
                 setLocationLoading(false);
+            },
+
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             }
-        },
-
-        (error) => {
-
-            console.error(
-                "GEOLOCATION ERROR:",
-                error
-            );
-
-            setLocationError(
-                "Unable to get your current location. Please allow location access."
-            );
-
-            setLocationLoading(false);
-        },
-
-        {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-        }
-    );
-}
+        );
+    }
 
 
-    async function calculateDeliveryCharge(addressId){
-        if(!cart || !addressId){
+    async function calculateDeliveryCharge(addressId) {
+        if (!cart || !addressId) {
             return;
         }
         setDeliveryLoading(true);
-        setDeliveryError(""); 
+        setDeliveryError("");
         try {
             const response = await fetch(
                 "http://127.0.0.1:8000/customer/delivery-charge",
                 {
                     method: "POST",
-                    credentials:"include",
-                    headers:{
-                        "Content-Type" : "application/json"
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        shop_id:cart.shop_id,
-                        address_id:addressId
+                        shop_id: cart.shop_id,
+                        address_id: addressId
                     })
                 }
             );
             const data = await response.json();
-            if(!response.ok){
+            if (!response.ok) {
                 throw new Error(
                     data.detail ||
                     "Unable to calculate delivery charge"
                 );
-            }   
+            }
             setDeliveryCharge(data);
-        } catch (error){
+        } catch (error) {
             console.error(
                 "Delivery Charge Error :",
                 error
             );
-             setDeliveryCharge(null);
+            setDeliveryCharge(null);
 
-        setDeliveryError(
-            error.message ||
-            "Unable to calculate delivery charge"
-        );
-        }finally {
+            setDeliveryError(
+                error.message ||
+                "Unable to calculate delivery charge"
+            );
+        } finally {
 
-        setDeliveryLoading(false);
+            setDeliveryLoading(false);
+        }
+
     }
-        
-    }
 
-    async function searchFoodly(query){
+    async function searchFoodly(query) {
         const value = query.trim();
-        if(!value) {
+        if (!value) {
             setSearchResults(
                 {
-                    shops:[],
-                    items:[]
+                    shops: [],
+                    items: []
                 }
             );
             setShowSearchResults(false);
@@ -867,28 +980,28 @@ async function decreaseMenuItem(item) {
         setSearchLoading(true);
         setShowSearchResults(true);
 
-        try{
+        try {
             const response = await fetch(
-            `http://127.0.0.1:8000/customer/search?q=${encodeURIComponent(value)}`,
-            {
-                credentials: "include",
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok){
-            throw newError(
-                data.detail || "search failed"
+                `http://127.0.0.1:8000/customer/search?q=${encodeURIComponent(value)}`,
+                {
+                    credentials: "include",
+                }
             );
-        }
-        setSearchResults(data);
-        } catch (error){
-            console.error("Search failed : ",error)
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw newError(
+                    data.detail || "search failed"
+                );
+            }
+            setSearchResults(data);
+        } catch (error) {
+            console.error("Search failed : ", error)
             setSearchResults(
                 {
-                    shops:[],
-                    items:[]
+                    shops: [],
+                    items: []
                 }
             );
         } finally {
@@ -959,179 +1072,179 @@ async function decreaseMenuItem(item) {
 
             </header>
             <section className="dashboard-header">
-                               <div className="home-search-wrapper">
+                <div className="home-search-wrapper">
 
-    <div className="home-search-box">
+                    <div className="home-search-box">
 
-        <span className="home-search-icon">
-            🔍
-        </span>
+                        <span className="home-search-icon">
+                            🔍
+                        </span>
 
-        <input
-            type="text"
-            placeholder="Search for food or restaurants"
-            value={searchQuery}
-            onChange={(event) =>
-                setSearchQuery(event.target.value)
-            }
-            onFocus={() => {
-                if (searchQuery.trim()) {
-                    setShowSearchResults(true);
-                }
-            }}
-        />
+                        <input
+                            type="text"
+                            placeholder="Search for food or restaurants"
+                            value={searchQuery}
+                            onChange={(event) =>
+                                setSearchQuery(event.target.value)
+                            }
+                            onFocus={() => {
+                                if (searchQuery.trim()) {
+                                    setShowSearchResults(true);
+                                }
+                            }}
+                        />
 
-        {searchQuery && (
-            <button
-                type="button"
-                className="home-search-clear"
-                onClick={() => {
-                    setSearchQuery("");
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                className="home-search-clear"
+                                onClick={() => {
+                                    setSearchQuery("");
 
-                    setSearchResults({
-                        shops: [],
-                        items: [],
-                    });
+                                    setSearchResults({
+                                        shops: [],
+                                        items: [],
+                                    });
 
-                    setShowSearchResults(false);
-                }}
-            >
-                ×
-            </button>
-        )}
+                                    setShowSearchResults(false);
+                                }}
+                            >
+                                ×
+                            </button>
+                        )}
 
-    </div>
+                    </div>
 
 
-    {showSearchResults && (
-        <div className="home-search-dropdown">
+                    {showSearchResults && (
+                        <div className="home-search-dropdown">
 
-            {searchLoading ? (
+                            {searchLoading ? (
 
-                <div className="search-dropdown-loading">
-                    Searching...
+                                <div className="search-dropdown-loading">
+                                    Searching...
+                                </div>
+
+                            ) : (
+
+                                <>
+                                    {searchResults.shops.length > 0 && (
+                                        <div className="search-result-group">
+
+                                            <span className="search-result-heading">
+                                                SHOPS
+                                            </span>
+
+                                            {searchResults.shops.map((shop) => (
+
+                                                <button
+                                                    type="button"
+                                                    key={shop.shop_id}
+                                                    className="search-result-item"
+                                                    onClick={() => {
+                                                        setShowSearchResults(false);
+                                                        setSearchQuery("");
+
+                                                        setSearchedItemId(null);
+
+                                                        viewShopMenu(
+                                                            shop.shop_id
+                                                        );
+                                                    }}
+                                                >
+
+                                                    <div>
+
+                                                        <strong>
+                                                            {shop.shop_name}
+                                                        </strong>
+
+                                                        <span>
+                                                            Restaurant
+                                                        </span>
+
+                                                    </div>
+
+                                                    <span className="search-result-arrow">
+                                                        →
+                                                    </span>
+
+                                                </button>
+
+                                            ))}
+
+                                        </div>
+                                    )}
+
+
+                                    {searchResults.items.length > 0 && (
+                                        <div className="search-result-group">
+
+                                            <span className="search-result-heading">
+                                                FOOD
+                                            </span>
+
+                                            {searchResults.items.map((item) => (
+
+                                                <button
+                                                    type="button"
+                                                    key={item.item_id}
+                                                    className="search-result-item"
+                                                    onClick={() => {
+                                                        setShowSearchResults(false);
+                                                        setSearchQuery("");
+
+                                                        setSearchedItemId(
+                                                            item.item_id
+                                                        );
+
+                                                        viewShopMenu(
+                                                            item.shop_id
+                                                        );
+                                                    }}
+                                                >
+
+                                                    <div>
+
+                                                        <strong>
+                                                            {item.item_name}
+                                                        </strong>
+
+                                                        <span>
+                                                            {item.shop_name}
+                                                        </span>
+
+                                                    </div>
+
+                                                    <span className="search-result-arrow">
+                                                        →
+                                                    </span>
+
+                                                </button>
+
+                                            ))}
+
+                                        </div>
+                                    )}
+
+
+                                    {searchResults.shops.length === 0 &&
+                                        searchResults.items.length === 0 && (
+
+                                            <div className="search-dropdown-empty">
+                                                No results found
+                                            </div>
+
+                                        )}
+
+                                </>
+
+                            )}
+
+                        </div>
+                    )}
+
                 </div>
-
-            ) : (
-
-                <>
-                    {searchResults.shops.length > 0 && (
-                        <div className="search-result-group">
-
-                            <span className="search-result-heading">
-                                SHOPS
-                            </span>
-
-                            {searchResults.shops.map((shop) => (
-
-                                <button
-                                    type="button"
-                                    key={shop.shop_id}
-                                    className="search-result-item"
-                                    onClick={() => {
-                                        setShowSearchResults(false);
-                                        setSearchQuery("");
-
-                                        setSearchedItemId(null);
-
-                                        viewShopMenu(
-                                            shop.shop_id
-                                        );
-                                    }}
-                                >
-
-                                    <div>
-
-                                        <strong>
-                                            {shop.shop_name}
-                                        </strong>
-
-                                        <span>
-                                            Restaurant
-                                        </span>
-
-                                    </div>
-
-                                    <span className="search-result-arrow">
-                                        →
-                                    </span>
-
-                                </button>
-
-                            ))}
-
-                        </div>
-                    )}
-
-
-                    {searchResults.items.length > 0 && (
-                        <div className="search-result-group">
-
-                            <span className="search-result-heading">
-                                FOOD
-                            </span>
-
-                            {searchResults.items.map((item) => (
-
-                                <button
-                                    type="button"
-                                    key={item.item_id}
-                                    className="search-result-item"
-                                    onClick={() => {
-                                        setShowSearchResults(false);
-                                        setSearchQuery("");
-
-                                        setSearchedItemId(
-                                            item.item_id
-                                        );
-
-                                        viewShopMenu(
-                                            item.shop_id
-                                        );
-                                    }}
-                                >
-
-                                    <div>
-
-                                        <strong>
-                                            {item.item_name}
-                                        </strong>
-
-                                        <span>
-                                            {item.shop_name}
-                                        </span>
-
-                                    </div>
-
-                                    <span className="search-result-arrow">
-                                        →
-                                    </span>
-
-                                </button>
-
-                            ))}
-
-                        </div>
-                    )}
-
-
-                    {searchResults.shops.length === 0 &&
-                        searchResults.items.length === 0 && (
-
-                            <div className="search-dropdown-empty">
-                                No results found
-                            </div>
-
-                    )}
-
-                </>
-
-            )}
-
-        </div>
-    )}
-
-</div>
                 <div>
                     <span className="eyebrow">
                         DISCOVER
@@ -1266,55 +1379,54 @@ async function decreaseMenuItem(item) {
 
                     </div>
                     {totalShopPages > 1 && (
-    <div className="shop-pagination">
+                        <div className="shop-pagination">
 
-        <button
-            className="shop-pagination-button"
-            disabled={currentShopPage === 1}
-            onClick={() =>
-                setCurrentShopPage(
-                    currentShopPage - 1
-                )
-            }
-        >
-            ‹
-        </button>
+                            <button
+                                className="shop-pagination-button"
+                                disabled={currentShopPage === 1}
+                                onClick={() =>
+                                    setCurrentShopPage(
+                                        currentShopPage - 1
+                                    )
+                                }
+                            >
+                                ‹
+                            </button>
 
-        {Array.from(
-            { length: totalShopPages },
-            (_, index) => index + 1
-        ).map((page) => (
-            <button
-                key={page}
-                className={`shop-pagination-button ${
-                    currentShopPage === page
-                        ? "active"
-                        : ""
-                }`}
-                onClick={() =>
-                    setCurrentShopPage(page)
-                }
-            >
-                {page}
-            </button>
-        ))}
+                            {Array.from(
+                                { length: totalShopPages },
+                                (_, index) => index + 1
+                            ).map((page) => (
+                                <button
+                                    key={page}
+                                    className={`shop-pagination-button ${currentShopPage === page
+                                            ? "active"
+                                            : ""
+                                        }`}
+                                    onClick={() =>
+                                        setCurrentShopPage(page)
+                                    }
+                                >
+                                    {page}
+                                </button>
+                            ))}
 
-        <button
-            className="shop-pagination-button"
-            disabled={
-                currentShopPage === totalShopPages
-            }
-            onClick={() =>
-                setCurrentShopPage(
-                    currentShopPage + 1
-                )
-            }
-        >
-            ›
-        </button>
+                            <button
+                                className="shop-pagination-button"
+                                disabled={
+                                    currentShopPage === totalShopPages
+                                }
+                                onClick={() =>
+                                    setCurrentShopPage(
+                                        currentShopPage + 1
+                                    )
+                                }
+                            >
+                                ›
+                            </button>
 
-    </div>
-)}
+                        </div>
+                    )}
 
                 </section>
 
@@ -1385,74 +1497,434 @@ async function decreaseMenuItem(item) {
 
                                 <div className="food-list">
 
-                                    {category.items.map(item => (
+                                    {category.items.map((item) => (
 
-                                        <div
-    key={item.item_id}
-    className="food-card"
+    <div
+        key={item.item_id}
+        className={
+            item.has_options
+                ? "config-food-card"
+                : "food-card"
+        }
+    >
+
+        {item.has_options ? (
+
+            <>
+                {/* =========================================
+                    CONFIGURABLE FOOD ITEM
+                    ========================================= */}
+
+                <div className="config-food-main">
+
+                    {/* Food Image */}
+                    <div className="config-food-image">
+
+                        {item.image_url ? (
+                            <img
+                                src={`http://127.0.0.1:8000${item.image_url}`}
+                                alt={item.name}
+                            />
+                        ) : (
+                            <div className="config-food-image-placeholder">
+                                No Image
+                            </div>
+                        )}
+
+                    </div>
+
+
+                    {/* Food Information */}
+                    <div className="config-food-info">
+
+                        <h4>
+                            {item.name}
+                        </h4>
+
+                        <p>
+                            {item.description || "No description"}
+                        </p>
+
+                    </div>
+
+
+                    {/* Dropdown Button */}
+                    {/* Parent Add Button */}
+
+{item.allow_parent_purchase && (
+    <button
+        type="button"
+        className="menu-add-button"
+        onClick={() =>
+            addToCart(item.item_id, [], 1)
+        }
+    >
+        Add
+    </button>
+)}
+
+
+{/* Add On's Button */}
+
+<button
+    type="button"
+    className="config-options-button"
+    onClick={() =>
+        toggleItemOptions(item.item_id)
+    }
+    aria-label={
+        expandedItems[item.item_id]
+            ? "Hide addons"
+            : "Show addons"
+    }
 >
-    <div className="food-item-image">
-        {item.image_url ? (
-            <img
-                src={`http://127.0.0.1:8000${item.image_url}`}
-                alt={item.name}
-            />
+    {item.allow_parent_purchase
+        ? "Add On's"
+        : expandedItems[item.item_id]
+            ? "▲"
+            : "▼"}
+</button>
+
+                </div>
+
+
+                {/* =========================================
+                    OPTIONS DROPDOWN
+                    ========================================= */}
+
+                {expandedItems[item.item_id] && (
+
+                    <div className="config-options-panel">
+
+                        {item.option_groups
+                            ?.filter((group) => group.is_active)
+                            .map((group) => (
+
+                                <div
+                                    key={group.group_id}
+                                    className="config-option-group"
+                                >
+
+                                    {/* Group Header */}
+                                    <div className="config-option-group-header">
+
+                                        <strong>
+                                            {group.name}
+                                        </strong>
+
+                                        {group.required && (
+                                            <span className="config-required">
+                                                Required
+                                            </span>
+                                        )}
+
+                                    </div>
+
+
+                                    {/* Options */}
+                                    <div className="config-option-list">
+
+                                        {group.options
+                                            ?.filter(
+                                                (option) =>
+                                                    option.is_available
+                                            )
+                                            .map((option) => (
+
+                                                <div
+                                                    key={option.option_id}
+                                                    className="config-option-item"
+                                                >
+
+                                                    {/* Option Information */}
+                                                    <div className="config-option-info">
+
+                                                        <span className="config-option-name">
+                                                            {option.name}
+                                                        </span>
+
+                                                        <span className="config-option-price">
+                                                            ₹
+                                                            {Number(
+                                                                option.price
+                                                            ).toFixed(2)}
+                                                        </span>
+
+                                                    </div>
+
+
+                                                    {/* Add / Quantity */}
+                                                    {(() => {
+
+                                                        const optionIds = [
+                                                            option.option_id
+                                                        ];
+
+                                                        const quantity =
+                                                            getConfiguredItemQuantity(
+                                                                item.item_id,
+                                                                optionIds
+                                                            );
+
+
+                                                        /* =====================
+                                                           ADD BUTTON
+                                                           ===================== */
+
+                                                        if (quantity === 0) {
+
+                                                            return (
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="config-add-button"
+                                                                    onClick={async () => {
+
+                                                                        const updatedSelection = {
+                                                                            ...selectedOptions,
+                                                                            [group.group_id]: [
+                                                                                option.option_id
+                                                                            ]
+                                                                        };
+
+                                                                        setSelectedOptions(
+                                                                            updatedSelection
+                                                                        );
+
+                                                                        await addToCart(
+                                                                            item.item_id,
+                                                                            [
+                                                                                option.option_id
+                                                                            ],
+                                                                            1
+                                                                        );
+
+                                                                    }}
+                                                                >
+                                                                    Add
+                                                                </button>
+
+                                                            );
+
+                                                        }
+
+
+                                                        /* =====================
+                                                           FIND CART ITEM
+                                                           ===================== */
+
+                                                        const cartItem =
+                                                            cart?.items?.find(
+                                                                (cartItem) => {
+
+                                                                    if (
+                                                                        cartItem.menu_item_id !==
+                                                                        item.item_id
+                                                                    ) {
+                                                                        return false;
+                                                                    }
+
+                                                                    const cartOptionIds =
+                                                                        (
+                                                                            cartItem.option_ids ||
+                                                                            []
+                                                                        )
+                                                                            .slice()
+                                                                            .sort();
+
+                                                                    const sortedOptionIds =
+                                                                        [
+                                                                            ...optionIds
+                                                                        ].sort();
+
+                                                                    return (
+                                                                        cartOptionIds.length ===
+                                                                            sortedOptionIds.length &&
+                                                                        cartOptionIds.every(
+                                                                            (
+                                                                                id,
+                                                                                index
+                                                                            ) =>
+                                                                                id ===
+                                                                                sortedOptionIds[
+                                                                                    index
+                                                                                ]
+                                                                        )
+                                                                    );
+
+                                                                }
+                                                            );
+
+
+                                                        /* =====================
+                                                           QUANTITY CONTROL
+                                                           ===================== */
+
+                                                        return (
+
+                                                            <div className="config-quantity-control">
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="config-quantity-button"
+                                                                    onClick={() => {
+
+                                                                        if (
+                                                                            quantity ===
+                                                                            1
+                                                                        ) {
+
+                                                                            removeFromCart(
+                                                                                cartItem.cart_item_id
+                                                                            );
+
+                                                                        } else {
+
+                                                                            updateCartQuantity(
+                                                                                cartItem.cart_item_id,
+                                                                                quantity - 1
+                                                                            );
+
+                                                                        }
+
+                                                                    }}
+                                                                >
+                                                                    −
+                                                                </button>
+
+
+                                                                <span className="config-quantity-value">
+                                                                    {quantity}
+                                                                </span>
+
+
+                                                                <button
+                                                                    type="button"
+                                                                    className="config-quantity-button"
+                                                                    onClick={() =>
+                                                                        updateCartQuantity(
+                                                                            cartItem.cart_item_id,
+                                                                            quantity + 1
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    +
+                                                                </button>
+
+                                                            </div>
+
+                                                        );
+
+                                                    })()}
+
+                                                </div>
+
+                                            ))}
+
+                                    </div>
+
+                                </div>
+
+                            ))}
+
+                    </div>
+
+                )}
+
+            </>
+
         ) : (
-            <div className="food-item-image-placeholder">
-                No Image
-            </div>
+
+            /* =========================================
+               NORMAL FOOD ITEM
+               ========================================= */
+
+            <>
+                <div className="food-item-image">
+
+                    {item.image_url ? (
+                        <img
+                            src={`http://127.0.0.1:8000${item.image_url}`}
+                            alt={item.name}
+                        />
+                    ) : (
+                        <div className="food-item-image-placeholder">
+                            No Image
+                        </div>
+                    )}
+
+                </div>
+
+
+                <div className="food-card-info">
+
+                    <h4>
+                        {item.name}
+                    </h4>
+
+                    <p>
+                        {item.description || "No description"}
+                    </p>
+
+                    <strong>
+                        ₹
+                        {Number(item.price).toFixed(2)}
+                    </strong>
+
+                </div>
+
+
+                {getMenuItemQuantity(item.item_id) === 0 ? (
+
+                    <button
+                        type="button"
+                        className="menu-add-button"
+                        onClick={() =>
+                            addToCart(item.item_id)
+                        }
+                    >
+                        Add
+                    </button>
+
+                ) : (
+
+                    <div className="menu-quantity-control">
+
+                        <button
+                            type="button"
+                            className="menu-quantity-button"
+                            onClick={() =>
+                                decreaseMenuItem(item)
+                            }
+                        >
+                            −
+                        </button>
+
+                        <span className="menu-quantity-value">
+                            {getMenuItemQuantity(item.item_id)}
+                        </span>
+
+                        <button
+                            type="button"
+                            className="menu-quantity-button"
+                            onClick={() =>
+                                increaseMenuItem(item)
+                            }
+                        >
+                            +
+                        </button>
+
+                    </div>
+
+                )}
+
+            </>
+
         )}
+
     </div>
 
-    <div className="food-card-info">
-        <h4>
-            {item.name}
-        </h4>
-
-        <p>
-            {item.description || "No description"}
-        </p>
-
-        <strong>
-            ₹{Number(
-                item.price
-            ).toFixed(2)}
-        </strong>
-    </div>
-
-    <div className="menu-quantity-control">
-
-    <button
-        type="button"
-        className="menu-quantity-button"
-        disabled={
-            getMenuItemQuantity(item.item_id) === 0
-        }
-        onClick={() =>
-            decreaseMenuItem(item)
-        }
-    >
-        −
-    </button>
-
-    <span className="menu-quantity-value">
-        {getMenuItemQuantity(item.item_id)}
-    </span>
-
-    <button
-        type="button"
-        className="menu-quantity-button"
-        onClick={() =>
-            increaseMenuItem(item)
-        }
-    >
-        +
-    </button>
-
-</div>
-</div>
-
-                                    ))}
+))}
 
                                 </div>
 
@@ -1626,15 +2098,15 @@ async function decreaseMenuItem(item) {
                             className="primary-button checkout-button"
                             onClick={() => {
 
-    setShowCheckout(true);
+                                setShowCheckout(true);
 
-    if (selectedAddressId) {
-        calculateDeliveryCharge(
-            selectedAddressId
-        );
-    }
+                                if (selectedAddressId) {
+                                    calculateDeliveryCharge(
+                                        selectedAddressId
+                                    );
+                                }
 
-}}
+                            }}
                         >
                             Continue to Checkout
                         </button>
@@ -1777,65 +2249,65 @@ async function decreaseMenuItem(item) {
 
                         <div className="checkout-summary">
 
-    <div className="checkout-summary-row">
-        <span>Items Total</span>
+                            <div className="checkout-summary-row">
+                                <span>Items Total</span>
 
-        <strong>
-            ₹{Number(cart.total).toFixed(2)}
-        </strong>
-    </div>
-
-
-    <div className="checkout-summary-row">
-        <span>Delivery</span>
-
-        {deliveryLoading ? (
-            <span>Calculating...</span>
-        ) : deliveryCharge ? (
-            <strong>
-                ₹{Number(
-                    deliveryCharge.delivery_fee
-                ).toFixed(2)}
-            </strong>
-        ) : (
-            <span>—</span>
-        )}
-    </div>
+                                <strong>
+                                    ₹{Number(cart.total).toFixed(2)}
+                                </strong>
+                            </div>
 
 
-    {deliveryCharge && (
-        <div className="checkout-distance">
-            Delivery distance:{" "}
-            {Number(
-                deliveryCharge.distance_km
-            ).toFixed(2)} km
-        </div>
-    )}
+                            <div className="checkout-summary-row">
+                                <span>Delivery</span>
+
+                                {deliveryLoading ? (
+                                    <span>Calculating...</span>
+                                ) : deliveryCharge ? (
+                                    <strong>
+                                        ₹{Number(
+                                            deliveryCharge.delivery_fee
+                                        ).toFixed(2)}
+                                    </strong>
+                                ) : (
+                                    <span>—</span>
+                                )}
+                            </div>
 
 
-    {deliveryError && (
-        <p className="address-form-error">
-            {deliveryError}
-        </p>
-    )}
+                            {deliveryCharge && (
+                                <div className="checkout-distance">
+                                    Delivery distance:{" "}
+                                    {Number(
+                                        deliveryCharge.distance_km
+                                    ).toFixed(2)} km
+                                </div>
+                            )}
 
 
-    <div className="checkout-total">
+                            {deliveryError && (
+                                <p className="address-form-error">
+                                    {deliveryError}
+                                </p>
+                            )}
 
-        <span>Grand Total</span>
 
-        <strong>
-            ₹{(
-                Number(cart.total) +
-                Number(
-                    deliveryCharge?.delivery_fee || 0
-                )
-            ).toFixed(2)}
-        </strong>
+                            <div className="checkout-total">
 
-    </div>
+                                <span>Grand Total</span>
 
-</div>
+                                <strong>
+                                    ₹{(
+                                        Number(cart.total) +
+                                        Number(
+                                            deliveryCharge?.delivery_fee || 0
+                                        )
+                                    ).toFixed(2)}
+                                </strong>
+
+                            </div>
+
+                        </div>
 
 
                         <div className="checkout-address-section">
@@ -1863,13 +2335,13 @@ async function decreaseMenuItem(item) {
                                         <div
                                             key={address.address_id}
                                             className={`address-card ${selectedAddressId === address.address_id
-                                                    ? "selected"
-                                                    : ""
+                                                ? "selected"
+                                                : ""
                                                 }`}
                                             onClick={() => {
-    setSelectedAddressId(address.address_id);
-    calculateDeliveryCharge(address.address_id);
-}}
+                                                setSelectedAddressId(address.address_id);
+                                                calculateDeliveryCharge(address.address_id);
+                                            }}
                                         >
                                             <div className="address-card-header">
 
@@ -1928,7 +2400,7 @@ async function decreaseMenuItem(item) {
                                             {addressFormError}
                                         </p>
                                     )}
-                                        
+
                                     <input
                                         type="text"
                                         placeholder="Address Line 1"
@@ -2291,22 +2763,22 @@ async function decreaseMenuItem(item) {
                                     </p>
                                 )}
 
-                            <button
-    type="button"
-    className="use-location-btn"
-    onClick={useCurrentLocation}
-    disabled={locationLoading}
->
-    {locationLoading
-        ? "Getting your location..."
-        : "📍 Use My Current Location"}
-</button>
+                                <button
+                                    type="button"
+                                    className="use-location-btn"
+                                    onClick={useCurrentLocation}
+                                    disabled={locationLoading}
+                                >
+                                    {locationLoading
+                                        ? "Getting your location..."
+                                        : "📍 Use My Current Location"}
+                                </button>
 
-{locationError && (
-    <p className="profile-address-error">
-        {locationError}
-    </p>
-)}
+                                {locationError && (
+                                    <p className="profile-address-error">
+                                        {locationError}
+                                    </p>
+                                )}
 
                                 <input
                                     type="text"
