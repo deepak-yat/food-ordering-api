@@ -1642,7 +1642,7 @@ background: var(--primary-dark);
 .cart-item-price {
     min-width: 80px;
 
-    text-align: right;
+    text-align: center;
 
     color: #a87100;
 }
@@ -12733,7 +12733,7 @@ background: var(--primary-dark);
 
 .cart-item-price {
     min-width: 90px;
-    text-align: right;
+    text-align: center;
 }
 
 
@@ -12802,7 +12802,7 @@ background: var(--primary-dark);
     display: flex;
     align-items: center;
     justify-content: center;
-
+    margin-right: 5px;
     width: 34px;
     height: 34px;
 

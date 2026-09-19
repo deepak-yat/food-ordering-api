@@ -13,7 +13,8 @@ from app.models.shop import Shop
 from app.models.menu_item_option_group import MenuItemOptionGroup
 from app.models.menu_item_option import MenuItemOption
 from app.models.cart_item_option import CartItemOption
-from app.schemas.cart import CartItemOptionResponse
+from app.schemas.cart import CartItemOptionResponse,UpdateCartItemOption
+from app.services.cart_pricing import money, price_cart_item
 router = APIRouter(
     prefix="/customer/cart",
     tags=["Customer Cart"]
@@ -49,10 +50,6 @@ def add_to_cart(
 
     # ----------------------------------------
     # Get active option groups
-    #
-    # This must happen even when no options
-    # are supplied because ADD mode detection
-    # is also needed for parent-only purchases.
     # ----------------------------------------
 
     option_groups = db.exec(
@@ -61,6 +58,15 @@ def add_to_cart(
             MenuItemOptionGroup.is_active == True
         )
     ).all()
+
+    # ----------------------------------------
+    # Build group maps
+    # ----------------------------------------
+
+    group_map = {
+        group.group_id: group
+        for group in option_groups
+    }
 
     # ----------------------------------------
     # Validate selected options
@@ -89,15 +95,6 @@ def add_to_cart(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="This item does not have options"
             )
-
-        # ------------------------------------
-        # Create option group map
-        # ------------------------------------
-
-        group_map = {
-            group.group_id: group
-            for group in option_groups
-        }
 
         # ------------------------------------
         # Get selected options
@@ -151,7 +148,6 @@ def add_to_cart(
         selections_by_group = {}
 
         for option in selected_options:
-
             selections_by_group.setdefault(
                 option.group_id,
                 []
@@ -216,9 +212,6 @@ def add_to_cart(
 
         # ------------------------------------
         # No options supplied
-        #
-        # This represents a parent-only
-        # purchase for an ADD-mode item.
         # ------------------------------------
 
         if (
@@ -231,7 +224,37 @@ def add_to_cart(
             )
 
     # ----------------------------------------
-    # Find the customer's existing active cart
+    # Build option mode/group lookup
+    # ----------------------------------------
+
+    option_mode = {
+        option.option_id: group_map[option.group_id].price_mode
+        for option in selected_options
+    }
+
+    option_group = {
+        option.option_id: option.group_id
+        for option in selected_options
+    }
+
+    # ----------------------------------------
+    # Incoming REPLACE and ADD options
+    # ----------------------------------------
+
+    incoming_replace = {
+        option.option_id
+        for option in selected_options
+        if option_mode.get(option.option_id) == "REPLACE"
+    }
+
+    incoming_add = [
+        option
+        for option in selected_options
+        if option_mode.get(option.option_id) == "ADD"
+    ]
+
+    # ----------------------------------------
+    # Find customer's existing active cart
     # ----------------------------------------
 
     cart = db.exec(
@@ -303,222 +326,230 @@ def add_to_cart(
         )
     ).all()
 
-    incoming_option_ids = set(data.option_ids)
+    # ----------------------------------------
+    # Helper: load options attached to a row
+    # ----------------------------------------
+
+    def load_links(cart_item):
+        return db.exec(
+            select(CartItemOption).where(
+                CartItemOption.cart_item_id ==
+                cart_item.cart_item_id
+            )
+        ).all()
+
+    # ----------------------------------------
+    # Find matching CartItem
+    #
+    # IMPORTANT:
+    #
+    # CartItem identity is:
+    #
+    # cart + menu_item + REPLACE options
+    #
+    # ADD options do NOT create a new CartItem.
+    # ----------------------------------------
 
     cart_item = None
 
+    for row in existing_cart_items:
+
+        existing_links = load_links(row)
+
+        existing_replace = {
+            link.option_id
+            for link in existing_links
+            if option_mode.get(link.option_id) == "REPLACE"
+        }
+
+        if existing_replace == incoming_replace:
+            cart_item = row
+            break
+
     # ----------------------------------------
-    # Determine whether this menu item
-    # contains ADD pricing groups
+    # Validate final option selection
+    #
+    # This matters when ADD options are being
+    # attached to an existing CartItem.
     # ----------------------------------------
 
-    add_mode = any(
-        group.price_mode == "ADD"
-        for group in option_groups
-    )
-
-    # ========================================================
-    # ADD MODE
-    # ========================================================
-
-    if add_mode:
-
-        # ------------------------------------
-        # CASE 1:
-        # Parent-only purchase
-        #
-        # Example:
-        #
-        # Chai -> Add
-        #
-        # option_ids = []
-        #
-        # This should create/increase a
-        # parent-only CartItem.
-        # ------------------------------------
-
-        if not incoming_option_ids:
-
-            # Find an existing parent-only
-            # CartItem.
-            for existing_item in existing_cart_items:
-
-                existing_options = db.exec(
-                    select(CartItemOption.option_id).where(
-                        CartItemOption.cart_item_id ==
-                        existing_item.cart_item_id
-                    )
-                ).all()
-
-                if not existing_options:
-
-                    cart_item = existing_item
-                    break
-
-            # Existing parent-only item
-            if cart_item:
-
-                cart_item.quantity += data.quantity
-
-            # No parent-only item exists
-            else:
-
-                cart_item = CartItem(
-                    cart_id=cart.cart_id,
-                    menu_item_id=data.menu_item_id,
-                    quantity=data.quantity
-                )
-
-                db.add(cart_item)
-                db.flush()
-
-        # ------------------------------------
-        # CASE 2:
-        # Add-on purchase
-        #
-        # Example:
-        #
-        # Chai
-        #   + Pazham Pori
-        #
-        # The addon must be attached to
-        # the existing parent CartItem.
-        #
-        # IMPORTANT:
-        # Parent quantity must NOT increase.
-        # ------------------------------------
-
-        else:
-
-            # Find the existing parent-only
-            # CartItem.
-            for existing_item in existing_cart_items:
-
-                existing_options = db.exec(
-                    select(CartItemOption.option_id).where(
-                        CartItemOption.cart_item_id ==
-                        existing_item.cart_item_id
-                    )
-                ).all()
-
-                if not existing_options:
-
-                    cart_item = existing_item
-                    break
-
-            # --------------------------------
-            # Parent must exist first
-            # --------------------------------
-
-            if cart_item is None:
-
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        "Please add the parent item "
-                        "before adding addons"
-                    )
-                )
-
-            # --------------------------------
-            # Get options already attached
-            # to the parent
-            # --------------------------------
-
-            existing_option_ids = set(
-                db.exec(
-                    select(
-                        CartItemOption.option_id
-                    ).where(
-                        CartItemOption.cart_item_id ==
-                        cart_item.cart_item_id
-                    )
-                ).all()
-            )
-
-            # --------------------------------
-            # Attach newly selected addons
-            #
-            # Do NOT increase parent quantity.
-            # --------------------------------
-
-            for option in selected_options:
-
-                if option.option_id not in existing_option_ids:
-
-                    db.add(
-    CartItemOption(
-        cart_item_id=cart_item.cart_item_id,
-        option_id=option.option_id,
-        quantity=data.option_quantities.get(
-            option.option_id,
-            1
-        )
-    )
-)
-
-    # ========================================================
-    # REPLACE MODE / NON-ADD MODE
-    # ========================================================
-
-    else:
-
-        # ------------------------------------
-        # Find exact same configuration
-        # ------------------------------------
-
-        for existing_item in existing_cart_items:
-
-            existing_options = db.exec(
-                select(CartItemOption.option_id).where(
-                    CartItemOption.cart_item_id ==
-                    existing_item.cart_item_id
-                )
-            ).all()
-
-            existing_option_ids = set(existing_options)
-
-            if existing_option_ids == incoming_option_ids:
-
-                cart_item = existing_item
-                break
-
-        # ------------------------------------
-        # Existing configuration
-        # ------------------------------------
+    if data.option_ids:
 
         if cart_item:
 
-            cart_item.quantity += data.quantity
-
-        # ------------------------------------
-        # New configuration
-        # ------------------------------------
+            final_ids = {
+                link.option_id
+                for link in load_links(cart_item)
+            }
 
         else:
+            final_ids = set()
 
-            cart_item = CartItem(
-                cart_id=cart.cart_id,
-                menu_item_id=data.menu_item_id,
-                quantity=data.quantity
+        final_ids |= set(data.option_ids)
+
+        selections = {}
+
+        # Build group lookup using all active
+        # groups for this menu item.
+        all_option_groups = {
+            group.group_id: group
+            for group in option_groups
+        }
+
+        # We need the option -> group relationship
+        # for options already attached to the row.
+        attached_option_ids = list(final_ids)
+
+        if attached_option_ids:
+
+            attached_options = db.exec(
+                select(MenuItemOption).where(
+                    MenuItemOption.option_id.in_(
+                        attached_option_ids
+                    )
+                )
+            ).all()
+
+            for option in attached_options:
+
+                group_id = option.group_id
+
+                if group_id in all_option_groups:
+                    selections.setdefault(
+                        group_id,
+                        set()
+                    ).add(option.option_id)
+
+        for group in option_groups:
+
+            count = len(
+                selections.get(
+                    group.group_id,
+                    set()
+                )
             )
 
-            db.add(cart_item)
-            db.flush()
+            # SINGLE selection validation
+            if (
+                group.selection_type == "SINGLE"
+                and count > 1
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"{group.name} allows only one selection"
+                    )
+                )
 
-            # Store selected options
-            for option in selected_options:
+            # Minimum selection validation
+            if count < group.min_selection:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"{group.name} requires at least "
+                        f"{group.min_selection} selection(s)"
+                    )
+                )
+
+            # Maximum selection validation
+            if (
+                group.max_selection is not None
+                and count > group.max_selection
+            ):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"{group.name} allows at most "
+                        f"{group.max_selection} selection(s)"
+                    )
+                )
+
+            # Required group validation
+            if group.required and count == 0:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"{group.name} is required"
+                )
+
+    # ----------------------------------------
+    # Create new CartItem
+    # ----------------------------------------
+
+    if cart_item is None:
+
+        cart_item = CartItem(
+            cart_id=cart.cart_id,
+            menu_item_id=data.menu_item_id,
+            quantity=data.quantity
+        )
+
+        db.add(cart_item)
+        db.flush()
+
+        # Only REPLACE options belong to the
+        # identity of the parent row.
+        #
+        # ADD options are attached separately
+        # below.
+        for option in selected_options:
+
+            if option_mode.get(option.option_id) == "REPLACE":
 
                 db.add(
-    CartItemOption(
-        cart_item_id=cart_item.cart_item_id,
-        option_id=option.option_id,
-        quantity=data.option_quantities.get(
+                    CartItemOption(
+                        cart_item_id=cart_item.cart_item_id,
+                        option_id=option.option_id,
+                        quantity=1
+                    )
+                )
+
+    # ----------------------------------------
+    # Existing CartItem
+    #
+    # If this request contains only ADD options,
+    # parent quantity must remain unchanged.
+    #
+    # If this is a normal/REPLACE parent add,
+    # increase parent quantity.
+    # ----------------------------------------
+
+    elif not incoming_add:
+
+        cart_item.quantity += data.quantity
+
+    # ----------------------------------------
+    # Handle ADD options
+    # ----------------------------------------
+
+    links = {
+        link.option_id: link
+        for link in load_links(cart_item)
+    }
+
+    for option in incoming_add:
+
+        qty = data.option_quantities.get(
             option.option_id,
             1
         )
-    )
-)
+
+        if option.option_id in links:
+
+            # Existing addon:
+            # increase addon quantity only.
+            links[option.option_id].quantity += qty
+
+        else:
+
+            # New addon:
+            # attach to existing parent.
+            db.add(
+                CartItemOption(
+                    cart_item_id=cart_item.cart_item_id,
+                    option_id=option.option_id,
+                    quantity=qty
+                )
+            )
 
     # ----------------------------------------
     # Save changes
@@ -528,8 +559,7 @@ def add_to_cart(
     db.refresh(cart_item)
 
     # ----------------------------------------
-    # Get the actual options currently
-    # attached to this cart item
+    # Get actual options currently attached
     # ----------------------------------------
 
     current_option_ids = db.exec(
@@ -551,7 +581,6 @@ def add_to_cart(
         "quantity": cart_item.quantity,
         "option_ids": current_option_ids
     }
-
 @router.get(
     "",
     response_model=CartResponse
@@ -584,9 +613,11 @@ def get_cart(
         )
 
     cart_items = db.exec(
-        select(CartItem).where(
+        select(CartItem)
+        .where(
             CartItem.cart_id == cart.cart_id
         )
+        .order_by(CartItem.cart_item_id)
     ).all()
 
     response_items = []
@@ -603,74 +634,37 @@ def get_cart(
             continue
 
         # ----------------------------------------
-        # Get selected options
+        # Calculate authoritative cart pricing
         # ----------------------------------------
 
-        selected_option_ids = db.exec(
-            select(CartItemOption.option_id).where(
-                CartItemOption.cart_item_id ==
-                cart_item.cart_item_id
+        line = price_cart_item(
+            db=db,
+            cart_item=cart_item,
+            base_price=menu_item.price
+        )
+
+        # ----------------------------------------
+        # Convert priced options to response
+        # ----------------------------------------
+
+        response_options = [
+            CartItemOptionResponse(
+                option_id=option.option_id,
+                group_id=option.group_id,
+                name=option.name,
+                price=option.price,
+                quantity=option.quantity,
+                subtotal=option.subtotal,
+                price_mode=option.price_mode,
+                is_available=option.is_available,
+                display_order=option.display_order,
             )
-        ).all()
-
-        selected_options = []
-
-        if selected_option_ids:
-
-            options = db.exec(
-                select(MenuItemOption).where(
-                    MenuItemOption.option_id.in_(
-                        selected_option_ids
-                    )
-                )
-            ).all()
-
-            selected_options = options
+            for option in line.options
+        ]
 
         # ----------------------------------------
-# Calculate authoritative unit price
-# ----------------------------------------
-
-        unit_price = menu_item.price
-
-        options_by_group = {}
-
-        for option in selected_options:
-
-            options_by_group.setdefault(
-            option.group_id,
-            []
-            ).append(option)
-
-
-        for group_id, options in options_by_group.items():
-
-            group = db.get(
-        MenuItemOptionGroup,
-        group_id
-        )
-
-            if group is None:
-                continue
-
-            if group.price_mode == "REPLACE":
-
-        # SINGLE groups should normally have
-        # only one option selected.
-        # The validation above already enforces this.
-                unit_price = options[0].price
-
-            elif group.price_mode == "ADD":
-
-                unit_price += sum(
-                option.price
-                for option in options
-                )
-
-        subtotal = (
-            unit_price *
-            cart_item.quantity
-        )
+        # Build cart item response
+        # ----------------------------------------
 
         response_items.append(
             CartItemResponse(
@@ -678,33 +672,27 @@ def get_cart(
                 menu_item_id=menu_item.item_id,
                 name=menu_item.name,
                 quantity=cart_item.quantity,
-                unit_price=unit_price,
-                subtotal=subtotal,
-                options=[
-                    CartItemOptionResponse(
-                        option_id=option.option_id,
-                        group_id=option.group_id,
-                        name=option.name,
-                        price=option.price,
-                        is_available=option.is_available,
-                        display_order=option.display_order
-                    )
-                    for option in selected_options
+                unit_price=line.unit_price,
+                subtotal=line.subtotal,
+                options_subtotal=line.options_subtotal,
+                line_total=line.line_total,
+                options=response_options,
+                option_ids=[
+                    option.option_id
+                    for option in line.options
                 ],
-                    option_ids=[option.option_id for option in selected_options],
             )
         )
 
-        total += subtotal
+        total += line.line_total
 
     return CartResponse(
         cart_id=cart.cart_id,
         shop_id=cart.shop_id,
         shop_name=shop.shop_name,
         items=response_items,
-        total=total
+        total=money(total)
     )
-
 @router.put("/items/{cart_item_id}")
 def update_cart_item(
     cart_item_id: int,
@@ -838,4 +826,258 @@ def delete_cart(
 
     return {
         "message": "Cart cleared successfully"
+    }
+
+
+@router.put("/items/{cart_item_id}/options/{option_id}")
+def update_cart_item_option(
+    cart_item_id: int,
+    option_id: int,
+    data: UpdateCartItemOption,
+    current_customer: Customer = Depends(get_current_customer),
+    db: Session = Depends(get_db)
+):
+    # ----------------------------------------
+    # Verify cart item belongs to current customer
+    # ----------------------------------------
+
+    cart_item = db.exec(
+        select(CartItem)
+        .join(Cart)
+        .where(
+            CartItem.cart_item_id == cart_item_id,
+            Cart.customer_id == current_customer.customer_id
+        )
+    ).first()
+
+    if cart_item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Cart item not found"
+        )
+
+    # ----------------------------------------
+    # Get option
+    # ----------------------------------------
+
+    option = db.get(
+        MenuItemOption,
+        option_id
+    )
+
+    if option is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Option not found"
+        )
+
+    # ----------------------------------------
+    # Verify option belongs to this menu item
+    # ----------------------------------------
+
+    group = db.exec(
+        select(MenuItemOptionGroup).where(
+            MenuItemOptionGroup.group_id == option.group_id,
+            MenuItemOptionGroup.menu_item_id ==
+            cart_item.menu_item_id
+        )
+    ).first()
+
+    if group is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Option does not belong to this menu item"
+        )
+
+    # ----------------------------------------
+    # Only ADD options have independent quantity
+    # ----------------------------------------
+
+    if group.price_mode != "ADD":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only ADD options can have their own quantity"
+        )
+
+    # ----------------------------------------
+    # Option/group availability
+    # ----------------------------------------
+
+    if not group.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Option group is inactive"
+        )
+
+    if not option.is_available:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{option.name} is currently unavailable"
+        )
+
+    # ----------------------------------------
+    # Find existing link
+    # ----------------------------------------
+
+    cart_item_option = db.exec(
+        select(CartItemOption).where(
+            CartItemOption.cart_item_id == cart_item_id,
+            CartItemOption.option_id == option_id
+        )
+    ).first()
+
+    # ----------------------------------------
+    # Quantity 0 -> remove addon
+    # ----------------------------------------
+
+    if data.quantity == 0:
+
+        if cart_item_option is None:
+            return {
+                "message": "Cart item option removed successfully",
+                "cart_item_id": cart_item_id,
+                "option_id": option_id,
+                "quantity": 0
+            }
+
+        # ------------------------------------
+        # Check remaining selections in group
+        # ------------------------------------
+
+        group_links = db.exec(
+            select(CartItemOption)
+            .join(
+                MenuItemOption,
+                MenuItemOption.option_id ==
+                CartItemOption.option_id
+            )
+            .where(
+                CartItemOption.cart_item_id == cart_item_id,
+                MenuItemOption.group_id == group.group_id
+            )
+        ).all()
+
+        remaining_count = len(group_links) - 1
+
+        # Required/minimum selection validation
+        if remaining_count < group.min_selection:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"{group.name} requires at least "
+                    f"{group.min_selection} selection(s)"
+                )
+            )
+
+        if group.required and remaining_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"{group.name} is required"
+            )
+
+        db.delete(cart_item_option)
+        db.commit()
+
+        return {
+            "message": "Cart item option removed successfully",
+            "cart_item_id": cart_item_id,
+            "option_id": option_id,
+            "quantity": 0
+        }
+
+    # ----------------------------------------
+    # Quantity > 0
+    # ----------------------------------------
+
+    # ----------------------------------------
+    # Get all ADD options currently attached
+    # to this group
+    # ----------------------------------------
+
+    group_links = db.exec(
+        select(CartItemOption)
+        .join(
+            MenuItemOption,
+            MenuItemOption.option_id ==
+            CartItemOption.option_id
+        )
+        .where(
+            CartItemOption.cart_item_id == cart_item_id,
+            MenuItemOption.group_id == group.group_id
+        )
+    ).all()
+
+    existing_option_ids = {
+        link.option_id
+        for link in group_links
+    }
+
+    # ----------------------------------------
+    # If this is a new option, validate
+    # selection limits
+    # ----------------------------------------
+
+    if cart_item_option is None:
+
+        current_selection_count = len(
+            existing_option_ids
+        )
+
+        # SINGLE selection validation
+        if (
+            group.selection_type == "SINGLE"
+            and current_selection_count >= 1
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"{group.name} allows only one selection"
+                )
+            )
+
+        # Maximum selection validation
+        if (
+            group.max_selection is not None
+            and current_selection_count >= group.max_selection
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    f"{group.name} allows at most "
+                    f"{group.max_selection} selection(s)"
+                )
+            )
+
+        # ------------------------------------
+        # Create addon link
+        # ------------------------------------
+
+        cart_item_option = CartItemOption(
+            cart_item_id=cart_item_id,
+            option_id=option_id,
+            quantity=data.quantity
+        )
+
+        db.add(cart_item_option)
+
+    else:
+
+        # ------------------------------------
+        # Existing addon -> update quantity
+        # ------------------------------------
+
+        cart_item_option.quantity = data.quantity
+
+    # ----------------------------------------
+    # Save
+    # ----------------------------------------
+
+    db.commit()
+    db.refresh(cart_item_option)
+
+    return {
+        "message": "Cart item option updated successfully",
+        "cart_item_id": cart_item_id,
+        "option_id": option_id,
+        "quantity": cart_item_option.quantity
     }

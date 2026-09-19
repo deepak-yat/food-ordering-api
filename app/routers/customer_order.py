@@ -14,12 +14,14 @@ from app.models.order_item import OrderItem
 from app.models.customer_addresses import CustomerAddress
 from app.models.order_delivery_address import OrderDeliveryAddress
 from app.models.shop import Shop
+from app.models.cart_item_option import CartItemOption
 from app.schemas.order import (
     CreateOrderRequest,
     OrderResponse,
     OrderItemResponse,
     OrderDeliveryAddressResponse
 )
+from app.services.cart_pricing import price_cart_item
 from app.services.routing import calculate_delivery_distance
 from app.services.delivery import calculate_delivery_fee
 
@@ -132,33 +134,39 @@ def create_order(
     cart_total = 0.0
 
     menu_items = {}
+    priced_items = {}
 
     for cart_item in cart_items:
 
         menu_item = db.exec(
-            select(MenuItem).where(
-                MenuItem.item_id == cart_item.menu_item_id,
-                MenuItem.shop_id == cart.shop_id
-            )
-        ).first()
+        select(MenuItem).where(
+            MenuItem.item_id == cart_item.menu_item_id,
+            MenuItem.shop_id == cart.shop_id
+        )
+    ).first()
 
         if menu_item is None:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Item not found"
-            )
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Item not found"
+        )
 
         if not menu_item.is_available:
             raise HTTPException(
-                status_code=status.HTTP_410_GONE,
-                detail=f"{menu_item.name} is currently unavailable"
-            )
+            status_code=status.HTTP_410_GONE,
+            detail=f"{menu_item.name} is currently unavailable"
+        )
 
-        subtotal = menu_item.price * cart_item.quantity
+        line = price_cart_item(
+            db,
+            cart_item,
+            menu_item.price
+        )
 
-        cart_total += subtotal
+        cart_total += line.line_total
 
         menu_items[cart_item.menu_item_id] = menu_item
+        priced_items[cart_item.cart_item_id] = line
 
     # ----------------------------------------
     # 6. Calculate delivery distance
@@ -231,20 +239,36 @@ def create_order(
     for cart_item in cart_items:
 
         menu_item = menu_items[cart_item.menu_item_id]
+        line = priced_items[cart_item.cart_item_id]
 
-        subtotal = (
-            menu_item.price *
-            cart_item.quantity
-        )
+        variants = [
+        option.name
+        for option in line.options
+        if option.price_mode == "REPLACE"
+    ]
+
+        addons = [
+        f"{option.name} ×{option.quantity}"
+        for option in line.options
+        if option.price_mode == "ADD"
+    ]
+
+        item_name = menu_item.name
+
+        if variants:
+            item_name += f" ({', '.join(variants)})"
+
+        if addons:
+            item_name += f" + {', '.join(addons)}"
 
         order_item = OrderItem(
-            order_id=order.order_id,
-            menu_item_id=menu_item.item_id,
-            item_name=menu_item.name,
-            unit_price=menu_item.price,
-            quantity=cart_item.quantity,
-            subtotal=subtotal
-        )
+        order_id=order.order_id,
+        menu_item_id=menu_item.item_id,
+        item_name=item_name,
+        unit_price=line.unit_price,
+        quantity=cart_item.quantity,
+        subtotal=line.line_total
+    )
 
         db.add(order_item)
 
@@ -252,12 +276,29 @@ def create_order(
     # 11. Remove cart items
     # ----------------------------------------
 
+    # ----------------------------------------
+# 11. Remove cart items
+# ----------------------------------------
+
+    for cart_item in cart_items:
+
+    # Delete child option rows first
+        cart_item_options = db.exec(
+            select(CartItemOption).where(
+            CartItemOption.cart_item_id == cart_item.cart_item_id
+        )
+    ).all()
+
+        for cart_item_option in cart_item_options:
+            db.delete(cart_item_option)
+    db.flush()
+
     for cart_item in cart_items:
         db.delete(cart_item)
 
     db.flush()
 
-    # Remove the active cart
+# Remove the active cart
     db.delete(cart)
 
     # ----------------------------------------

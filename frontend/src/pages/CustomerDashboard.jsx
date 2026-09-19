@@ -200,16 +200,30 @@ async function addToCart(
         await loadCart();
 
     } catch (error) {
-        console.error(
-            "Error adding item to cart:",
-            error
-        );
+    console.error(
+        "Error adding item to cart:",
+        error
+    );
 
-        setError(
-            error.message ||
-            "Unable to add item to cart"
-        );
+    if (error.status === 409) {
+        setCartConflict({
+            itemId: itemId,
+            optionIds: optionIds,
+            quantity: quantity,
+            optionQuantities: optionQuantities,
+            currentShopName: cart?.shop_name || "your current shop",
+            requestedShopName: selectedShop?.shop_name || "the selected shop"
+        });
+
+        setError("");
+        return;
     }
+
+    setError(
+        error.message ||
+        "Unable to add item to cart"
+    );
+}
 }
 
     function openItemConfiguration(item){
@@ -232,6 +246,55 @@ async function addToCart(
         setConfigQuantity(1);
         setConfigError("");
     }
+
+    function getRowsForItem(itemId) {
+    return (
+        cart?.items?.filter(
+            (row) => row.menu_item_id === itemId
+        ) ?? []
+    );
+}
+
+
+function findVariantRow(itemId, optionId) {
+    return (
+        getRowsForItem(itemId).find((row) => {
+
+            const replaceOptions = (
+                row.options ?? []
+            )
+                .filter(
+                    (option) =>
+                        option.price_mode === "REPLACE"
+                )
+                .map(
+                    (option) => option.option_id
+                );
+
+            return (
+                replaceOptions.length === 1 &&
+                replaceOptions[0] === optionId
+            );
+        }) ?? null
+    );
+}
+
+
+function findAddonParentRow(itemId, optionId) {
+    const rows = getRowsForItem(itemId);
+
+    return (
+        rows.find((row) =>
+            row.options?.some(
+                (option) =>
+                    option.option_id === optionId
+            )
+        ) ??
+        rows[0] ??
+        null
+    );
+}
+
 
 
     function handleOptionSelection(group, optionId) {
@@ -307,9 +370,11 @@ async function addConfiguredItem(item) {
                 {
                     method: "POST",
                     body: JSON.stringify({
-                        menu_item_id: cartConflict.itemId,
-                        quantity: 1
-                    })
+    menu_item_id: cartConflict.itemId,
+    quantity: cartConflict.quantity,
+    option_ids: cartConflict.optionIds,
+    option_quantities: cartConflict.optionQuantities
+})
                 }
             );
 
@@ -396,31 +461,20 @@ console.log("CART ITEMS:", data.items);
     optionId,
     quantity
 ) {
-    try {
-        const token = localStorage.getItem("token");
+    if (quantity < 0) {
+        return;
+    }
 
-        const response = await fetch(
-            `http://localhost:8000/customer/cart/items/${cartItemId}/options/${optionId}`,
+    try {
+        await apiFetch(
+            `/customer/cart/items/${cartItemId}/options/${optionId}`,
             {
                 method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
                 body: JSON.stringify({
-                    quantity: quantity,
-                }),
+                    quantity: quantity
+                })
             }
         );
-
-        if (!response.ok) {
-            const errorData = await response.json();
-
-            throw new Error(
-                errorData.detail ||
-                "Failed to update addon quantity"
-            );
-        }
 
         await loadCart();
 
@@ -430,10 +484,12 @@ console.log("CART ITEMS:", data.items);
             error
         );
 
-        alert(error.message);
+        setError(
+            error.message ||
+            "Unable to update add-on quantity"
+        );
     }
 }
-
 
     async function removeFromCart(cartItemId) {
         try {
@@ -676,18 +732,10 @@ console.log("CART ITEMS:", data.items);
         setAddressError("");
 
         try {
-            const response = await fetch(
-                "http://127.0.0.1:8000/customer/addresses",
-                {
-                    credentials: "include",
-                }
-            );
+            const data = await apiFetch(
+    "/customer/addresses"
+);
 
-            if (!response.ok) {
-                throw new Error("Failed to load addresses");
-            }
-
-            const data = await response.json();
 
             setAddresses(data);
 
@@ -716,25 +764,14 @@ console.log("CART ITEMS:", data.items);
         setAddressFormError("");
 
         try {
-            const response = await fetch(
-                "http://127.0.0.1:8000/customer/addresses",
+            const data = await apiFetch(
+                "/customer/addresses",
                 {
                     method: "POST",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
                     body: JSON.stringify(addressForm),
                 }
             );
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail || "Failed to save address"
-                );
-            }
 
             // Add the new address to the existing list
             setAddresses((previousAddresses) => {
@@ -796,18 +833,12 @@ console.log("CART ITEMS:", data.items);
     async function loadPendingOrderCount() {
 
         try {
-            const response = await fetch(
-                "http://127.0.0.1:8000/customer/orders",
-                {
-                    credentials: "include",
-                }
-            );
+            const data = await apiFetch(
+    "/customer/orders/pending-count"
+);
 
-            if (!response.ok) {
-                return;
-            }
+           
 
-            const data = await response.json();
             console.log("CUSTOMER ORDERS:", data);
             const pendingCount = data.filter(
                 (order) => order.status === "pending"
@@ -958,27 +989,16 @@ console.log("CART ITEMS:", data.items);
         setDeliveryLoading(true);
         setDeliveryError("");
         try {
-            const response = await fetch(
-                "http://127.0.0.1:8000/customer/delivery-charge",
-                {
+            const data = await apiFetch(
+                    "/customer/delivery-charge",                {
                     method: "POST",
-                    credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
                     body: JSON.stringify({
                         shop_id: cart.shop_id,
                         address_id: addressId
                     })
                 }
             );
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(
-                    data.detail ||
-                    "Unable to calculate delivery charge"
-                );
-            }
+            
             setDeliveryCharge(data);
         } catch (error) {
             console.error(
@@ -1014,20 +1034,10 @@ console.log("CART ITEMS:", data.items);
         setShowSearchResults(true);
 
         try {
-            const response = await fetch(
-                `http://127.0.0.1:8000/customer/search?q=${encodeURIComponent(value)}`,
-                {
-                    credentials: "include",
-                }
-            );
+            const data = await apiFetch(
+    `/customer/search?q=${encodeURIComponent(searchQuery)}`
+);
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw newError(
-                    data.detail || "search failed"
-                );
-            }
             setSearchResults(data);
         } catch (error) {
             console.error("Search failed : ", error)
@@ -1687,168 +1697,223 @@ console.log("CART ITEMS:", data.items);
 
 
                                                     {/* Add / Quantity */}
-                                                    {(() => {
+{(() => {
+    const isAddOption =
+        group.price_mode === "ADD";
 
-                                                        const optionIds = [
-                                                            option.option_id
-                                                        ];
+    const isReplaceOption =
+        group.price_mode === "REPLACE";
 
-                                                        const quantity =
-                                                            getConfiguredItemQuantity(
-                                                                item.item_id,
-                                                                optionIds
-                                                            );
+    /* =========================================
+       ADD MODE
+       ========================================= */
 
+    if (isAddOption) {
 
-                                                        /* =====================
-                                                           ADD BUTTON
-                                                           ===================== */
+        const parentRow =
+            findAddonParentRow(
+                item.item_id,
+                option.option_id
+            );
 
-                                                        if (quantity === 0) {
+        const addonOption =
+            parentRow?.options?.find(
+                (cartOption) =>
+                    cartOption.option_id ===
+                    option.option_id &&
+                    cartOption.price_mode === "ADD"
+            );
 
-                                                            return (
-
-                                                                <button
-                                                                    type="button"
-                                                                    className="config-add-button"
-                                                                    onClick={async () => {
-
-                                                                        const updatedSelection = {
-                                                                            ...selectedOptions,
-                                                                            [group.group_id]: [
-                                                                                option.option_id
-                                                                            ]
-                                                                        };
-
-                                                                        setSelectedOptions(
-                                                                            updatedSelection
-                                                                        );
-
-                                                                        await addToCart(
-                                                                            item.item_id,
-                                                                            [
-                                                                                option.option_id
-                                                                            ],
-                                                                            1
-                                                                        );
-
-                                                                    }}
-                                                                >
-                                                                    Add
-                                                                </button>
-
-                                                            );
-
-                                                        }
+        const quantity =
+            addonOption?.quantity ?? 0;
 
 
-                                                        /* =====================
-                                                           FIND CART ITEM
-                                                           ===================== */
+        /* -----------------------------------------
+           ADD BUTTON
+           ----------------------------------------- */
 
-                                                        const cartItem =
-                                                            cart?.items?.find(
-                                                                (cartItem) => {
+        if (quantity === 0) {
 
-                                                                    if (
-                                                                        cartItem.menu_item_id !==
-                                                                        item.item_id
-                                                                    ) {
-                                                                        return false;
-                                                                    }
+            return (
+                <button
+                    type="button"
+                    className="config-add-button"
+                    onClick={async () => {
 
-                                                                    const cartOptionIds =
-                                                                        (
-                                                                            cartItem.option_ids ||
-                                                                            []
-                                                                        )
-                                                                            .slice()
-                                                                            .sort();
+                        if (parentRow) {
 
-                                                                    const sortedOptionIds =
-                                                                        [
-                                                                            ...optionIds
-                                                                        ].sort();
+                            await updateCartOptionQuantity(
+                                parentRow.cart_item_id,
+                                option.option_id,
+                                1
+                            );
 
-                                                                    return (
-                                                                        cartOptionIds.length ===
-                                                                            sortedOptionIds.length &&
-                                                                        cartOptionIds.every(
-                                                                            (
-                                                                                id,
-                                                                                index
-                                                                            ) =>
-                                                                                id ===
-                                                                                sortedOptionIds[
-                                                                                    index
-                                                                                ]
-                                                                        )
-                                                                    );
+                        } else {
 
-                                                                }
-                                                            );
+                            await addToCart(
+                                item.item_id,
+                                [option.option_id],
+                                1,
+                                {
+                                    [option.option_id]: 1
+                                }
+                            );
+
+                        }
+
+                    }}
+                >
+                    Add
+                </button>
+            );
+        }
 
 
-                                                        /* =====================
-                                                           QUANTITY CONTROL
-                                                           ===================== */
+        /* -----------------------------------------
+           ADDON QUANTITY CONTROL
+           ----------------------------------------- */
 
-                                                        return (
+        return (
+            <div className="config-quantity-control">
 
-                                                            <div className="config-quantity-control">
-
-                                                                <button
-                                                                    type="button"
-                                                                    className="config-quantity-button"
-                                                                    onClick={() => {
-
-                                                                        if (
-                                                                            quantity ===
-                                                                            1
-                                                                        ) {
-
-                                                                            removeFromCart(
-                                                                                cartItem.cart_item_id
-                                                                            );
-
-                                                                        } else {
-
-                                                                            updateCartQuantity(
-                                                                                cartItem.cart_item_id,
-                                                                                quantity - 1
-                                                                            );
-
-                                                                        }
-
-                                                                    }}
-                                                                >
-                                                                    −
-                                                                </button>
+                <button
+                    type="button"
+                    className="config-quantity-button"
+                    onClick={() =>
+                        updateCartOptionQuantity(
+                            parentRow.cart_item_id,
+                            option.option_id,
+                            quantity - 1
+                        )
+                    }
+                >
+                    −
+                </button>
 
 
-                                                                <span className="config-quantity-value">
-                                                                    {quantity}
-                                                                </span>
+                <span className="config-quantity-value">
+                    {quantity}
+                </span>
 
 
-                                                                <button
-                                                                    type="button"
-                                                                    className="config-quantity-button"
-                                                                    onClick={() =>
-                                                                        updateCartQuantity(
-                                                                            cartItem.cart_item_id,
-                                                                            quantity + 1
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    +
-                                                                </button>
+                <button
+                    type="button"
+                    className="config-quantity-button"
+                    onClick={() =>
+                        updateCartOptionQuantity(
+                            parentRow.cart_item_id,
+                            option.option_id,
+                            quantity + 1
+                        )
+                    }
+                >
+                    +
+                </button>
 
-                                                            </div>
+            </div>
+        );
+    }
 
-                                                        );
 
-                                                    })()}
+    /* =========================================
+       REPLACE MODE
+       ========================================= */
+
+    if (isReplaceOption) {
+
+        const variantRow =
+            findVariantRow(
+                item.item_id,
+                option.option_id
+            );
+
+        const quantity =
+            variantRow?.quantity ?? 0;
+
+
+        /* -----------------------------------------
+           ADD VARIANT
+           ----------------------------------------- */
+
+        if (quantity === 0) {
+
+            return (
+                <button
+                    type="button"
+                    className="config-add-button"
+                    onClick={() =>
+                        addToCart(
+                            item.item_id,
+                            [option.option_id],
+                            1
+                        )
+                    }
+                >
+                    Add
+                </button>
+            );
+        }
+
+
+        /* -----------------------------------------
+           VARIANT QUANTITY CONTROL
+           ----------------------------------------- */
+
+        return (
+            <div className="config-quantity-control">
+
+                <button
+                    type="button"
+                    className="config-quantity-button"
+                    onClick={async () => {
+
+                        if (quantity === 1) {
+
+                            await removeFromCart(
+                                variantRow.cart_item_id
+                            );
+
+                        } else {
+
+                            await updateCartQuantity(
+                                variantRow.cart_item_id,
+                                quantity - 1
+                            );
+
+                        }
+
+                    }}
+                >
+                    −
+                </button>
+
+
+                <span className="config-quantity-value">
+                    {quantity}
+                </span>
+
+
+                <button
+                    type="button"
+                    className="config-quantity-button"
+                    onClick={() =>
+                        updateCartQuantity(
+                            variantRow.cart_item_id,
+                            quantity + 1
+                        )
+                    }
+                >
+                    +
+                </button>
+
+            </div>
+        );
+    }
+
+
+    return null;
+
+})()}
 
                                                 </div>
 
