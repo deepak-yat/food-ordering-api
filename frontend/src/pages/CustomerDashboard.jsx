@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
-
+import Cart from "../components/Cart";
 import {
     useNavigate
 } from "react-router-dom";
@@ -177,52 +177,40 @@ function CustomerDashboard() {
         setError("");
     }
 
-    async function addToCart(itemId, optionIds = [], quantity = 1)  {
-        try {
-            await apiFetch(
-                "/customer/cart/items",
-                {
-                    method: "POST",
-                    body: JSON.stringify({
-    menu_item_id: itemId,
-    quantity: quantity,
-    option_ids: optionIds
-})
-                }
-            );
-
-            await loadCart();
-
-            setError("");
-
-        } catch (error) {
-            console.error(error);
-
-            if (error.status === 401) {
-                navigate("/login");
-                return;
+async function addToCart(
+    itemId,
+    optionIds = [],
+    quantity = 1,
+    optionQuantities = {}
+) {
+    try {
+        await apiFetch(
+            "/customer/cart/items",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    menu_item_id: itemId,
+                    quantity: quantity,
+                    option_ids: optionIds,
+                    option_quantities: optionQuantities,
+                })
             }
+        );
 
-            if (error.status === 409) {
-                const conflict = error.data?.detail;
+        await loadCart();
 
-                setCartConflict({
-                    itemId: itemId,
-                    currentShopName:
-                        conflict?.current_shop_name,
-                    requestedShopName:
-                        conflict?.requested_shop_name
-                });
+    } catch (error) {
+        console.error(
+            "Error adding item to cart:",
+            error
+        );
 
-                return;
-            }
-
-            setError(
-                error.message ||
-                "Unable to add item to cart"
-            );
-        }
+        setError(
+            error.message ||
+            "Unable to add item to cart"
+        );
     }
+}
 
     function openItemConfiguration(item){
         setSelectedConfigItem(item);
@@ -401,6 +389,51 @@ console.log("CART ITEMS:", data.items);
             );
         }
     }
+
+
+    async function updateCartOptionQuantity(
+    cartItemId,
+    optionId,
+    quantity
+) {
+    try {
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+            `http://localhost:8000/customer/cart/items/${cartItemId}/options/${optionId}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    quantity: quantity,
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.json();
+
+            throw new Error(
+                errorData.detail ||
+                "Failed to update addon quantity"
+            );
+        }
+
+        await loadCart();
+
+    } catch (error) {
+        console.error(
+            "Error updating addon quantity:",
+            error
+        );
+
+        alert(error.message);
+    }
+}
+
 
     async function removeFromCart(cartItemId) {
         try {
@@ -1938,183 +1971,22 @@ console.log("CART ITEMS:", data.items);
 
 
             )}
-            <section id="customer-cart" className="customer-cart">
+<Cart
+    cart={cart}
+    cartLoading={cartLoading}
+    updateCartQuantity={updateCartQuantity}
+    updateCartOptionQuantity={updateCartOptionQuantity}
+    removeFromCart={removeFromCart}
+    onCheckout={() => {
+        setShowCheckout(true);
 
-                <div className="section-heading">
-
-                    <span className="eyebrow">
-                        YOUR CART
-                    </span>
-
-                    <h2>
-                        Cart
-                    </h2>
-
-                    <p>
-                        Review your selected items.
-                    </p>
-
-                </div>
-
-
-                {cartLoading && (
-                    <p className="status-text">
-                        Loading cart...
-                    </p>
-                )}
-
-
-                {!cartLoading && !cart && (
-                    <div className="empty-state">
-
-                        <h3>
-                            Your cart is empty
-                        </h3>
-
-                        <p>
-                            Browse a shop and add something
-                            delicious.
-                        </p>
-
-                    </div>
-                )}
-
-
-                {!cartLoading && cart && (
-                    <div className="cart-panel">
-                        <div className="cart-shop-header">
-
-                            <span className="eyebrow">
-                                FROM
-                            </span>
-
-                            <h3>
-                                {cart.shop_name}
-                            </h3>
-
-                        </div>
-
-                        {cart.items.map(item => (
-
-                            <div
-                                key={item.cart_item_id}
-                                className="cart-item"
-                            >
-
-                                <div className="cart-item-info">
-
-                                    <h3>
-                                        {item.name}
-                                    </h3>
-
-                                    <p>
-                                        ₹{Number(
-                                            item.unit_price
-                                        ).toFixed(2)}
-                                        {" "}×{" "}
-                                        {item.quantity}
-                                    </p>
-
-                                </div>
-
-
-                                <div className="cart-item-actions">
-
-                                    <div className="quantity-control">
-
-                                        <button
-                                            onClick={() =>
-                                                updateCartQuantity(
-                                                    item.cart_item_id,
-                                                    item.quantity - 1
-                                                )
-                                            }
-                                            disabled={
-                                                item.quantity <= 1
-                                            }
-                                        >
-                                            −
-                                        </button>
-
-                                        <span>
-                                            {item.quantity}
-                                        </span>
-
-                                        <button
-                                            onClick={() =>
-                                                updateCartQuantity(
-                                                    item.cart_item_id,
-                                                    item.quantity + 1
-                                                )
-                                            }
-                                        >
-                                            +
-                                        </button>
-
-                                    </div>
-
-
-                                    <strong className="cart-item-price">
-                                        ₹{Number(
-                                            item.subtotal
-                                        ).toFixed(2)}
-                                    </strong>
-
-
-                                    <button
-                                        className="remove-button"
-                                        onClick={() =>
-                                            removeFromCart(
-                                                item.cart_item_id
-                                            )
-                                        }
-                                    >
-                                        Remove
-                                    </button>
-
-                                </div>
-
-                            </div>
-
-                        ))}
-
-
-                        <div className="cart-summary">
-
-                            <span>
-                                Total
-                            </span>
-
-                            <strong>
-                                ₹{Number(
-                                    cart.total
-                                ).toFixed(2)}
-                            </strong>
-
-                        </div>
-
-
-                        <button
-                            className="primary-button checkout-button"
-                            onClick={() => {
-
-                                setShowCheckout(true);
-
-                                if (selectedAddressId) {
-                                    calculateDeliveryCharge(
-                                        selectedAddressId
-                                    );
-                                }
-
-                            }}
-                        >
-                            Continue to Checkout
-                        </button>
-
-                    </div>
-                )}
-
-            </section>
+        if (selectedAddressId) {
+            calculateDeliveryCharge(
+                selectedAddressId
+            );
+        }
+    }}
+/>
             {cartConflict && (
                 <div className="cart-conflict-overlay">
 
