@@ -16,3 +16,5 @@ from app.models.message_recipient import MessageRecipient
 from app.models.menu_item_option_group import MenuItemOptionGroup
 from app.models.menu_item_option import MenuItemOption
 from app.models.cart_item_option import CartItemOption
+from app.models.offer import Offer
+from app.models.offer_item import OfferItem

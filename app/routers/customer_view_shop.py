@@ -1,6 +1,11 @@
 from fastapi import APIRouter,HTTPException,status,Depends
 from sqlmodel import Session,select
+from datetime import datetime, timezone
 
+from app.services.offer_pricing import (
+    best_offer,
+    get_live_offers_by_item,
+)
 from app.database import get_db
 from app.models.shop import Shop
 from app.schemas.customer_view_shop import CustomerShopResponse
@@ -8,7 +13,8 @@ from app.models.menu_category import MenuCategory
 from app.models.menu_item import MenuItem
 from app.schemas.customer_menu import (
     CustomerMenuCategoryResponse,
-    CustomerMenuItemResponse
+    CustomerMenuItemResponse,
+    ItemOfferInfo
 )
 
 from app.models.menu_item_option_group import MenuItemOptionGroup
@@ -64,6 +70,26 @@ def get_shop_menu(
         )
     ).all()
 
+    now = datetime.now(timezone.utc)
+
+    all_items = db.exec(
+    select(MenuItem).where(
+        MenuItem.shop_id == shop_id,
+        MenuItem.is_available == True
+    )
+    ).all()
+
+    item_ids = [
+    item.item_id
+    for item in all_items
+    ]
+
+    live_offers_by_item = get_live_offers_by_item(
+    db,
+    item_ids,
+    now=now,
+    )
+
     result = []
 
     for category in categories:
@@ -79,6 +105,49 @@ def get_shop_menu(
         customer_items = []
 
         for item in items:
+            item_offers = live_offers_by_item.get(
+                item.item_id,
+                    []
+                    )
+
+            selected_offer, offer_price = best_offer(
+            effective_unit=item.price,
+            has_variant=False,
+            offers=item_offers,
+                )
+            offer_info = None
+
+            if selected_offer is not None:
+                if selected_offer.discount_type == "PERCENTAGE":
+                    discount_label = (
+                        f"{selected_offer.discount_value:g}% OFF"
+                    )
+                else:
+                    discount_label = (
+                        f"₹{selected_offer.discount_value:g} OFF"
+                    )
+
+                discount_percent = (
+                    (item.price - offer_price)
+                    / item.price
+                    * 100
+                    if item.price > 0
+                    else 0
+                    )
+
+                offer_info = ItemOfferInfo(
+                    offer_id=selected_offer.offer_id,
+                    title=selected_offer.title,
+                    discount_type=selected_offer.discount_type,
+                    discount_label=discount_label,
+                    original_price=item.price,
+                    offer_price=offer_price,
+                    discount_percent=round(
+                            discount_percent,
+                            2
+                        ),
+                    ends_at=selected_offer.end_at.isoformat(),
+                    )
 
             option_groups = []
 
@@ -123,13 +192,28 @@ def get_shop_menu(
                             is_active=group.is_active,
                             options=[
                                 MenuItemOptionResponse(
-                                    option_id=option.option_id,
-                                    group_id=option.group_id,
-                                    name=option.name,
-                                    price=option.price,
-                                    is_available=option.is_available,
-                                    display_order=option.display_order
-                                )
+    option_id=option.option_id,
+    group_id=option.group_id,
+    name=option.name,
+    price=option.price,
+    is_available=option.is_available,
+    display_order=option.display_order,
+    offer_price=(
+        best_offer(
+            effective_unit=option.price,
+            has_variant=True,
+            offers=item_offers,
+        )[1]
+        if group.price_mode == "REPLACE"
+        and item_offers
+        and best_offer(
+            effective_unit=option.price,
+            has_variant=True,
+            offers=item_offers,
+        )[1] < option.price
+        else None
+    ),
+)
                                 for option in options
                             ]
                         )
@@ -146,7 +230,8 @@ def get_shop_menu(
                     image_url=item.image_url,
                     has_options=item.has_options,
                     allow_parent_purchase=item.allow_parent_purchase,
-                    option_groups=option_groups
+                    option_groups=option_groups,
+                    offer=offer_info
                 )
             )
 

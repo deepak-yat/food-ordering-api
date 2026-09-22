@@ -123,15 +123,49 @@ function CustomerOrderDetails() {
                             className="customer-order-details-item"
                         >
 
-                            <div>
-                                <strong>
-                                    {item.item_name}
-                                </strong>
+                            <div className="customer-order-item-info">
 
-                                <span>
-                                    ₹{item.unit_price} × {item.quantity}
-                                </span>
-                            </div>
+    <strong>
+        {item.item_name}
+    </strong>
+
+    {item.offer_id ? (
+        <div className="customer-order-offer">
+
+            <span className="customer-order-offer-title">
+                🔥 {item.offer_title}
+            </span>
+
+            <div className="customer-order-price-row">
+
+                <span className="customer-order-original-price">
+                    ₹{Number(item.original_unit_price).toFixed(2)}
+                </span>
+
+                <strong className="customer-order-discounted-price">
+                    ₹{Number(item.unit_price).toFixed(2)}
+                </strong>
+
+                <span className="customer-order-saved">
+                    Save ₹{Number(item.discount_amount).toFixed(2)}
+                </span>
+
+            </div>
+
+            <span className="customer-order-quantity">
+                × {item.quantity}
+            </span>
+
+        </div>
+    ) : (
+        <span className="customer-order-normal-price">
+            ₹{Number(item.unit_price).toFixed(2)}
+            {" × "}
+            {item.quantity}
+        </span>
+    )}
+
+</div>
 
                             <strong>
                                 ₹{item.subtotal}

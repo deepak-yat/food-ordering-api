@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
 import Cart from "../components/Cart";
+import SpecialOffers from "../components/SpecialOffers";
 import {
     useNavigate
 } from "react-router-dom";
@@ -16,7 +17,7 @@ function CustomerDashboard() {
     const [searchLoading, setSearchLoading] = useState(false);
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [searchedItemId, setSearchedItemId] = useState(null);
-
+    const [activeOfferId, setActiveOfferId] = useState(null);
     const [selectedShop, setSelectedShop] = useState(null);
     const [menu, setMenu] = useState([]);
     const [menuLoading, setMenuLoading] = useState(false);
@@ -67,6 +68,20 @@ function CustomerDashboard() {
 
         return () => clearTimeout(timeout);
     }, [searchQuery]);
+
+    useEffect(() => {
+    if (!activeOfferId || !selectedShop || !menu.length) {
+        return;
+    }
+
+    const targetItem = menu
+        .flatMap((category) => category.items || [])
+        .find((item) => item.offer?.offer_id === activeOfferId);
+
+    if (targetItem && targetItem.item_id !== searchedItemId) {
+        setSearchedItemId(targetItem.item_id);
+    }
+}, [menu, activeOfferId, selectedShop, searchedItemId]);
 
     useEffect(() => {
         if (!searchedItemId || !selectedShop) {
@@ -1305,6 +1320,15 @@ console.log("CART ITEMS:", data.items);
 
             </section>
 
+      {!selectedShop && (
+   <SpecialOffers
+    onOfferClick={async (shopId, offerId) => {
+        setActiveOfferId(offerId);
+        setSearchedItemId(null);
+        await viewShopMenu(shopId);
+    }}
+/>
+)}
 
             {!selectedShop ? (
                 <section className="dashboard-shops">
@@ -1542,14 +1566,16 @@ console.log("CART ITEMS:", data.items);
 
                                     {category.items.map((item) => (
 
-    <div
-        key={item.item_id}
-        className={
-            item.has_options
-                ? "config-food-card"
-                : "food-card"
-        }
-    >
+<div
+    id={`searched-food-${item.item_id}`}
+    key={item.item_id}
+    className={`${item.has_options ? "config-food-card" : "food-card"} ${
+    searchedItemId === item.item_id ||
+    (activeOfferId && item.offer?.offer_id === activeOfferId)
+        ? "searched-food-highlight"
+        : ""
+}`}
+>
 
         {item.has_options ? (
 
@@ -1964,10 +1990,25 @@ console.log("CART ITEMS:", data.items);
                         {item.description || "No description"}
                     </p>
 
-                    <strong>
-                        ₹
-                        {Number(item.price).toFixed(2)}
-                    </strong>
+                    {item.offer ? (
+    <div className="customer-offer-price">
+        <span className="customer-original-price">
+            ₹{Number(item.offer.original_price).toFixed(2)}
+        </span>
+
+        <strong className="customer-discounted-price">
+            ₹{Number(item.offer.offer_price).toFixed(2)}
+        </strong>
+
+        <span className="customer-discount-label">
+            {item.offer.discount_label}
+        </span>
+    </div>
+) : (
+    <strong>
+        ₹{Number(item.price).toFixed(2)}
+    </strong>
+)}
 
                 </div>
 

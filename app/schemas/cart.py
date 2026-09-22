@@ -45,6 +45,11 @@ class CartItemResponse(BaseModel):
     option_ids: list[int] = Field(
         default_factory=list
     )
+    original_unit_price: float
+    discount_per_unit: float
+    discount_total: float
+    offer_id: int | None = None
+    offer_title: str | None = None
 
 class CartResponse(BaseModel):
 

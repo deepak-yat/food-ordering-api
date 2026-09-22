@@ -1,3 +1,5 @@
+@import "./styles/base/base.css";
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -12790,7 +12792,8 @@ background: var(--primary-dark);
 
 .cart-option-actions > strong {
     min-width: 80px;
-    text-align: right;
+    text-align: center;
+    color: #996a00;
 }
 
 
@@ -12910,4 +12913,1404 @@ background: var(--primary-dark);
         justify-content: space-between;
     }
 
+}
+
+/* =========================================
+   CART - PARENT / ADD-ON LAYERED LAYOUT
+   ========================================= */
+
+.cart-item {
+    display: block;
+}
+
+.cart-item-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+}
+
+.cart-item-options {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    margin-left: 0px;
+    padding-left: 5px;
+    border-left: 2px solid #f3d98b;
+}
+
+.cart-options-label {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.cart-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    padding: 10px 0;
+}
+
+.cart-option-info {
+    flex: 1;
+}
+
+.cart-option-actions {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+/* =================================
+   SHOP OFFERS MANAGEMENT
+   ================================= */
+
+.shop-page {
+    min-height: 100vh;
+    background: #f7f7f5;
+    padding: 50px 24px 90px;
+}
+
+.shop-page-header {
+    width: min(1200px, 100%);
+    margin: 0 auto 35px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 25px;
+}
+
+.shop-page-header h1 {
+    font-size: clamp(2rem, 4vw, 3rem);
+    color: #202124;
+}
+
+.shop-page-header p {
+    margin-top: 8px;
+    color: #707070;
+}
+
+
+/* CREATE OFFER BUTTON */
+
+.shop-page-header .primary-btn {
+    flex-shrink: 0;
+
+    padding: 12px 20px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: var(--primary);
+    color: #171717;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.shop-page-header .primary-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 7px 18px rgba(255, 184, 0, 0.22);
+}
+
+
+/* CREATE OFFER FORM */
+
+.offer-form {
+    width: min(900px, 100%);
+    margin: 0 auto 35px;
+
+    padding: 30px;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    box-shadow: var(--shadow);
+}
+
+.offer-form h2 {
+    margin-bottom: 25px;
+
+    color: var(--text);
+    font-size: 1.6rem;
+}
+
+
+/* FORM */
+
+.offer-form .form-group {
+    margin-bottom: 20px;
+}
+
+.offer-form .form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #333;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.offer-form input[type="text"],
+.offer-form input[type="number"],
+.offer-form input[type="datetime-local"],
+.offer-form textarea,
+.offer-form select {
+    width: 100%;
+
+    padding: 12px 14px;
+
+    border: 1px solid #dddddd;
+    border-radius: 10px;
+
+    background: #fafafa;
+    color: var(--text);
+
+    font: inherit;
+
+    outline: none;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.offer-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.offer-form input:focus,
+.offer-form textarea:focus,
+.offer-form select:focus {
+    background: #ffffff;
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 3px rgba(255, 184, 0, 0.15);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+
+/* IMAGE INPUT */
+
+.offer-form input[type="file"] {
+    width: 100%;
+
+    padding: 10px;
+
+    border: 1px dashed #d8d8d8;
+    border-radius: 10px;
+
+    background: #fafafa;
+}
+
+.offer-form small {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #888;
+    font-size: 0.78rem;
+}
+
+
+/* MENU ITEM SELECTION */
+
+.offer-item-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.offer-item-option {
+    display: grid !important;
+    grid-template-columns: 1fr 220px 40px !important;
+    grid-template-rows: 1fr !important;
+
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 14px 18px;
+    margin: 0;
+
+    gap: 20px;
+
+    background: #ffffff;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+
+    cursor: pointer;
+}
+
+.offer-item-option:hover {
+    border-color: #ffb800;
+    background: #fffdf5;
+}
+
+.offer-item-name {
+    min-width: 0;
+
+    font-size: 15px;
+    font-weight: 600;
+    color: #202124;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.offer-item-pricing {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 14px;
+
+    min-width: 0;
+}
+
+.offer-original-price {
+    min-width: 80px;
+
+    font-size: 14px;
+    color: #707070;
+    white-space: nowrap;
+}
+
+.offer-new-price {
+    min-width: 80px;
+
+    font-size: 15px;
+    font-weight: 700;
+    color: #202124;
+    white-space: nowrap;
+}
+
+.offer-item-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+
+    margin: 0;
+    justify-self: center;
+
+    accent-color: #ffb800;
+    cursor: pointer;
+}
+
+.offer-item-option:has(input[type="checkbox"]:checked) {
+    border-color: #ffb800;
+    background: #fffaf0;
+}
+
+.offer-item-option:has(input[type="checkbox"]:checked)
+.offer-original-price {
+    color: #999;
+    text-decoration: line-through;
+}
+
+.offer-new-price {
+    color: #a87100;
+
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+
+/* FORM ACTIONS */
+
+.form-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 12px;
+
+    margin-top: 28px;
+}
+
+.form-actions button {
+    padding: 11px 18px;
+
+    border-radius: 9px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.form-actions .primary-btn {
+    border: none;
+
+    background: var(--primary);
+    color: #171717;
+}
+
+.form-actions .primary-btn:hover {
+    background: var(--primary-dark);
+}
+
+.form-actions .primary-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.form-actions .secondary-btn {
+    border: 1px solid #dddddd;
+
+    background: #ffffff;
+    color: #555;
+}
+
+.form-actions .secondary-btn:hover {
+    background: #f6f6f6;
+}
+
+
+/* ERROR */
+
+.form-error {
+    margin-bottom: 18px;
+
+    padding: 10px 12px;
+
+    border: 1px solid #ffd1cd;
+    border-radius: 8px;
+
+    background: #fff1f0;
+    color: #c0392b;
+
+    font-size: 0.85rem;
+}
+
+
+/* OFFERS GRID */
+
+.offers-grid {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(320px, 1fr));
+
+    gap: 24px;
+}
+
+
+/* OFFER CARD */
+
+.offer-card {
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
+
+    background: var(--card);
+
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    box-shadow: var(--shadow);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease,
+        border-color 0.25s ease;
+}
+
+.offer-card:hover {
+    transform: translateY(-4px);
+
+    border-color: #f1cd73;
+
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.09);
+}
+
+
+/* OFFER IMAGE */
+
+.offer-card-image {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+
+    display: block;
+
+    object-fit: cover;
+    object-position: center;
+
+    border-radius: 12px 12px 0 0;
+}
+
+/* OFFER CONTENT */
+
+.offer-card-content {
+    padding: 22px;
+
+    display: flex;
+    flex-direction: column;
+
+    flex: 1;
+}
+
+.offer-card-top {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 12px;
+}
+
+.offer-card-top h2 {
+    color: #202124;
+
+    font-size: 1.25rem;
+    line-height: 1.3;
+}
+
+.offer-description {
+    margin-top: 9px;
+
+    color: #777;
+
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+
+/* DISCOUNT */
+
+.offer-discount {
+    width: fit-content;
+
+    margin-top: 16px;
+
+    padding: 7px 11px;
+
+    border-radius: 8px;
+
+    background: #fff4cc;
+    color: #9a6b00;
+
+    font-size: 0.9rem;
+    font-weight: 800;
+}
+
+
+/* STATUS */
+
+.offer-status {
+    flex-shrink: 0;
+
+    padding: 5px 9px;
+
+    border-radius: 20px;
+
+    font-size: 0.68rem;
+    font-weight: 800;
+}
+
+.offer-status.live {
+    background: #edf8ee;
+    color: #37823d;
+}
+
+.offer-status.scheduled {
+    background: #fff5d6;
+    color: #9a7000;
+}
+
+.offer-status.expired {
+    background: #f3f3f3;
+    color: #777;
+}
+
+.offer-status.inactive {
+    background: #fff1f0;
+    color: #c0392b;
+}
+
+
+/* DATES */
+
+.offer-dates {
+    margin-top: 18px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #eeeeee;
+}
+
+.offer-dates p {
+    margin-top: 5px;
+
+    color: #777;
+
+    font-size: 0.8rem;
+}
+
+.offer-dates p:first-child {
+    margin-top: 0;
+}
+
+.offer-dates strong {
+    color: #444;
+}
+
+
+/* OFFER ITEMS */
+
+.offer-items {
+    margin-top: 18px;
+}
+
+.offer-items > strong {
+    color: #333;
+
+    font-size: 0.88rem;
+}
+
+.offer-items ul {
+    margin-top: 9px;
+    padding-left: 18px;
+}
+
+.offer-items li {
+    margin-top: 4px;
+
+    color: #777;
+
+    font-size: 0.85rem;
+}
+
+
+/* OFFER ACTIONS */
+
+.offer-actions {
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: auto;
+    padding-top: 22px;
+}
+
+.offer-actions button {
+    flex: 1;
+
+    padding: 10px 12px;
+
+    border-radius: 8px;
+
+    font-size: 0.82rem;
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.offer-actions .secondary-btn {
+    border: 1px solid #dddddd;
+
+    background: #ffffff;
+    color: #555;
+}
+
+.offer-actions .secondary-btn:hover {
+    background: #fff8e5;
+    border-color: #ffcf57;
+    color: #8f6500;
+}
+
+.offer-actions .danger-btn {
+    border: 1px solid #f0d0cd;
+
+    background: #ffffff;
+    color: #c0392b;
+}
+
+.offer-actions .danger-btn:hover {
+    background: #fff2f0;
+    border-color: #e7a9a4;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+    .shop-page {
+        padding: 35px 18px 70px;
+    }
+
+    .shop-page-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+    }
+
+    .shop-page-header .primary-btn {
+        width: 100%;
+    }
+
+    .offer-form {
+        padding: 22px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .offer-item-option {
+        align-items: flex-start;
+    }
+
+    .offer-item-pricing {
+        flex-direction: column;
+        align-items: flex-end;
+
+        gap: 3px;
+    }
+
+    .offer-actions {
+        flex-wrap: wrap;
+    }
+
+    .offer-actions button {
+        min-width: calc(50% - 4px);
+    }
+}
+.shop-page-back  {
+    width: min(1200px, 100%);
+    margin: 0 auto 20px;
+}
+
+.shop-page-back .secondary-btn {
+    width: min(1200px,);
+    margin: 0 auto 20px;
+     
+    padding: 10px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.offer-card-item-prices {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.offer-card-original-price {
+    color: #888;
+    font-size: 14px;
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    white-space: nowrap;
+}
+
+.offer-card-new-price {
+    color: #202124;
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.offer-items ul {
+    list-style: none;
+    padding: 0;
+    margin: 12px 0 0;
+}
+
+.offer-items li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+
+    padding: 9px 0;
+    border-bottom: 1px solid #eeeeee;
+}
+
+.offer-card-item-name {
+    flex: 1;
+    min-width: 0;
+
+    color: #202124;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* =========================================
+   SPECIAL OFFERS 3D CAROUSEL
+   ========================================= */
+
+.special-offers-section {
+    width: min(1200px, 100%);
+    margin: 50px auto;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.special-offers-heading {
+    margin-bottom: 25px;
+}
+
+.special-offers-heading h2 {
+    margin: 6px 0;
+    font-size: 30px;
+    color: var(--text);
+}
+
+.special-offers-heading p {
+    margin: 0;
+    color: var(--muted);
+}
+
+
+/* =========================================
+   CAROUSEL STAGE
+   ========================================= */
+
+.special-offers-carousel {
+    position: relative;
+    width: 100%;
+    height: 520px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    perspective: 1400px;
+    transform-style: preserve-3d;
+}
+
+
+/* =========================================
+   CARD BASE
+   ========================================= */
+
+.special-offer-card {
+    position: absolute;
+
+    width: 340px;
+    max-width: 80vw;
+
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+
+    overflow: hidden;
+
+    box-shadow: var(--shadow);
+
+    cursor: pointer;
+
+    transform-style: preserve-3d;
+
+   transition:
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.5s ease,
+    filter 0.5s ease,
+    width 0.5s ease,
+    box-shadow 0.5s ease;
+}
+
+
+/* =========================================
+   IMAGE
+   ========================================= */
+
+.special-offer-image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    background: #f1f1ef;
+}
+
+.special-offer-image {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+    object-position: center;
+
+    transition: transform 0.6s ease;
+}
+
+.special-offer-center .special-offer-image {
+    transform: scale(1.03);
+}
+
+.special-offer-image-placeholder {
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--primary);
+
+    font-size: 30px;
+    font-weight: 800;
+}
+
+
+/* =========================================
+   DISCOUNT BADGE
+   ========================================= */
+
+.special-offer-discount {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+
+    padding: 8px 12px;
+
+    background: var(--primary);
+    color: #202124;
+
+    border-radius: 999px;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+
+/* =========================================
+   CENTER CARD CONTENT
+   ========================================= */
+
+.special-offer-content {
+    padding: 20px 22px 22px;
+    background: var(--card);
+}
+
+.special-offer-content h3 {
+    margin: 0 0 8px;
+
+    font-size: 21px;
+    line-height: 1.3;
+    font-weight: 750;
+}
+
+.special-offer-content p {
+    margin: 0 0 18px;
+
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.special-offer-dates {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    margin-bottom: 18px;
+
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.special-offer-button {
+    width: 100%;
+
+    border: none;
+    border-radius: 10px;
+
+    padding: 11px 16px;
+
+    background: var(--primary);
+    color: #202124;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.special-offer-button:hover {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+}
+
+
+/* =========================================
+   CENTER
+   ========================================= */
+
+.special-offer-center {
+    z-index: 5;
+
+    width: 420px;
+
+    transform:
+        translateX(0)
+        translateZ(120px)
+        scale(1.05);
+
+    opacity: 1;
+    filter: none;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.16);
+}
+
+
+/* =========================================
+   LEFT
+   ========================================= */
+
+.special-offer-left {
+    z-index: 3;
+
+    transform:
+        translateX(-310px)
+        translateZ(-140px)
+        rotateY(28deg)
+        scale(0.78);
+
+    opacity: 0.72;
+
+    filter: brightness(0.82);
+
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.10);
+}
+
+/* =========================================
+   RIGHT
+   ========================================= */
+
+.special-offer-right {
+    z-index: 3;
+
+    transform:
+        translateX(310px)
+        translateZ(-140px)
+        rotateY(-28deg)
+        scale(0.78);
+
+    opacity: 0.72;
+
+    filter: brightness(0.82);
+
+    box-shadow:
+        0 15px 35px rgba(0, 0, 0, 0.10);
+}
+
+
+/* =========================================
+   TWO-OFFER LAYOUT
+   ========================================= */
+
+.special-offer-side {
+    z-index: 3;
+
+    transform:
+        translateX(300px)
+        translateZ(-80px)
+        rotateY(-20deg)
+        scale(0.82);
+
+    opacity: 0.75;
+
+    filter: brightness(0.85);
+}
+
+
+/* =========================================
+   HIDDEN CARDS
+   ========================================= */
+
+.special-offer-hidden {
+    z-index: 0;
+
+    transform:
+        translateX(0)
+        translateZ(-300px)
+        scale(0.5);
+
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+/* =========================================
+   ONE OFFER
+   ========================================= */
+
+.special-offers-carousel
+.special-offer-center:only-child {
+    width: 400px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 900px) {
+
+    .special-offers-carousel {
+        height: 470px;
+    }
+
+    .special-offer-center {
+        width: 360px;
+    }
+
+    .special-offer-left {
+        transform:
+            translateX(-220px)
+            translateZ(-100px)
+            rotateY(20deg)
+            scale(0.75);
+    }
+
+    .special-offer-right,
+    .special-offer-side {
+        transform:
+            translateX(220px)
+            translateZ(-100px)
+            rotateY(-20deg)
+            scale(0.75);
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .special-offers-section {
+        padding: 0 12px;
+    }
+
+    .special-offers-carousel {
+        height: 450px;
+    }
+
+    .special-offer-center {
+        width: min(340px, 90vw);
+    }
+
+    .special-offer-left,
+    .special-offer-right,
+    .special-offer-side {
+        display: none;
+    }
+
+    .special-offer-image-wrapper {
+        height: 220px;
+    }
+
+}
+
+/* =========================================
+   SPECIAL OFFERS NAVIGATION
+   ========================================= */
+
+.special-offer-nav {
+    position: absolute;
+
+    top: 50%;
+    transform: translateY(-50%);
+
+    z-index: 20;
+
+    width: 42px;
+height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid var(--border);
+    border-radius: 50%;
+
+    background: var(--card);
+    color: var(--text);
+
+    font-size: 28px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.special-offer-nav:hover {
+    background: var(--primary);
+
+    transform:
+        translateY(-50%)
+        scale(1.08);
+
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+.special-offer-prev {
+    left: 35px;
+}
+
+.special-offer-next {
+    right: 35px;
+}
+
+
+/* =========================================
+   MOBILE NAVIGATION
+   ========================================= */
+
+@media (max-width: 650px) {
+
+    .special-offer-nav {
+        width: 40px;
+        height: 40px;
+
+        font-size: 27px;
+    }
+
+    .special-offer-prev {
+        left: 5px;
+    }
+
+    .special-offer-next {
+        right: 5px;
+    }
+}
+
+.searched-food-highlight {
+    position: relative !important;
+    border: 3px solid var(--primary) !important;
+    box-shadow:
+        0 0 0 6px rgba(255, 184, 0, 0.25),
+        0 12px 35px rgba(0, 0, 0, 0.15) !important;
+    animation: searched-food-highlight 1.5s ease-in-out 2;
+}
+
+@keyframes searched-food-highlight {
+    0% {
+        box-shadow:
+            0 0 0 0 rgba(255, 184, 0, 0.5),
+            0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    50% {
+        box-shadow:
+            0 0 0 10px rgba(255, 184, 0, 0.15),
+            0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+
+    100% {
+        box-shadow:
+            0 0 0 0 rgba(255, 184, 0, 0),
+            0 12px 35px rgba(0, 0, 0, 0.15);
+    }
+}
+
+.customer-offer-price {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.customer-original-price {
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    margin-top: 8px;
+}
+
+.customer-discounted-price {
+    color: #202124;
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.customer-discount-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: #fff3cd;
+    color: #9a6700;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    margin-top: 8px;
+}
+
+/* =========================================
+   CART OFFER PRICING
+   ========================================= */
+
+.cart-item-pricing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.cart-offer-title {
+    display: block;
+    color: #9a6700;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.cart-price-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+    line-height: 1;
+}
+
+.cart-original-price {
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+    white-space: nowrap;
+}
+
+.cart-discounted-price {
+    color: #202124;
+    font-size: 17px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cart-discount-label {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #fff3cd;
+    color: #9a6700;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.cart-normal-price {
+    color: #202124;
+    font-weight: 600;
+}
+
+
+.customer-order-item-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+}
+
+.customer-order-offer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.customer-order-offer-title {
+    color: #9a6700;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.customer-order-price-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.customer-order-original-price {
+    color: #888;
+    font-size: 14px;
+    text-decoration: line-through;
+    text-decoration-thickness: 1.5px;
+}
+
+.customer-order-discounted-price {
+    color: #202124;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.customer-order-saved {
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: #fff3cd;
+    color: #9a6700;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.customer-order-quantity {
+    color: #707070;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.customer-order-normal-price {
+    color: #707070;
+    font-size: 14px;
 }

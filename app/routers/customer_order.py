@@ -262,13 +262,18 @@ def create_order(
             item_name += f" + {', '.join(addons)}"
 
         order_item = OrderItem(
-        order_id=order.order_id,
-        menu_item_id=menu_item.item_id,
-        item_name=item_name,
-        unit_price=line.unit_price,
-        quantity=cart_item.quantity,
-        subtotal=line.line_total
-    )
+    order_id=order.order_id,
+    menu_item_id=menu_item.item_id,
+    item_name=item_name,
+    unit_price=line.unit_price,
+    quantity=cart_item.quantity,
+    subtotal=line.line_total,
+
+    original_unit_price=line.original_unit_price,
+    discount_amount=line.discount_total,
+    offer_id=line.offer_id,
+    offer_title=line.offer_title,
+)
 
         db.add(order_item)
 
@@ -373,22 +378,30 @@ def create_order(
         ),
 
         items=[
-            OrderItemResponse(
-                order_item_id=item.order_item_id,
+    OrderItemResponse(
+        order_item_id=item.order_item_id,
 
-                menu_item_id=item.menu_item_id,
+        menu_item_id=item.menu_item_id,
 
-                item_name=item.item_name,
+        item_name=item.item_name,
 
-                unit_price=item.unit_price,
+        unit_price=item.unit_price,
 
-                quantity=item.quantity,
+        quantity=item.quantity,
 
-                subtotal=item.subtotal
-            )
+        subtotal=item.subtotal,
 
-            for item in order_items
-        ]
+        original_unit_price=item.original_unit_price,
+
+        discount_amount=item.discount_amount,
+
+        offer_id=item.offer_id,
+
+        offer_title=item.offer_title,
+    )
+
+    for item in order_items
+]
     )
 @router.get(
     "",

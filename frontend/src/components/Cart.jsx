@@ -49,11 +49,14 @@ function Cart({
         (option) => option.price_mode === "ADD"
     );
 
-    return (
-        <div
-            key={item.cart_item_id}
-            className="cart-item"
-        >
+   return (
+    <div
+        key={item.cart_item_id}
+        className="cart-item"
+    >
+
+        {/* PARENT ITEM */}
+        <div className="cart-item-main">
 
             <div className="cart-item-info">
 
@@ -61,22 +64,47 @@ function Cart({
                     {item.name}
                 </h3>
 
-                <p>
+               <div className="cart-item-pricing">
+    {item.offer_id ? (
+        <>
+            <span className="cart-offer-title">
+                🔥 {item.offer_title}
+            </span>
+
+            <div className="cart-price-row">
+                <span className="cart-original-price">
+                    ₹{Number(item.original_unit_price).toFixed(2)}
+                </span>
+
+                <strong className="cart-discounted-price">
                     ₹{Number(item.unit_price).toFixed(2)}
-                    {variantOptions.length > 0 && (
-                        <>
-                            {" · "}
-                            {variantOptions
-                                .map((option) => option.name)
-                                .join(", ")}
-                        </>
-                    )}
-                    {" × "}
-                    {item.quantity}
-                </p>
+                </strong>
+
+                <span className="cart-discount-label">
+                    Save ₹{Number(item.discount_per_unit).toFixed(2)}
+                </span>
+            </div>
+        </>
+    ) : (
+        <span className="cart-normal-price">
+            ₹{Number(item.unit_price).toFixed(2)}
+        </span>
+    )}
+
+    {variantOptions.length > 0 && (
+        <>
+            {" · "}
+            {variantOptions
+                .map((option) => option.name)
+                .join(", ")}
+        </>
+    )}
+
+    {" × "}
+    {item.quantity}
+</div>
 
             </div>
-
 
             <div className="cart-item-actions">
 
@@ -111,11 +139,9 @@ function Cart({
 
                 </div>
 
-
                 <strong className="cart-item-price">
                     ₹{Number(item.subtotal).toFixed(2)}
                 </strong>
-
 
                 <button
                     className="remove-button"
@@ -128,103 +154,103 @@ function Cart({
 
             </div>
 
-
-            {addonOptions.length > 0 && (
-                <div className="cart-item-options">
-
-                    <span className="cart-options-label">
-                        Add-ons
-                    </span>
-
-                    {addonOptions.map((option) => (
-
-                        <div
-                            key={option.option_id}
-                            className="cart-option"
-                        >
-
-                            <div className="cart-option-info">
-
-                                <h4>
-                                    {option.name}
-                                </h4>
-
-                                <p>
-                                    ₹{Number(option.price).toFixed(2)}
-                                    {" × "}
-                                    {option.quantity}
-                                </p>
-
-                            </div>
+        </div>
 
 
-                            <div className="cart-option-actions">
+        {/* ADD-ONS — CHILDREN OF THE PARENT */}
+        {addonOptions.length > 0 && (
+            <div className="cart-item-options">
 
-                                <div className="quantity-control">
+                <span className="cart-options-label">
+                    Add-ons
+                </span>
 
-                                    <button
-                                        onClick={() =>
-                                            updateCartOptionQuantity(
-                                                item.cart_item_id,
-                                                option.option_id,
-                                                option.quantity - 1
-                                            )
-                                        }
-                                        disabled={option.quantity <= 1}
-                                    >
-                                        −
-                                    </button>
+                {addonOptions.map((option) => (
 
-                                    <span>
-                                        {option.quantity}
-                                    </span>
+                    <div
+                        key={option.option_id}
+                        className="cart-option"
+                    >
 
-                                    <button
-                                        onClick={() =>
-                                            updateCartOptionQuantity(
-                                                item.cart_item_id,
-                                                option.option_id,
-                                                option.quantity + 1
-                                            )
-                                        }
-                                    >
-                                        +
-                                    </button>
+                        <div className="cart-option-info">
 
-                                </div>
+                            <h4>
+                                {option.name}
+                            </h4>
 
+                            <p>
+                                ₹{Number(option.price).toFixed(2)}
+                                {" × "}
+                                {option.quantity}
+                            </p>
 
-                                <strong>
-                                    ₹{Number(
-                                        option.subtotal
-                                    ).toFixed(2)}
-                                </strong>
+                        </div>
 
+                        <div className="cart-option-actions">
+
+                            <div className="quantity-control">
 
                                 <button
-                                    className="remove-button"
                                     onClick={() =>
                                         updateCartOptionQuantity(
                                             item.cart_item_id,
                                             option.option_id,
-                                            0
+                                            option.quantity - 1
+                                        )
+                                    }
+                                    disabled={option.quantity <= 1}
+                                >
+                                    −
+                                </button>
+
+                                <span>
+                                    {option.quantity}
+                                </span>
+
+                                <button
+                                    onClick={() =>
+                                        updateCartOptionQuantity(
+                                            item.cart_item_id,
+                                            option.option_id,
+                                            option.quantity + 1
                                         )
                                     }
                                 >
-                                    Remove
+                                    +
                                 </button>
 
                             </div>
 
+                            <strong>
+                                ₹{Number(
+                                    option.subtotal
+                                ).toFixed(2)}
+                            </strong>
+
+                            <button
+                                className="remove-button"
+                                onClick={() =>
+                                    updateCartOptionQuantity(
+                                        item.cart_item_id,
+                                        option.option_id,
+                                        0
+                                    )
+                                }
+                            >
+                                Remove
+                            </button>
+
                         </div>
 
-                    ))}
+                    </div>
 
-                </div>
-            )}
+                ))}
 
-        </div>
-    );
+            </div>
+        )}
+
+    </div>
+);
 })}
 
                     {/* CART TOTAL */}

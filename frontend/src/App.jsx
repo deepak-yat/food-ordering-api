@@ -25,6 +25,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ShopMessages from "./pages/ShopMessages";
 import ShopMessageDetails from "./pages/ShopMessageDetails";
+import ShopOffers from "./components/ShopOffers";
 function App() {
 
     return (
@@ -103,7 +104,14 @@ function App() {
     path="/shop/messages"
     element={<ShopMessages />}
 />
-
+<Route
+    path="/shop/offers"
+    element={
+        <ProtectedRoute role="shop_owner">
+            <ShopOffers />
+        </ProtectedRoute>
+    }
+/>
 <Route
     path="/shop/messages/:recipientId"
     element={<ShopMessageDetails />}

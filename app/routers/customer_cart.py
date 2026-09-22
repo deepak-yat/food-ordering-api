@@ -676,13 +676,18 @@ def get_cart(
                 subtotal=line.subtotal,
                 options_subtotal=line.options_subtotal,
                 line_total=line.line_total,
+                original_unit_price=line.original_unit_price,
+                discount_per_unit=line.discount_per_unit,
+                discount_total=line.discount_total,
+                offer_id=line.offer_id,
+                offer_title=line.offer_title,
                 options=response_options,
                 option_ids=[
-                    option.option_id
-                    for option in line.options
-                ],
-            )
-        )
+                        option.option_id
+                            for option in line.options
+                        ],
+                    )
+                )
 
         total += line.line_total
 

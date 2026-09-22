@@ -22,3 +22,4 @@ class MenuItemOptionResponse(BaseModel):
     price: float
     is_available: bool
     display_order: int
+    offer_price: float | None = None

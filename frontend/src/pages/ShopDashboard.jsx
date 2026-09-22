@@ -7,7 +7,6 @@ import OptionGroupCard from "../components/OptionGroupCard";
 import OptionGroupModal from "../components/OptionGroupModal";
 import OptionModal from "../components/OptionModal";
 
-
 function ShopDashboard() {
 
     const navigate = useNavigate();
@@ -1324,6 +1323,13 @@ async function updateOption() {
                         <button>
                             Menu
                         </button>
+                        
+                        <button
+    onClick={() => navigate("/shop/offers")}
+>
+    Offers & Discounts
+</button>
+
 
                         <button
                             onClick={() => navigate("/shop/orders")}
@@ -1690,6 +1696,7 @@ async function updateOption() {
 
                 </section>
 
+                
 
                 <section className="shop-section">
 

@@ -19,6 +19,10 @@ class OrderItemResponse(BaseModel):
     quantity: int
     subtotal: float
 
+    original_unit_price: float | None = None
+    discount_amount: float = 0.0
+    offer_id: int | None = None
+    offer_title: str | None = None
 
 class OrderDeliveryAddressResponse(BaseModel):
     delivery_address_id: int
