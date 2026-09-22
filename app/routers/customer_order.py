@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from sqlalchemy import desc
+from datetime import datetime, timezone
 
 from app.database import get_db
 from app.dependencies import get_current_customer
@@ -39,6 +40,7 @@ def create_order(
     current_customer: Customer = Depends(get_current_customer),
     db: Session = Depends(get_db)
 ):
+    now = datetime.now(timezone.utc)
     # ----------------------------------------
     # 1. Find customer's cart
     # ----------------------------------------
@@ -160,7 +162,8 @@ def create_order(
         line = price_cart_item(
             db,
             cart_item,
-            menu_item.price
+            menu_item.price,
+            now=now
         )
 
         cart_total += line.line_total

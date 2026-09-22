@@ -1,10 +1,5 @@
 @import "./styles/base/base.css";
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
 
 :root {
     font-family:
@@ -31,27 +26,7 @@
         0 12px 35px rgba(0, 0, 0, 0.07);
 }
 
-html {
-    scroll-behavior: smooth;
-}
 
-body {
-    background: #f7f7f5;
-}
-
-button,
-input {
-    font: inherit;
-}
-
-button {
-    cursor: pointer;
-}
-
-a {
-    text-decoration: none;
-    color: inherit;
-}
 
 
 /* NAVBAR */
@@ -1061,10 +1036,26 @@ background: var(--primary-dark);
 /* HEADER */
 
 .dashboard-header {
+    position: relative;
+    height: 350px;
     max-width: 1200px;
     margin: 0 auto;
-
+    margin-top: 20px;
     padding: 55px 24px 35px;
+
+    background-image:
+        linear-gradient(
+            rgba(0, 0, 0, 0.28),
+            rgba(0, 0, 0, 0.28)
+        ),
+        url("/foodly-banner.png");
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    border-radius: 18px;
+    overflow: hidden;
 }
 
 .dashboard-header h1 {
@@ -1073,13 +1064,13 @@ background: var(--primary-dark);
     font-size: clamp(2.4rem, 5vw, 4rem);
     line-height: 1.05;
 
-    color: #202124;
+    color: white;
 }
 
 .dashboard-header p {
     margin-top: 12px;
 
-    color: #707070;
+    color: white !important;
 
     max-width: 600px;
 }
@@ -13680,7 +13671,7 @@ background: var(--primary-dark);
 
 .special-offers-section {
     width: min(1200px, 100%);
-    margin: 50px auto;
+    margin: 25px auto;
     padding: 0 20px;
     box-sizing: border-box;
 }
@@ -14173,7 +14164,8 @@ height: 42px;
 }
 
 .customer-discounted-price {
-    color: #202124;
+    margin-left: 5px;
+    color: a87100;
     font-size: 17px;
     font-weight: 700;
 }

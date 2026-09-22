@@ -187,10 +187,11 @@ function CustomerDashboard() {
     }
 
     function backToShops() {
-        setSelectedShop(null);
-        setMenu([]);
-        setError("");
-    }
+    setSelectedShop(null);
+    setMenu([]);
+    setActiveOfferId(null);
+    setError("");
+}
 
 async function addToCart(
     itemId,
@@ -1613,6 +1614,27 @@ console.log("CART ITEMS:", data.items);
                         <p>
                             {item.description || "No description"}
                         </p>
+                        {item.allow_parent_purchase && item.offer ? (
+    <div className="customer-offer-price">
+        <span className="customer-original-price">
+            ₹{Number(item.offer.original_price).toFixed(2)}
+        </span>
+
+        <strong className="customer-discounted-price">
+            ₹{Number(item.offer.offer_price).toFixed(2)}
+        </strong>
+
+        <span className="customer-discount-label">
+            {item.offer.discount_label}
+        </span>
+    </div>
+) : (
+    item.allow_parent_purchase && (
+        <strong>
+            ₹{Number(item.price).toFixed(2)}
+        </strong>
+    )
+)}
 
                     </div>
 
@@ -1713,12 +1735,22 @@ console.log("CART ITEMS:", data.items);
                                                         </span>
 
                                                         <span className="config-option-price">
-                                                            ₹
-                                                            {Number(
-                                                                option.price
-                                                            ).toFixed(2)}
-                                                        </span>
+    {option.offer_price != null ? (
+        <>
+            <span className="customer-original-price">
+                ₹{Number(option.price).toFixed(2)}
+            </span>
 
+            <strong className="customer-discounted-price">
+                ₹{Number(option.offer_price).toFixed(2)}
+            </strong>
+        </>
+    ) : (
+        <>
+            ₹{Number(option.price).toFixed(2)}
+        </>
+    )}
+</span>
                                                     </div>
 
 

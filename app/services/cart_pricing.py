@@ -9,7 +9,8 @@ from app.models.menu_item_option_group import MenuItemOptionGroup
 from app.models.offer import Offer
 from app.models.offer_item import OfferItem
 from app.services.offer_pricing import best_offer
-
+from app.models.shop import Shop
+from app.models.menu_item import MenuItem
 def money(value: float) -> float:
     return round(float(value), 2)
 
@@ -74,6 +75,8 @@ def price_cart_item(
     db: Session,
     cart_item: CartItem,
     base_price: float,
+    *,
+    now: datetime | None = None,
 ) -> PricedLine:
 
     links = db.exec(
@@ -211,8 +214,8 @@ def price_cart_item(
 # ----------------------------------------
 # Apply best live offer
 # ----------------------------------------
-
-    now = datetime.now(timezone.utc)
+    if now is None:
+        now = datetime.now(timezone.utc)
 
     live_offers = db.exec(
         select(Offer)
@@ -220,11 +223,22 @@ def price_cart_item(
             OfferItem,
             OfferItem.offer_id == Offer.offer_id,
         )
+        .join(
+            MenuItem,
+            MenuItem.item_id == OfferItem.item_id,
+        )
+        .join(
+            Shop,
+            Shop.shop_id == MenuItem.shop_id,
+        )
         .where(
             OfferItem.item_id == cart_item.menu_item_id,
             Offer.is_active == True,
             Offer.start_at <= now,
             Offer.end_at > now,
+            Shop.is_active == True,
+            Shop.is_approved == True,
+            MenuItem.is_available == True,
         )
     ).all()
 

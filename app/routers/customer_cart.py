@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from sqlmodel import delete
-
+from datetime import datetime, timezone
 from app.database import get_db
 from app.dependencies import get_current_customer
 from app.models.cart import Cart
@@ -589,6 +589,7 @@ def get_cart(
     current_customer: Customer = Depends(get_current_customer),
     db: Session = Depends(get_db)
 ):
+    now = datetime.now(timezone.utc)
     cart = db.exec(
         select(Cart).where(
             Cart.customer_id == current_customer.customer_id
@@ -640,7 +641,8 @@ def get_cart(
         line = price_cart_item(
             db=db,
             cart_item=cart_item,
-            base_price=menu_item.price
+            base_price=menu_item.price,
+            now=now
         )
 
         # ----------------------------------------
