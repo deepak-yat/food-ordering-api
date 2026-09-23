@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
 import Cart from "../components/Cart";
 import SpecialOffers from "../components/SpecialOffers";
+import { getBrowserCoordinates } from "../utils/geolocation";
 import {
     useNavigate
 } from "react-router-dom";
@@ -44,7 +45,7 @@ function CustomerDashboard() {
     });
     const [currentShopPage, setCurrentShopPage] = useState(1);
 
-    const shopsPerPage = 6;
+    const shopsPerPage = 4;
 
     const totalShopPages = Math.ceil(
         shops.length / shopsPerPage
@@ -131,10 +132,43 @@ function CustomerDashboard() {
     const [deliveryLoading, setDeliveryLoading] = useState(false);
     const [deliveryError, setDeliveryError] = useState("");
     useEffect(() => {
-        loadShops();
-        loadCart();
-        loadAddresses();
-    }, []);
+    let cancelled = false;
+    console.log("LOCATION EFFECT RUNNING");
+    async function resolveLocation() {
+        let coords = await getBrowserCoordinates();
+            console.log("BROWSER COORDS:", coords);
+        if (!coords) {
+            const fallback =
+                addresses.find((address) => address.is_default) ||
+                addresses[0];
+                console.log("FALLBACK ADDRESS:", fallback);
+            if (
+                fallback?.latitude != null &&
+                fallback?.longitude != null
+            ) {
+                coords = {
+                    latitude: fallback.latitude,
+                    longitude: fallback.longitude
+                };
+            }
+        }
+        console.log("FINAL COORDS:", coords);
+        if (!cancelled && coords) {
+            setCurrentLocation(coords);
+            loadShops(coords.latitude, coords.longitude);
+        }
+    }
+
+    loadShops();
+    loadCart();
+    loadAddresses();
+
+    resolveLocation();
+
+    return () => {
+        cancelled = true;
+    };
+}, []);
 
     useEffect(() => {
         if (showCheckout && selectedAddressId) {
@@ -142,22 +176,41 @@ function CustomerDashboard() {
         }
     }, [showCheckout]);
 
-    async function loadShops() {
-        try {
-            const data = await apiFetch(
-                "/customer/view-shop"
-            );
-            setShops(data);
-        } catch (error) {
-            console.error(error);
-            setError(
-                error.message ||
-                "Unable to load shops"
-            );
-        } finally {
-            setLoading(false);
+   async function loadShops(latitude = null, longitude = null) {
+    console.log("LOAD SHOPS COORDS:", latitude, longitude);
+    try {
+
+        let endpoint = "/customer/view-shop";
+
+        if (latitude !== null && longitude !== null) {
+
+            endpoint += `?lat=${latitude}&lng=${longitude}`;
+
         }
+        console.log("SHOP ENDPOINT:", endpoint);
+        const data = await apiFetch(endpoint);
+        console.log("SHOP DATA:", data);
+        setShops(data);
+
+    } catch (error) {
+
+        console.error(error);
+
+        setError(
+
+            error.message ||
+
+            "Unable to load shops"
+
+        );
+
+    } finally {
+
+        setLoading(false);
+
     }
+
+}
 
     async function viewShopMenu(shopId) {
 
@@ -1390,60 +1443,115 @@ console.log("CART ITEMS:", data.items);
                         )
                     }
 
-                    <div className="shops-grid">
+                    <div className="foodly-shops-grid">
 
-                        {visibleShops.map(shop => (
+                        {visibleShops.map(shop => {
+    const randomCategories = [...(shop.categories || [])]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 3);
 
-                            <article
-                                key={shop.shop_id}
-                                className="shop-card"
-                            >
+    return (
 
-                                <div className="shop-image">
+<article
+    key={shop.shop_id}
+    className="foodly-shop-card"
+>
 
-                                    <span>
-                                        {shop.shop_name
-                                            .charAt(0)
-                                            .toUpperCase()}
-                                    </span>
+    <div className="foodly-shop-image">
 
-                                </div>
+        <span className="foodly-shop-image-placeholder">
+            {shop.shop_name
+                .charAt(0)
+                .toUpperCase()}
+        </span>
 
-                                <div className="shop-card-content">
+        <span className="foodly-shop-open-badge">
+            <span className="foodly-shop-open-dot"></span>
+            Open
+        </span>
 
-                                    <div className="shop-title-row">
+    </div>
 
-                                        <h3>
-                                            {shop.shop_name}
-                                        </h3>
+    <div className="foodly-shop-content">
 
-                                        <span className="open-badge">
-                                            Open
-                                        </span>
+        <div className="foodly-shop-heading">
 
-                                    </div>
+            <h3>
+                {shop.shop_name}
+            </h3>
 
-                                    <p>
-                                        {shop.description ||
-                                            "Delicious food awaits."}
-                                    </p>
+        </div>
+        {randomCategories.length > 0 && (
+    <div className="foodly-shop-category-tags">
+        {randomCategories.map((category, index) => (
+            <span
+                key={`${shop.shop_id}-${category}-${index}`}
+                className="foodly-shop-category-tag"
+            >
+                {category}
+            </span>
+        ))}
+    </div>
+)}
 
-                                    <button
-                                        className="primary-button"
-                                        onClick={() =>
-                                            viewShopMenu(
-                                                shop.shop_id
-                                            )
-                                        }
-                                    >
-                                        View Menu
-                                    </button>
+        <p
+    className="foodly-shop-description"
+    title={shop.description || "Delicious food awaits."}
+>
+    {shop.description ||
+        "Delicious food awaits."}
+</p>
 
-                                </div>
+        {(shop.city || shop.address_line1) && (
+            <div className="foodly-shop-location">
 
-                            </article>
+                <img
+                    src="/location_image.png"
+                    alt="Location"
+                    className="foodly-shop-location-icon"
+                />
 
-                        ))}
+                <span>
+                    {shop.address_line1
+                        ? `${shop.address_line1}, `
+                        : ""}
+                    {shop.city}
+                </span>
+
+            </div>
+        )}
+
+        <div className="foodly-shop-meta">
+
+            {shop.distance_km != null && (
+                <span className="foodly-shop-distance">
+                    {shop.distance_km.toFixed(1)} km away
+                </span>
+            )}
+
+            {shop.delivery_available && (
+                <span className="foodly-shop-delivery">
+                    Delivery available
+                </span>
+            )}
+
+        </div>
+
+        <button
+            className="foodly-shop-menu-button"
+            onClick={() =>
+                viewShopMenu(shop.shop_id)
+            }
+        >
+            View Menu
+            <span>›</span>
+        </button>
+
+    </div>
+
+ </article>
+    );
+})}
 
                     </div>
                     {totalShopPages > 1 && (

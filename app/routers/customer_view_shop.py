@@ -1,7 +1,8 @@
-from fastapi import APIRouter,HTTPException,status,Depends
+from fastapi import APIRouter,HTTPException,status,Depends,Query
 from sqlmodel import Session,select
 from datetime import datetime, timezone
-
+from app.services.delivery import MAX_DELIVERY_DISTANCE_KM
+from app.services.distance import haversine_km
 from app.services.offer_pricing import (
     best_offer,
     get_live_offers_by_item,
@@ -19,7 +20,7 @@ from app.schemas.customer_menu import (
 
 from app.models.menu_item_option_group import MenuItemOptionGroup
 from app.models.menu_item_option import MenuItemOption
-
+from app.models.menu_category import MenuCategory   
 from app.schemas.menu_item_option_group import MenuItemOptionGroupResponse
 from app.schemas.menu_item_option import MenuItemOptionResponse
 
@@ -29,18 +30,109 @@ router=APIRouter(
     tags=["Customer Interactions"]
 )
 
-@router.get("",response_model=list[CustomerShopResponse])
+@router.get("", response_model=list[CustomerShopResponse])
 def get_available_shops(
-    db:Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    lat: float | None = Query(default=None),
+    lng: float | None = Query(default=None)
 ):
-    shops=db.exec(
+    print("BACKEND COORDS:", lat, lng)
+    shops = db.exec(
         select(Shop).where(
-            Shop.is_active==True,
-            Shop.is_approved==True
+            Shop.is_active == True,
+            Shop.is_approved == True
         )
     ).all()
+    categories = db.exec(
+    select(MenuCategory)
+    ).all()
+    
+    if lat is None or lng is None:
+        result = []
 
-    return shops
+        category_map = {}
+
+        for category in categories:
+            category_map.setdefault(
+            category.shop_id,
+            []
+            ).append(category.category_name)
+
+        for shop in shops:
+            shop_data = shop.model_dump()
+
+            shop_data["categories"] = category_map.get(
+            shop.shop_id,
+            []
+            )
+
+            shop_data["address_line1"] = shop.address_line1
+            shop_data["city"] = shop.city
+
+            shop_data["distance_km"] = None
+            shop_data["delivery_available"] = False
+
+            result.append(shop_data)
+
+        return result
+
+    shops_with_distance = []
+
+    for shop in shops:
+        if shop.latitude is None or shop.longitude is None:
+            shops_with_distance.append(
+                (shop, None)
+            )
+            continue
+
+        distance_km = haversine_km(
+            lat,
+            lng,
+            shop.latitude,
+            shop.longitude
+        )
+
+        shops_with_distance.append(
+            (shop, distance_km)
+        )
+
+    shops_with_distance.sort(
+        key=lambda item: (
+            item[1] is None,
+            item[1] if item[1] is not None else 0
+        )
+    )
+
+    result = []
+
+    category_map = {}
+
+    for category in categories:
+        category_map.setdefault(
+            category.shop_id,
+            []
+        ).append(category.category_name)
+
+    for shop, distance_km in shops_with_distance:
+        shop_data = shop.model_dump()
+        shop_data["categories"] = category_map.get(
+        shop.shop_id,
+        []
+        )
+        shop_data["address_line1"] = shop.address_line1
+        shop_data["city"] = shop.city
+        if distance_km is not None:
+            shop_data["distance_km"] = round(distance_km, 2)
+            shop_data["delivery_available"] = (
+                distance_km <= MAX_DELIVERY_DISTANCE_KM
+            )
+        else:
+            shop_data["distance_km"] = None
+            shop_data["delivery_available"] = False
+
+        result.append(shop_data)
+
+    return result
 
 @router.get(
     "/{shop_id}/menu",

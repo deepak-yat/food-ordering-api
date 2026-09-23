@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import ShopCard from "../components/ShopCard";
 import FoodCard from "../components/FoodCard";
+import SpecialOffers from "../components/SpecialOffers";
 
 import { apiFetch } from "../api/client";
 
@@ -13,6 +14,7 @@ function Home() {
 
     const [selectedShop, setSelectedShop] =
         useState(null);
+    const [activeOfferId, setActiveOfferId] = useState(null);
 
     const [menu, setMenu] = useState([]);
 
@@ -432,6 +434,14 @@ if (searchedItemId) {
 </div>
 
                 </section>
+
+                <SpecialOffers
+    onOfferClick={async (shopId, offerId) => {
+        setActiveOfferId(offerId);
+        setSearchedItemId(null);
+        await viewShopMenu(shopId);
+    }}
+/>
 
 
                 {/* SHOPS */}

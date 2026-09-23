@@ -270,7 +270,7 @@ def price_cart_item(
     line_total = money(
         parent_subtotal + options_subtotal
     )
-
+    
     return PricedLine(
     cart_item_id=cart_item.cart_item_id,
     menu_item_id=cart_item.menu_item_id,

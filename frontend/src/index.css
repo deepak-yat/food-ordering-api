@@ -283,8 +283,7 @@ background: var(--primary-dark);
 .shops-grid {
     display: grid !important;
 
-    grid-template-columns: repeat(3, 1fr) !important;
-
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 24px;
 
     width: 100%;
@@ -1227,7 +1226,7 @@ background: var(--primary-dark);
 .shop-card .primary-button {
     width: 100%;
 
-    margin-top: 18px;
+    margin-top: 8px;
 
     padding: 12px 18px;
 
@@ -13813,12 +13812,12 @@ background: var(--primary-dark);
 
 .special-offer-content {
     padding: 20px 22px 22px;
-    background: var(--card);
+    background: black;
 }
 
 .special-offer-content h3 {
     margin: 0 0 8px;
-
+    color: white;
     font-size: 21px;
     line-height: 1.3;
     font-weight: 750;
@@ -13827,7 +13826,7 @@ background: var(--primary-dark);
 .special-offer-content p {
     margin: 0 0 18px;
 
-    color: var(--muted);
+    color: white;
     line-height: 1.5;
 }
 
@@ -13839,7 +13838,7 @@ background: var(--primary-dark);
     margin-bottom: 18px;
 
     font-size: 13px;
-    color: var(--muted);
+    color: white;
 }
 
 .special-offer-button {
@@ -14305,4 +14304,364 @@ height: 42px;
 .customer-order-normal-price {
     color: #707070;
     font-size: 14px;
+}
+
+.shop-card-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 0px;
+    line-height: 1.4;
+}
+
+.shop-card-location .material-symbols-outlined {
+    font-size: 19px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.shop-card-distance-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.shop-card-distance {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+
+/* =========================================
+   FOODLY SHOP CARD
+   ========================================= */
+
+.foodly-shop-card {
+    display: flex;
+    overflow: hidden;
+
+    background: #1f1f1f;
+
+    border: 1px solid #2d2d2d;
+    border-radius: 18px;
+
+    box-shadow:
+        0 10px 28px rgba(0, 0, 0, 0.12);
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+
+    animation: foodlyShopCardEnter 0.45s ease both;
+}
+
+.foodly-shop-card:hover {
+    transform: translateY(-5px);
+
+    box-shadow:
+        0 18px 38px rgba(0, 0, 0, 0.18);
+}
+
+
+/* IMAGE */
+
+.foodly-shop-image {
+    position: relative;
+
+    width: 42%;
+    min-height: 250px;
+
+    display: grid;
+    place-items: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffe29a,
+            #fff3c9
+        );
+}
+
+.foodly-shop-image-placeholder {
+    width: 82px;
+    height: 82px;
+
+    display: grid;
+    place-items: center;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+
+    color: #b57d00;
+
+    font-size: 2rem;
+    font-weight: 800;
+
+    box-shadow:
+        0 8px 22px rgba(0, 0, 0, 0.12);
+}
+
+
+/* OPEN BADGE */
+
+.foodly-shop-open-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+
+    display: flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 7px 12px;
+
+    border: 1px solid rgba(92, 255, 122, 0.55);
+    border-radius: 20px;
+
+    background: rgba(232, 255, 237, 0.95);
+    color: #258536;
+
+    font-size: 0.72rem;
+    font-weight: 800;
+
+    box-shadow:
+        0 0 8px rgba(92, 255, 122, 0.55),
+        0 0 18px rgba(92, 255, 122, 0.25);
+}
+.foodly-shop-open-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: #39d353;
+
+    box-shadow:
+        0 0 6px #39d353,
+        0 0 12px rgba(57, 211, 83, 0.8);
+}
+
+/* CONTENT */
+
+.foodly-shop-content {
+    flex: 1;
+
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 22px;
+}
+
+.foodly-shop-heading {
+    display: flex;
+    align-items: center;
+}
+
+.foodly-shop-heading h3 {
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: 1.3rem;
+    line-height: 1.3;
+}
+
+
+/* DESCRIPTION */
+
+.foodly-shop-description {
+    display: -webkit-box;
+
+    margin: 9px 0 14px;
+
+    min-height: 48px;
+
+    overflow: hidden;
+
+    color: #bdbdbd;
+
+    font-size: 0.88rem;
+    line-height: 1.55;
+
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+
+/* LOCATION */
+
+.foodly-shop-location {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 8px;
+
+    margin-bottom: 13px;
+
+    color: #d4d4d4;
+
+    font-size: 0.82rem;
+    line-height: 1.45;
+}
+
+.foodly-shop-location-icon {
+    width: 18px;
+    height: 18px;
+
+    flex-shrink: 0;
+
+    object-fit: contain;
+
+    margin-top: 1px;
+}
+
+
+/* DISTANCE + DELIVERY */
+
+.foodly-shop-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+    margin-bottom: 17px;
+}
+
+.foodly-shop-distance {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 11px;
+    border-radius: 20px;
+    background: #292929;
+    color: #e2e2e2;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.foodly-shop-delivery {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 11px;
+    border-radius: 20px;
+    background: #e8f7eb;
+    color: #31813b;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* BUTTON */
+
+.foodly-shop-menu-button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    margin-top: auto;
+
+    padding: 11px 16px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: #ffbf00;
+    color: #171717;
+
+    font-size: 0.88rem;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.foodly-shop-menu-button:hover {
+    background: #ffd04a;
+
+    transform: translateY(-1px);
+}
+
+.foodly-shop-menu-button span {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+
+/* ANIMATION */
+
+@keyframes foodlyShopCardEnter {
+
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.foodly-shop-category-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+
+    margin-top: 8px;
+}
+
+.foodly-shop-category-tag {
+    padding: 6px 10px;
+
+    border: 1px solid rgba(255, 191, 0, 0.5);
+    border-radius: 20px;
+
+    background: rgba(255, 191, 0, 0.1);
+    color: #ffd45c;
+
+    font-size: 0.72rem;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    box-shadow:
+        0 0 7px rgba(255, 191, 0, 0.25),
+        inset 0 0 8px rgba(255, 191, 0, 0.05);
+
+    transition:
+        background 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.foodly-shop-category-tag:hover {
+    background: rgba(255, 191, 0, 0.18);
+
+    box-shadow:
+        0 0 12px rgba(255, 191, 0, 0.45),
+        inset 0 0 10px rgba(255, 191, 0, 0.08);
+
+    transform: translateY(-1px);
+}
+.foodly-shops-grid {
+    display: grid;
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 24px;
+
+    width: 100%;
 }
