@@ -28,7 +28,7 @@ function Home() {
         useState("");
      const [currentShopPage, setCurrentShopPage] = useState(1);
 
-    const shopsPerPage = 6;
+    const shopsPerPage = 4;
 
     const totalShopPages = Math.ceil(
     shops.length / shopsPerPage

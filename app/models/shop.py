@@ -33,4 +33,5 @@ class Shop(SQLModel,table=True):
 
     latitude: float | None = None
     longitude: float | None = None
+    image_url: str | None = None
 

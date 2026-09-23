@@ -13,3 +13,4 @@ class CustomerShopResponse(BaseModel):
     distance_km: float | None = None
     delivery_available: bool = False
     categories: list[str] = []
+    image_url: str | None = None

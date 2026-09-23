@@ -15,7 +15,7 @@ class ShopProfileResponse(BaseModel):
 
     is_active: bool
     is_approved: bool
-
+    image_url: str | None = None
 
 class ShopProfileUpdate(BaseModel):
     shop_name: str
@@ -27,3 +27,4 @@ class ShopProfileUpdate(BaseModel):
     city: str
     state: str
     pincode: str
+    image_url: str | None = None

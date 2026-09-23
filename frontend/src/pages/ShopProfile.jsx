@@ -11,7 +11,9 @@ function ShopProfile() {
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
-
+    const [shopImage, setShopImage] = useState(null);
+    const [shopImagePreview, setShopImagePreview] = useState("");
+    const [shopImageUploading, setShopImageUploading] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -83,6 +85,93 @@ function ShopProfile() {
             [name]: value,
         }));
     }
+    function validateShopImage(file) {
+    if (!file) {
+        return "Please select an image.";
+    }
+
+    const allowedTypes = [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+        return "Only JPG, PNG and WEBP images are allowed.";
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+        return "Image must be smaller than 5 MB.";
+    }
+
+    return "";
+}
+
+function handleShopImageChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+        return;
+    }
+
+    const validationError = validateShopImage(file);
+
+    if (validationError) {
+        setError(validationError);
+        return;
+    }
+
+    setError("");
+    setShopImage(file);
+
+    const previewUrl = URL.createObjectURL(file);
+    setShopImagePreview(previewUrl);
+}
+
+async function uploadShopImage() {
+    if (!shopImage) {
+        return;
+    }
+
+    setShopImageUploading(true);
+    setError("");
+    setSuccess("");
+
+    try {
+        const formData = new FormData();
+        formData.append("image", shopImage);
+
+        const response = await fetch(
+            "http://127.0.0.1:8000/shop/my-profile/image",
+            {
+                method: "POST",
+                credentials: "include",
+                body: formData,
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || "Failed to upload shop image"
+            );
+        }
+
+        setShop(data);
+        setShopImage(null);
+        setShopImagePreview("");
+
+        setSuccess("Shop image updated successfully.");
+    } catch (error) {
+        console.error("Failed to upload shop image:", error);
+        setError(error.message);
+    } finally {
+        setShopImageUploading(false);
+    }
+}
 
     function startEditing() {
         setIsEditing(true);
@@ -292,8 +381,29 @@ function ShopProfile() {
             <div className="shop-profile-card">
 
                 {!isEditing ? (
+                    
 
                     <>
+ <section className="shop-profile-section">
+    <div className="shop-profile-image-row">
+        <span className="eyebrow">
+            SHOP IMAGE
+        </span>
+
+        <div className="shop-profile-image-display">
+            {shop.image_url ? (
+                <img
+                    src={`http://127.0.0.1:8000${shop.image_url}`}
+                    alt={shop.shop_name}
+                />
+            ) : (
+                <div className="shop-profile-image-placeholder">
+                    {shop.shop_name.charAt(0).toUpperCase()}
+                </div>
+            )}
+        </div>
+    </div>
+</section>
                         {/* Shop Information */}
 
                         <section className="shop-profile-section">
@@ -482,6 +592,50 @@ function ShopProfile() {
 
                         </section>
 
+
+
+                    <section className="shop-profile-section">
+    <span className="eyebrow">
+        SHOP IMAGE
+    </span>
+
+    <div className="shop-profile-form-group">
+        <label htmlFor="shop_image">
+            Shop Image
+        </label>
+
+        <input
+            id="shop_image"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleShopImageChange}
+            disabled={shopImageUploading}
+        />
+
+        {(shopImagePreview || shop?.image_url) && (
+            <div className="shop-image-preview">
+                <img
+                    src={
+                        shopImagePreview ||
+                        `http://127.0.0.1:8000${shop.image_url}`
+                    }
+                    alt="Shop preview"
+                />
+            </div>
+        )}
+
+        <button
+            type="button"
+            className="secondary-button"
+            onClick={uploadShopImage}
+            disabled={!shopImage || shopImageUploading}
+        >
+            {shopImageUploading
+                ? "Uploading..."
+                : "Upload Shop Image"}
+        </button>
+    </div>
+</section>
 
                         {/* Edit Address */}
 

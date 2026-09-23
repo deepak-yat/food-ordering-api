@@ -1459,16 +1459,25 @@ console.log("CART ITEMS:", data.items);
 
     <div className="foodly-shop-image">
 
-        <span className="foodly-shop-image-placeholder">
-            {shop.shop_name
-                .charAt(0)
-                .toUpperCase()}
-        </span>
+        {shop.image_url ? (
+    <img
+        src={`http://127.0.0.1:8000${shop.image_url}`}
+        alt={shop.shop_name}
+        className="foodly-shop-image-photo"
+        onError={(event) => {
+            event.currentTarget.style.display = "none";
+        }}
+    />
+) : (
+    <span className="foodly-shop-image-placeholder">
+        {shop.shop_name.charAt(0).toUpperCase()}
+    </span>
+)}
 
-        <span className="foodly-shop-open-badge">
-            <span className="foodly-shop-open-dot"></span>
-            Open
-        </span>
+<span className="foodly-shop-open-badge">
+    <span className="foodly-shop-open-dot"></span>
+    Open
+</span>
 
     </div>
 
