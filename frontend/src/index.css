@@ -1054,7 +1054,7 @@ background: var(--primary-dark);
     background-repeat: no-repeat;
 
     border-radius: 18px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .dashboard-header h1 {
@@ -14715,4 +14715,97 @@ height: 42px;
     height: 100%;
     display: block;
     object-fit: cover;
+}
+
+/* Google Sign-In */
+.google-signin-section {
+    width: 100%;
+    margin-top: 22px;
+}
+
+.google-signin-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    color: #8a8a8a;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.google-signin-divider::before,
+.google-signin-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #333333;
+}
+
+.google-signin-divider span {
+    padding: 0 4px;
+}
+
+.google-signin-section > div:last-child {
+    display: flex;
+    justify-content: center;
+}
+
+.google-signin-section iframe {
+    border-radius: 999px !important;
+}
+/* Email Verification */
+
+.verification-form {
+    width: 100%;
+    text-align: center;
+}
+
+.verification-form .auth-heading {
+    margin-bottom: 24px;
+}
+
+.verification-form .form-group {
+    text-align: left;
+}
+
+.verification-form input {
+    text-align: center;
+    letter-spacing: 6px;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.verification-form input::placeholder {
+    letter-spacing: normal;
+    font-size: 0.9rem;
+    font-weight: 400;
+}
+
+.verification-form .primary-button {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.secondary-button {
+    width: 100%;
+    margin-top: 12px;
+    padding: 12px 18px;
+    border: 1px solid #3a3a3a;
+    border-radius: 8px;
+    background: transparent;
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.secondary-button:hover {
+    background: #242424;
+    border-color: #555555;
+}
+
+.secondary-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }

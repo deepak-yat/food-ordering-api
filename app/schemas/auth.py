@@ -42,3 +42,16 @@ class ResetPasswordRequest(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     user_email: str
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+class RegisterVerificationRequest(BaseModel):
+    user_name: str
+    user_email: EmailStr
+    password: str
+
+
+class VerifyRegistrationRequest(BaseModel):
+    email: EmailStr
+    verification_code: str

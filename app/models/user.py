@@ -25,8 +25,10 @@ class User(SQLModel,table=True):
         index=True
     )
 
-    password_hash : str
+    password_hash : str | None = None
 
     role : UserRole
 
     is_active : bool
+
+    google_id: str | None = Field(default=None, unique=True, index=True)

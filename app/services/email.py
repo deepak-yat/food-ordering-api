@@ -64,3 +64,57 @@ Foodly Team
         )
 
         server.send_message(message)
+
+
+def send_email_verification_code(
+    recipient_email: str,
+    verification_code: str
+) -> None:
+    if not all([
+        SMTP_HOST,
+        SMTP_USERNAME,
+        SMTP_PASSWORD,
+        SMTP_FROM_EMAIL
+    ]):
+        raise RuntimeError(
+            "SMTP configuration is incomplete"
+        )
+
+    message = EmailMessage()
+
+    message["Subject"] = "Verify your Foodly email"
+    message["From"] = SMTP_FROM_EMAIL
+    message["To"] = recipient_email
+
+    message.set_content(
+        f"""
+Hello,
+
+Welcome to Foodly!
+
+Your email verification code is:
+
+{verification_code}
+
+This code will expire in 10 minutes.
+
+If you did not try to create a Foodly account, you can safely ignore this email.
+
+Regards,
+Foodly Team
+"""
+    )
+
+    with smtplib.SMTP(
+        SMTP_HOST,
+        SMTP_PORT
+    ) as server:
+
+        server.starttls()
+
+        server.login(
+            SMTP_USERNAME,
+            SMTP_PASSWORD
+        )
+
+        server.send_message(message)
