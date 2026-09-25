@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import ShopCard from "../components/ShopCard";
 import FoodCard from "../components/FoodCard";
 import SpecialOffers from "../components/SpecialOffers";
+import FeaturedItemsCarousel from "../components/FeaturedItemCarousel";
 
 import { apiFetch } from "../api/client";
 
@@ -434,7 +435,17 @@ if (searchedItemId) {
 </div>
 
                 </section>
-
+  <FeaturedItemsCarousel
+    onAddToCart={(item) =>
+        addToCart(
+            item.item_id,
+            [],
+            1,
+            {},
+            item.shop_name
+        )
+    }
+/>
                 <SpecialOffers
     onOfferClick={async (shopId, offerId) => {
         setActiveOfferId(offerId);

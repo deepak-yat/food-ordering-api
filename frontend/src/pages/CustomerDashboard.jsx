@@ -3,6 +3,7 @@ import { apiFetch } from "../api/client";
 import Cart from "../components/Cart";
 import SpecialOffers from "../components/SpecialOffers";
 import { getBrowserCoordinates } from "../utils/geolocation";
+import FeaturedItemsCarousel from "../components/FeaturedItemCarousel";
 import {
     useNavigate
 } from "react-router-dom";
@@ -1161,7 +1162,7 @@ console.log("CART ITEMS:", data.items);
                                     });
                             }}
                         >
-                            Cart
+                        🛒
                         </button>
 
                         <button
@@ -1375,6 +1376,18 @@ console.log("CART ITEMS:", data.items);
             </section>
 
       {!selectedShop && (
+        <>
+       <FeaturedItemsCarousel
+    onAddToCart={(item) =>
+        addToCart(
+            item.item_id,
+            [],
+            1,
+            {},
+            item.shop_name
+        )
+    }
+/>
    <SpecialOffers
     onOfferClick={async (shopId, offerId) => {
         setActiveOfferId(offerId);
@@ -1382,6 +1395,7 @@ console.log("CART ITEMS:", data.items);
         await viewShopMenu(shopId);
     }}
 />
+</>
 )}
 
             {!selectedShop ? (
