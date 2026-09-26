@@ -4,6 +4,7 @@ import Cart from "../components/Cart";
 import SpecialOffers from "../components/SpecialOffers";
 import { getBrowserCoordinates } from "../utils/geolocation";
 import FeaturedItemsCarousel from "../components/FeaturedItemCarousel";
+import ReviewModal from "../components/ReviewModal";
 import {
     useNavigate
 } from "react-router-dom";
@@ -34,12 +35,11 @@ function CustomerDashboard() {
     const [configError, setConfigError] = useState("");
     const [showCheckout, setShowCheckout] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
-
-    const [profile, setProfile] = useState(null);
+        const [profile, setProfile] = useState(null);
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileError, setProfileError] = useState("");
     const [isEditingProfile, setIsEditingProfile] = useState(false);
-
+    const [reviewItem, setReviewItem] = useState(null);
     const [profileForm, setProfileForm] = useState({
         customer_name: "",
         phone: ""
@@ -2130,15 +2130,27 @@ console.log("CART ITEMS:", data.items);
                 <div className="food-item-image">
 
                     {item.image_url ? (
+                            
                         <img
                             src={`http://127.0.0.1:8000${item.image_url}`}
                             alt={item.name}
                         />
+                        
                     ) : (
                         <div className="food-item-image-placeholder">
                             No Image
+                            
                         </div>
                     )}
+                    
+                 <span className="menu-item-rating-badge">
+    <span className="menu-item-rating-star">★</span>
+    <span>
+        {item.average_rating != null
+            ? item.average_rating.toFixed(1)
+            : "5.0"}
+    </span>
+</span>
 
                 </div>
 
@@ -2172,7 +2184,15 @@ console.log("CART ITEMS:", data.items);
         ₹{Number(item.price).toFixed(2)}
     </strong>
 )}
-
+{true && (
+    <button
+    type="button"
+    className="food-item-reviews-link"
+    onClick={() => setReviewItem(item)}
+>
+    💬 {item.review_count} review{item.review_count === 1 ? "" : "s"} ›
+</button>
+)}
                 </div>
 
 
@@ -3084,6 +3104,41 @@ console.log("CART ITEMS:", data.items);
 
                 </div>
             )}
+            {reviewItem && (
+  <ReviewModal
+    item={reviewItem}
+    onClose={() => setReviewItem(null)}
+    onReviewUpdated={(updatedData) => {
+        const updatedReviewCount =
+            updatedData.summary.review_count;
+
+        const updatedAverageRating =
+            updatedData.summary.average_rating;
+
+        setMenu((previousMenu) =>
+            previousMenu.map((menuItem) =>
+                menuItem.item_id === reviewItem.item_id
+                    ? {
+                          ...menuItem,
+                          review_count: updatedReviewCount,
+                          average_rating: updatedAverageRating,
+                      }
+                    : menuItem
+            )
+        );
+
+        setReviewItem((previousItem) =>
+            previousItem
+                ? {
+                      ...previousItem,
+                      review_count: updatedReviewCount,
+                      average_rating: updatedAverageRating,
+                  }
+                : previousItem
+        );
+    }}
+/>
+)}
         </div>
     )
 }

@@ -163,3 +163,41 @@ def require_page_role(required_role: UserRole):
         return current_user
 
     return page_role_checker
+
+
+def get_optional_customer(
+    credentials: HTTPAuthorizationCredentials | None = Depends(
+        HTTPBearer(auto_error=False)
+    ),
+    access_token: str | None = Cookie(default=None),
+    db: Session = Depends(get_db),
+) -> Customer | None:
+    token = credentials.credentials if credentials else access_token
+
+    if token is None:
+        return None
+
+    payload = decode_access_token(token)
+
+    if payload is None:
+        return None
+
+    try:
+        user_id = int(payload.get("sub"))
+    except (TypeError, ValueError):
+        return None
+
+    user = db.get(User, user_id)
+
+    if (
+        user is None
+        or not user.is_active
+        or user.role != UserRole.CUSTOMER
+    ):
+        return None
+
+    return db.exec(
+        select(Customer).where(
+            Customer.user_id == user.user_id
+        )
+    ).first()

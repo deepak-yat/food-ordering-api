@@ -28,6 +28,8 @@ class CustomerMenuItemResponse(BaseModel):
         default_factory=list
     )
     offer: ItemOfferInfo | None = None
+    average_rating: float | None = None
+    review_count: int = 0
 
 
 class CustomerMenuCategoryResponse(BaseModel):

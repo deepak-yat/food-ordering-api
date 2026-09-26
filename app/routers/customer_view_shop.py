@@ -17,7 +17,7 @@ from app.schemas.customer_menu import (
     CustomerMenuItemResponse,
     ItemOfferInfo
 )
-
+from app.services.review_rating import get_rating_summary_by_item
 from app.models.menu_item_option_group import MenuItemOptionGroup
 from app.models.menu_item_option import MenuItemOption
 from app.models.menu_category import MenuCategory   
@@ -181,7 +181,10 @@ def get_shop_menu(
     item_ids,
     now=now,
     )
-
+    rating_by_item = get_rating_summary_by_item(
+    db,
+    item_ids
+)
     result = []
 
     for category in categories:
@@ -201,7 +204,10 @@ def get_shop_menu(
                 item.item_id,
                     []
                     )
-
+            rating_info = rating_by_item.get(
+            item.item_id,
+            {"average_rating": None, "review_count": 0}
+            )
             selected_offer, offer_price = best_offer(
             effective_unit=item.price,
             has_variant=False,
@@ -323,7 +329,9 @@ def get_shop_menu(
                     has_options=item.has_options,
                     allow_parent_purchase=item.allow_parent_purchase,
                     option_groups=option_groups,
-                    offer=offer_info
+                    offer=offer_info,
+                    average_rating=rating_info["average_rating"],
+                    review_count=rating_info["review_count"]
                 )
             )
 
