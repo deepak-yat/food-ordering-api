@@ -26,6 +26,10 @@ import ResetPassword from "./pages/ResetPassword";
 import ShopMessages from "./pages/ShopMessages";
 import ShopMessageDetails from "./pages/ShopMessageDetails";
 import ShopOffers from "./components/ShopOffers";
+import CustomerLayout from "./layouts/CustomerLayout";
+import CustomerCart from "./pages/CustomerCart";
+import CustomerProfile from "./pages/CustomerProfile";
+import { CustomerProvider } from "./context/CustomerContext";
 function App() {
 
     return (
@@ -54,13 +58,29 @@ function App() {
                         element={<ShopRegister />}
                     />
                     <Route
-                        path="/customer/dashboard"
-                        element={
-                      <ProtectedRoute role="customer">
-                        <CustomerDashboard />
-                      </ProtectedRoute>
-                    }
-                    />
+    path="/customer"
+    element={
+        <ProtectedRoute role="customer">
+            <CustomerProvider>
+                <CustomerLayout />
+            </CustomerProvider>
+        </ProtectedRoute>
+    }
+>
+    <Route
+        path="dashboard"
+        element={<CustomerDashboard />}
+    />
+<Route
+    path="profile"
+    element={<CustomerProfile />}
+/>
+    <Route
+        path="cart"
+        element={<CustomerCart />}
+    />
+</Route>
+
                     <Route
                     path="/admin/dashboard"
                     element={

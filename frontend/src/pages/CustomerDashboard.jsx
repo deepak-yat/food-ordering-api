@@ -5,6 +5,8 @@ import SpecialOffers from "../components/SpecialOffers";
 import { getBrowserCoordinates } from "../utils/geolocation";
 import FeaturedItemsCarousel from "../components/FeaturedItemCarousel";
 import ReviewModal from "../components/ReviewModal";
+import { useCustomer } from "../context/CustomerContext";
+import CartRecommended from "../components/cart/CartRecommended";
 import {
     useNavigate
 } from "react-router-dom";
@@ -21,14 +23,10 @@ function CustomerDashboard() {
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [searchedItemId, setSearchedItemId] = useState(null);
     const [activeOfferId, setActiveOfferId] = useState(null);
-    const [selectedShop, setSelectedShop] = useState(null);
-    const [menu, setMenu] = useState([]);
     const [menuLoading, setMenuLoading] = useState(false);
     const navigate = useNavigate();
-    const [cart, setCart] = useState(null);
     const [expandedItems, setExpandedItems] = useState({});
-    const [cartLoading, setCartLoading] = useState(true);
-    const [cartConflict, setCartConflict] = useState(null);
+        const [cartConflict, setCartConflict] = useState(null);
     const [selectedConfigItem, setSelectedConfigItem] = useState(null);
     const [selectedOptions, setSelectedOptions] = useState({});
     const [configQuantity, setConfigQuantity] = useState(1);
@@ -59,6 +57,18 @@ function CustomerDashboard() {
         startShopIndex,
         startShopIndex + shopsPerPage
     );
+   const {
+    cart,
+    cartLoading,
+    loadCart,
+    updateCartQuantity,
+    updateCartOptionQuantity,
+    removeFromCart,
+    selectedShop,
+    menu,
+    setSelectedShop,
+    setMenu
+} = useCustomer();
 
     useEffect(() => {
         setCurrentShopPage(1);
@@ -460,122 +470,6 @@ async function addConfiguredItem(item) {
             setError(
                 error.message ||
                 "Unable to switch shops"
-            );
-        }
-    }
-
-    async function loadCart() {
-        try {
-            setCartLoading(true);
-
-            const data = await apiFetch(
-                "/customer/cart"
-            );
-
-            setCart(data);
-            console.log("CART DATA:", data);
-console.log("CART ITEMS:", data.items);
-
-        } catch (error) {
-
-            if (error.status === 404) {
-                setCart(null);
-                return;
-            }
-
-            console.error(error);
-
-            setError(
-                error.message ||
-                "Unable to load cart"
-            );
-
-        } finally {
-
-            setCartLoading(false);
-
-        }
-    }
-
-    async function updateCartQuantity(
-        cartItemId,
-        quantity
-    ) {
-        if (quantity < 1) {
-            return;
-        }
-        try {
-            await apiFetch(
-                `/customer/cart/items/${cartItemId}`,
-                {
-                    method: "PUT",
-                    body: JSON.stringify({
-                        quantity: quantity
-                    })
-                }
-            );
-            await loadCart();
-        } catch (error) {
-            console.error(error);
-
-            setError(
-                error.message ||
-                "Unable to update quantity"
-            );
-        }
-    }
-
-
-    async function updateCartOptionQuantity(
-    cartItemId,
-    optionId,
-    quantity
-) {
-    if (quantity < 0) {
-        return;
-    }
-
-    try {
-        await apiFetch(
-            `/customer/cart/items/${cartItemId}/options/${optionId}`,
-            {
-                method: "PUT",
-                body: JSON.stringify({
-                    quantity: quantity
-                })
-            }
-        );
-
-        await loadCart();
-
-    } catch (error) {
-        console.error(
-            "Error updating addon quantity:",
-            error
-        );
-
-        setError(
-            error.message ||
-            "Unable to update add-on quantity"
-        );
-    }
-}
-
-    async function removeFromCart(cartItemId) {
-        try {
-            await apiFetch(
-                `/customer/cart/items/${cartItemId}`,
-                {
-                    method: "DELETE"
-                }
-            );
-            await loadCart();
-        } catch (error) {
-            console.error(error);
-
-            setError(
-                error.message ||
-                "Unable to remove item"
             );
         }
     }
