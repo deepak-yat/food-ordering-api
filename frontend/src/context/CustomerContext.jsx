@@ -8,6 +8,8 @@ export function CustomerProvider({ children }) {
     const [cartLoading, setCartLoading] = useState(true);
     const [selectedShop, setSelectedShop] = useState(null);
 const [menu, setMenu] = useState([]);
+const [error, setError] = useState("");
+const [cartConflict, setCartConflict] = useState(null);
 const [addresses, setAddresses] = useState([]);
 const [selectedAddressId, setSelectedAddressId] = useState(null);
 const [showAddAddress, setShowAddAddress] = useState(false);
@@ -31,7 +33,7 @@ const [deliveryCharge, setDeliveryCharge] = useState(null);
 const [deliveryLoading, setDeliveryLoading] = useState(false);
 const [deliveryError, setDeliveryError] = useState("");
 
-
+const [showCheckout, setShowCheckout] = useState(false);
 
      async function loadCart() {
         try {
@@ -130,6 +132,95 @@ async function updateCartQuantity(
             "Unable to update add-on quantity"
         );
     }
+}
+
+    async function replaceCartAndAddItem() {
+        if (!cartConflict) {
+            return;
+        }
+
+        try {
+            await apiFetch(
+                "/customer/cart",
+                {
+                    method: "DELETE"
+                }
+            );
+
+            await apiFetch(
+                "/customer/cart/items",
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+    menu_item_id: cartConflict.itemId,
+    quantity: cartConflict.quantity,
+    option_ids: cartConflict.optionIds,
+    option_quantities: cartConflict.optionQuantities
+})
+                }
+            );
+
+            setCartConflict(null);
+
+            await loadCart();
+
+            setError("");
+
+        } catch (error) {
+            console.error(error);
+
+            setError(
+                error.message ||
+                "Unable to switch shops"
+            );
+        }
+    }
+    function getRowsForItem(itemId) {
+    return (
+        cart?.items?.filter(
+            (row) => row.menu_item_id === itemId
+        ) ?? []
+    );
+}
+
+
+function findVariantRow(itemId, optionId) {
+    return (
+        getRowsForItem(itemId).find((row) => {
+
+            const replaceOptions = (
+                row.options ?? []
+            )
+                .filter(
+                    (option) =>
+                        option.price_mode === "REPLACE"
+                )
+                .map(
+                    (option) => option.option_id
+                );
+
+            return (
+                replaceOptions.length === 1 &&
+                replaceOptions[0] === optionId
+            );
+        }) ?? null
+    );
+}
+
+
+function findAddonParentRow(itemId, optionId) {
+    const rows = getRowsForItem(itemId);
+
+    return (
+        rows.find((row) =>
+            row.options?.some(
+                (option) =>
+                    option.option_id === optionId
+            )
+        ) ??
+        rows[0] ??
+        null
+    );
 }
 
     async function removeFromCart(cartItemId) {
@@ -346,7 +437,8 @@ async function updateCartQuantity(
 
     return (
         <CustomerContext.Provider
-            value={{
+           value={{
+    // Cart
     cart,
     cartLoading,
     addToCart,
@@ -354,15 +446,41 @@ async function updateCartQuantity(
     updateCartQuantity,
     updateCartOptionQuantity,
     removeFromCart,
+
+    // Shop / Menu
     selectedShop,
     menu,
     setSelectedShop,
-    loadAddresses,
-    calculateDeliveryCharge,
-    saveAddress,
     setMenu,
-    placeOrder
-    
+
+    // Addresses
+    addresses,
+    selectedAddressId,
+    setSelectedAddressId,
+
+    showAddAddress,
+    setShowAddAddress,
+
+    addressForm,
+    setAddressForm,
+
+    addressSaving,
+    addressFormError,
+    addressLoading,
+    addressError,
+
+    loadAddresses,
+    saveAddress,
+
+    // Delivery
+    deliveryCharge,
+    deliveryLoading,
+    deliveryError,
+    calculateDeliveryCharge,
+    showCheckout,
+    setShowCheckout,
+    // Orders
+    placeOrder,
 }}
         >
             {children}

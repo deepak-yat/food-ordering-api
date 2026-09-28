@@ -6,7 +6,7 @@ import { getBrowserCoordinates } from "../utils/geolocation";
 import FeaturedItemsCarousel from "../components/FeaturedItemCarousel";
 import ReviewModal from "../components/ReviewModal";
 import { useCustomer } from "../context/CustomerContext";
-import CartRecommended from "../components/cart/CartRecommended";
+
 import {
     useNavigate
 } from "react-router-dom";
@@ -31,7 +31,6 @@ function CustomerDashboard() {
     const [selectedOptions, setSelectedOptions] = useState({});
     const [configQuantity, setConfigQuantity] = useState(1);
     const [configError, setConfigError] = useState("");
-    const [showCheckout, setShowCheckout] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
         const [profile, setProfile] = useState(null);
     const [profileLoading, setProfileLoading] = useState(false);
@@ -57,17 +56,48 @@ function CustomerDashboard() {
         startShopIndex,
         startShopIndex + shopsPerPage
     );
-   const {
+const {
     cart,
     cartLoading,
     loadCart,
     updateCartQuantity,
     updateCartOptionQuantity,
     removeFromCart,
+
     selectedShop,
     menu,
     setSelectedShop,
-    setMenu
+    setMenu,
+
+    // Checkout
+    showCheckout,
+    setShowCheckout,
+
+    // Addresses
+    addresses,
+    selectedAddressId,
+    setSelectedAddressId,
+    showAddAddress,
+    setShowAddAddress,
+    addressForm,
+    setAddressForm,
+    addressSaving,
+    addressFormError,
+    addressLoading,
+    addressError,
+
+    // Address functions
+    loadAddresses,
+    saveAddress,
+
+    // Delivery
+    deliveryCharge,
+    deliveryLoading,
+    deliveryError,
+    calculateDeliveryCharge,
+
+    // Order
+    placeOrder,
 } = useCustomer();
 
     useEffect(() => {
@@ -111,25 +141,9 @@ function CustomerDashboard() {
             });
         }
     }, [menu, searchedItemId, selectedShop]);
-    const [addresses, setAddresses] = useState([]);
-    const [selectedAddressId, setSelectedAddressId] = useState(null);
-    const [showAddAddress, setShowAddAddress] = useState(false);
+   
     const [pendingOrderCount, setPendingOrderCount] = useState(0);
-    const [addressForm, setAddressForm] = useState({
-        address_line1: "",
-        address_line2: "",
-        city: "",
-        state: "",
-        pincode: "",
-        is_default: false,
-        latitude: null,
-        longitude: null
-    });
-
-    const [addressSaving, setAddressSaving] = useState(false);
-    const [addressFormError, setAddressFormError] = useState("");
-    const [addressLoading, setAddressLoading] = useState(true);
-    const [addressError, setAddressError] = useState("");
+    
     const [profileSaving, setProfileSaving] = useState(false);
 
     const [locationLoading, setLocationLoading] = useState(false);
@@ -139,9 +153,7 @@ function CustomerDashboard() {
         longitude: null
     });
 
-    const [deliveryCharge, setDeliveryCharge] = useState(null);
-    const [deliveryLoading, setDeliveryLoading] = useState(false);
-    const [deliveryError, setDeliveryError] = useState("");
+   
     useEffect(() => {
     let cancelled = false;
     console.log("LOCATION EFFECT RUNNING");
@@ -691,108 +703,7 @@ async function addConfiguredItem(item) {
         }
     }
 
-    async function loadAddresses() {
-        setAddressLoading(true);
-        setAddressError("");
 
-        try {
-            const data = await apiFetch(
-    "/customer/addresses"
-);
-
-
-            setAddresses(data);
-
-            // Automatically select the default address
-            const defaultAddress = data.find(
-                (address) => address.is_default
-            );
-
-            if (defaultAddress) {
-                setSelectedAddressId(defaultAddress.address_id);
-            } else if (data.length > 0) {
-                // Otherwise select the first address
-                setSelectedAddressId(data[0].address_id);
-            }
-
-        } catch (error) {
-            setAddressError(error.message);
-        } finally {
-            setAddressLoading(false);
-        }
-    }
-
-
-    async function saveAddress() {
-        setAddressSaving(true);
-        setAddressFormError("");
-
-        try {
-            const data = await apiFetch(
-                "/customer/addresses",
-                {
-                    method: "POST",
-                    body: JSON.stringify(addressForm),
-                }
-            );
-
-
-            // Add the new address to the existing list
-            setAddresses((previousAddresses) => {
-                if (data.is_default) {
-                    return [
-                        ...previousAddresses.map((address) => ({
-                            ...address,
-                            is_default: false,
-                        })),
-                        data,
-                    ];
-                }
-
-                return [...previousAddresses, data];
-            });
-
-            // Select the newly created address
-            setSelectedAddressId(data.address_id);
-
-            // Close the form
-            setShowAddAddress(false);
-
-            // Clear the form
-            setAddressForm({
-                address_line1: "",
-                address_line2: "",
-                city: "",
-                state: "",
-                pincode: "",
-                is_default: false,
-                latitude: null,
-                longitude: null
-            });
-
-        } catch (error) {
-            setAddressFormError(error.message);
-        } finally {
-            setAddressSaving(false);
-        }
-    }
-
-    function placeOrder() {
-        if (!selectedAddressId) {
-            alert("Please select a delivery address.");
-            return;
-        }
-
-        navigate("/customer/orders/review", {
-            state: {
-                cart: cart,
-                address: addresses.find(
-                    (address) =>
-                        address.address_id === selectedAddressId
-                )
-            }
-        });
-    }
 
     async function loadPendingOrderCount() {
 
@@ -946,41 +857,7 @@ async function addConfiguredItem(item) {
     }
 
 
-    async function calculateDeliveryCharge(addressId) {
-        if (!cart || !addressId) {
-            return;
-        }
-        setDeliveryLoading(true);
-        setDeliveryError("");
-        try {
-            const data = await apiFetch(
-                    "/customer/delivery-charge",                {
-                    method: "POST",
-                    body: JSON.stringify({
-                        shop_id: cart.shop_id,
-                        address_id: addressId
-                    })
-                }
-            );
-            
-            setDeliveryCharge(data);
-        } catch (error) {
-            console.error(
-                "Delivery Charge Error :",
-                error
-            );
-            setDeliveryCharge(null);
-
-            setDeliveryError(
-                error.message ||
-                "Unable to calculate delivery charge"
-            );
-        } finally {
-
-            setDeliveryLoading(false);
-        }
-
-    }
+ 
 
     async function searchFoodly(query) {
         const value = query.trim();
@@ -1311,13 +1188,9 @@ async function addConfiguredItem(item) {
                         <div className="menu-top-bar">
                             <button
                                 className="cart_button"
-                                onClick={() => {
-                                    document
-                                        .getElementById("customer-cart")
-                                        ?.scrollIntoView({
-                                            behavior: "smooth"
-                                        });
-                                }}
+                               onClick={() =>
+                                navigate("/customer/cart")
+                            }
                             >
                                 Go to Cart
                             </button>
@@ -1539,13 +1412,9 @@ async function addConfiguredItem(item) {
                     <div className="menu-top-bar">
                         <button
                             className="cart_button"
-                            onClick={() => {
-                                document
-                                    .getElementById("customer-cart")
-                                    ?.scrollIntoView({
-                                        behavior: "smooth"
-                                    });
-                            }}
+                            onClick={() =>
+                                navigate("/customer/cart")
+                            }
                         >
                             Go to Cart
                         </button>
@@ -2154,22 +2023,7 @@ async function addConfiguredItem(item) {
 
 
             )}
-<Cart
-    cart={cart}
-    cartLoading={cartLoading}
-    updateCartQuantity={updateCartQuantity}
-    updateCartOptionQuantity={updateCartOptionQuantity}
-    removeFromCart={removeFromCart}
-    onCheckout={() => {
-        setShowCheckout(true);
 
-        if (selectedAddressId) {
-            calculateDeliveryCharge(
-                selectedAddressId
-            );
-        }
-    }}
-/>
             {cartConflict && (
                 <div className="cart-conflict-overlay">
 
