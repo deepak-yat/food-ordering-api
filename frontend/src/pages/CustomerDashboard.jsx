@@ -6,10 +6,11 @@ import { getBrowserCoordinates } from "../utils/geolocation";
 import FeaturedItemsCarousel from "../components/FeaturedItemCarousel";
 import ReviewModal from "../components/ReviewModal";
 import { useCustomer } from "../context/CustomerContext";
-
+import FoodlyExperience from "../components/FoodlyExperience";
 import {
     useNavigate
 } from "react-router-dom";
+import "../styles/FoodlyExperience.css";
 function CustomerDashboard() {
     const [shops, setShops] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -897,64 +898,7 @@ async function addConfiguredItem(item) {
     return (
 
         <div className="customer-dashboard">
-            <header className="customer-navbar">
 
-                <div className="customer-navbar-container">
-                    <span to="" className="logo">
-                        Foodly
-                        <img
-                            src="/logo1.png"
-                            alt="Foodly"
-                            className="logo-icon"
-                        />
-                    </span>
-
-                    <nav className="customer-nav-links">
-
-                        <button
-                            className="customer-orders-nav-btn"
-                            onClick={() => navigate("/customer/orders")}
-                        >
-                            <span>Orders</span>
-
-                            {pendingOrderCount > 0 && (
-                                <span className="customer-orders-counter">
-                                    {pendingOrderCount}
-                                </span>
-                            )}
-                        </button>
-
-                        <button
-                            onClick={() => {
-                                document
-                                    .getElementById("customer-cart")
-                                    ?.scrollIntoView({
-                                        behavior: "smooth"
-                                    });
-                            }}
-                        >
-                        🛒
-                        </button>
-
-                        <button
-                            onClick={openProfile}
-                        >
-                            Profile
-                        </button>
-
-                    </nav>
-
-
-                    <button
-                        className="customer-logout-button"
-                        onClick={logout}
-                    >
-                        Logout
-                    </button>
-
-                </div>
-
-            </header>
             <section className="dashboard-header">
                 <div className="home-search-wrapper">
 
@@ -1170,6 +1114,7 @@ async function addConfiguredItem(item) {
 )}
 
             {!selectedShop ? (
+                <>
                 <section className="dashboard-shops">
 
                     <div className="section-heading">
@@ -1395,7 +1340,8 @@ async function addConfiguredItem(item) {
                     )}
 
                 </section>
-
+                <FoodlyExperience />
+</>
             ) : (
 
                 <section className="dashboard-menu">
@@ -2419,439 +2365,8 @@ async function addConfiguredItem(item) {
                 </div>
             )}
 
-            {showProfile && (
-                <div className="customer-modal-overlay">
+   
 
-                    <div className="customer-profile-modal">
-
-                        {/* Header */}
-                        <div className="customer-profile-header">
-
-                            <div>
-                                <h2>
-                                    {isEditingProfile
-                                        ? "Edit Profile"
-                                        : "My Profile"}
-                                </h2>
-
-                                <p>
-                                    {isEditingProfile
-                                        ? "Update your account information"
-                                        : "Your Foodly account information"}
-                                </p>
-                            </div>
-
-                            <button
-                                className="customer-modal-close"
-                                onClick={() => {
-                                    setShowProfile(false);
-                                    setIsEditingProfile(false);
-                                    setProfileError("");
-                                }}
-                            >
-                                ×
-                            </button>
-
-                        </div>
-
-
-                        {/* Body */}
-                        <div className="customer-profile-body">
-
-                            {profileLoading ? (
-
-                                <div className="profile-loading">
-                                    Loading profile...
-                                </div>
-
-                            ) : profileError ? (
-
-                                <p className="customer-profile-error">
-                                    {profileError}
-                                </p>
-
-                            ) : profile ? (
-
-                                isEditingProfile ? (
-
-                                    /* =========================
-                                       EDIT MODE
-                                       ========================= */
-
-                                    <div className="profile-edit-form">
-
-                                        <div className="profile-form-group">
-
-                                            <label>
-                                                Customer Name
-                                            </label>
-
-                                            <input
-                                                type="text"
-                                                name="customer_name"
-                                                value={
-                                                    profileForm.customer_name
-                                                }
-                                                onChange={(event) =>
-                                                    setProfileForm(
-                                                        (previous) => ({
-                                                            ...previous,
-                                                            customer_name:
-                                                                event.target.value
-                                                        })
-                                                    )
-                                                }
-                                            />
-
-                                        </div>
-
-
-                                        <div className="profile-form-group">
-
-                                            <label>
-                                                Phone
-                                            </label>
-
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                value={
-                                                    profileForm.phone
-                                                }
-                                                onChange={(event) =>
-                                                    setProfileForm(
-                                                        (previous) => ({
-                                                            ...previous,
-                                                            phone:
-                                                                event.target.value
-                                                        })
-                                                    )
-                                                }
-                                            />
-
-                                        </div>
-
-                                    </div>
-
-                                ) : (
-
-                                    /* =========================
-                                       VIEW MODE
-                                       ========================= */
-
-                                    <div className="profile-view">
-
-                                        <div className="profile-field">
-
-                                            <span>
-                                                Customer Name
-                                            </span>
-
-                                            <strong>
-                                                {profile.customer_name ||
-                                                    "Not provided"}
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div className="profile-field">
-
-                                            <span>
-                                                Phone
-                                            </span>
-
-                                            <strong>
-                                                {profile.phone ||
-                                                    "Not provided"}
-                                            </strong>
-
-                                        </div>
-
-
-                                        <div className="profile-field">
-
-                                            <span>
-                                                Customer ID
-                                            </span>
-
-                                            <strong>
-                                                {profile.customer_id}
-                                            </strong>
-
-                                        </div>
-                                        <div className="profile-address-section">
-
-                                            <span className="profile-section-label">
-                                                DELIVERY ADDRESS
-                                            </span>
-
-                                            {addresses.length === 0 ? (
-
-                                                <div className="profile-address-empty">
-                                                    <span>Not yet added</span>
-                                                </div>
-
-                                            ) : (
-
-                                                <div className="profile-address-card">
-
-                                                    {(() => {
-                                                        const defaultAddress =
-                                                            addresses.find(
-                                                                (address) => address.is_default
-                                                            ) || addresses[0];
-
-                                                        return (
-                                                            <>
-                                                                <div className="profile-address-top">
-
-                                                                    <strong>
-                                                                        {defaultAddress.address_line1}
-                                                                    </strong>
-
-                                                                    {defaultAddress.is_default && (
-                                                                        <span className="default-badge">
-                                                                            Default
-                                                                        </span>
-                                                                    )}
-
-                                                                </div>
-
-                                                                {defaultAddress.address_line2 && (
-                                                                    <p>
-                                                                        {defaultAddress.address_line2}
-                                                                    </p>
-                                                                )}
-
-                                                                <p>
-                                                                    {defaultAddress.city},{" "}
-                                                                    {defaultAddress.state} -{" "}
-                                                                    {defaultAddress.pincode}
-                                                                </p>
-                                                            </>
-                                                        );
-                                                    })()}
-
-                                                </div>
-
-                                            )}
-
-                                        </div>
-
-                                    </div>
-
-                                )
-
-                            ) : null}
-
-                        </div>
-
-
-                        {/* Footer */}
-                        {isEditingProfile && showAddAddress && (
-                            <div className="profile-add-address-form">
-
-                                <div className="profile-add-address-header">
-
-                                    <h3>Add New Address</h3>
-
-                                    <button
-                                        type="button"
-                                        className="profile-address-close-btn"
-                                        onClick={() => setShowAddAddress(false)}
-                                    >
-                                        ×
-                                    </button>
-
-                                </div>
-
-                                {addressFormError && (
-                                    <p className="profile-address-error">
-                                        {addressFormError}
-                                    </p>
-                                )}
-
-                                <button
-                                    type="button"
-                                    className="use-location-btn"
-                                    onClick={useCurrentLocation}
-                                    disabled={locationLoading}
-                                >
-                                    {locationLoading
-                                        ? "Getting your location..."
-                                        : "📍 Use My Current Location"}
-                                </button>
-
-                                {locationError && (
-                                    <p className="profile-address-error">
-                                        {locationError}
-                                    </p>
-                                )}
-
-                                <input
-                                    type="text"
-                                    placeholder="Address Line 1"
-                                    value={addressForm.address_line1}
-                                    onChange={(event) =>
-                                        setAddressForm({
-                                            ...addressForm,
-                                            address_line1: event.target.value
-                                        })
-                                    }
-                                />
-
-                                <input
-                                    type="text"
-                                    placeholder="Address Line 2 (Optional)"
-                                    value={addressForm.address_line2}
-                                    onChange={(event) =>
-                                        setAddressForm({
-                                            ...addressForm,
-                                            address_line2: event.target.value
-                                        })
-                                    }
-                                />
-
-                                <div className="profile-address-row">
-
-                                    <input
-                                        type="text"
-                                        placeholder="City"
-                                        value={addressForm.city}
-                                        onChange={(event) =>
-                                            setAddressForm({
-                                                ...addressForm,
-                                                city: event.target.value
-                                            })
-                                        }
-                                    />
-
-                                    <input
-                                        type="text"
-                                        placeholder="State"
-                                        value={addressForm.state}
-                                        onChange={(event) =>
-                                            setAddressForm({
-                                                ...addressForm,
-                                                state: event.target.value
-                                            })
-                                        }
-                                    />
-
-                                </div>
-
-                                <input
-                                    type="text"
-                                    placeholder="Pincode"
-                                    value={addressForm.pincode}
-                                    onChange={(event) =>
-                                        setAddressForm({
-                                            ...addressForm,
-                                            pincode: event.target.value
-                                        })
-                                    }
-                                />
-
-                                <label className="profile-default-address">
-
-                                    <input
-                                        type="checkbox"
-                                        checked={addressForm.is_default}
-                                        onChange={(event) =>
-                                            setAddressForm({
-                                                ...addressForm,
-                                                is_default: event.target.checked
-                                            })
-                                        }
-                                    />
-
-                                    <span>Set as default address</span>
-
-                                </label>
-
-                                <button
-                                    type="button"
-                                    className="profile-save-address-btn"
-                                    onClick={saveAddress}
-                                    disabled={addressSaving}
-                                >
-                                    {addressSaving
-                                        ? "Saving..."
-                                        : "Save Address"}
-                                </button>
-
-                            </div>
-                        )}
-
-
-                        {/* Footer */}
-                        <div className="customer-profile-footer">
-
-                            {isEditingProfile ? (
-
-                                <>
-                                    <button
-                                        className="profile-add-address-btn"
-                                        onClick={() => {
-                                            setShowAddAddress(true);
-                                            setAddressFormError("");
-                                        }}
-                                    >
-                                        + Add Address
-                                    </button>
-
-                                    <button
-                                        className="profile-cancel-btn"
-                                        onClick={() => {
-
-                                            setIsEditingProfile(false);
-                                            setShowAddAddress(false);
-                                            setProfileError("");
-
-                                            setProfileForm({
-                                                customer_name:
-                                                    profile.customer_name || "",
-                                                phone:
-                                                    profile.phone || ""
-                                            });
-
-                                        }}
-                                        disabled={profileSaving}
-                                    >
-                                        Cancel
-                                    </button>
-
-                                    <button
-                                        className="profile-save-btn"
-                                        onClick={saveProfileChanges}
-                                        disabled={profileSaving}
-                                    >
-                                        {profileSaving
-                                            ? "Saving..."
-                                            : "Save Changes"}
-                                    </button>
-                                </>
-
-                            ) : (
-
-                                <button
-                                    className="profile-edit-btn"
-                                    onClick={() =>
-                                        setIsEditingProfile(true)
-                                    }
-                                >
-                                    Edit Profile
-                                </button>
-
-                            )}
-
-                        </div>
-
-                    </div>
-
-                </div>
-            )}
             {reviewItem && (
   <ReviewModal
     item={reviewItem}
@@ -2887,6 +2402,110 @@ async function addConfiguredItem(item) {
     }}
 />
 )}
+
+<footer className="site-footer">
+
+    <div className="footer-container">
+
+        <div className="footer-brand">
+
+            <span className="footer-logo">
+                Foodly
+            </span>
+
+            <p>
+                Good food, great choices, and a
+                simple ordering experience.
+            </p>
+
+        </div>
+
+
+        <div className="footer-column">
+
+            <h3>
+                Explore
+            </h3>
+
+            <a href="/customer/dashboard">
+                Home
+            </a>
+
+            <a
+                href="#shops"
+                onClick={(event) => {
+                    event.preventDefault();
+
+                    document
+                        .querySelector(".dashboard-shops")
+                        ?.scrollIntoView({
+                            behavior: "smooth"
+                        });
+                }}
+            >
+                Restaurants
+            </a>
+
+            <a href="/customer/profile">
+                Profile
+            </a>
+
+        </div>
+
+
+        <div className="footer-column">
+
+            <h3>
+                For Partners
+            </h3>
+
+            <a href="/register/shop">
+                Register Your Shop
+            </a>
+
+            <a href="/login">
+                Shop Login
+            </a>
+
+        </div>
+
+
+        <div className="footer-column">
+
+            <h3>
+                Support
+            </h3>
+
+            <a href="#">
+                Help Center
+            </a>
+
+            <a href="#">
+                Contact Us
+            </a>
+
+            <a href="#">
+                Privacy Policy
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <div className="footer-bottom">
+
+        <span>
+            © 2026 Foodly. All rights reserved.
+        </span>
+
+        <span>
+            Made for food lovers ❤️
+        </span>
+
+    </div>
+
+</footer>
         </div>
     )
 }

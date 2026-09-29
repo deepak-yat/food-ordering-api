@@ -122,19 +122,20 @@ def get_addresses(
 
 
 
-@router.put("/addresses/{address_id}",
-            response_model=CustomerAddressResponse,
-            )
+@router.put(
+    "/addresses/{address_id}",
+    response_model=CustomerAddressResponse,
+)
 def update_address(
-    address_id : int,
-    data : CustomerAddressUpdate,
-    db : Session = Depends(get_db),
-    current_customer : User = Depends(get_current_customer)
+    address_id: int,
+    data: CustomerAddressUpdate,
+    db: Session = Depends(get_db),
+    current_customer: User = Depends(get_current_customer)
 ):
     address = db.exec(
         select(CustomerAddress).where(
-            CustomerAddress.address_id==address_id,
-            CustomerAddress.customer_id==current_customer.customer_id
+            CustomerAddress.address_id == address_id,
+            CustomerAddress.customer_id == current_customer.customer_id
         )
     ).first()
 
@@ -144,6 +145,14 @@ def update_address(
             detail="Address not found"
         )
 
+    ADDRESS_TEXT_FIELDS = (
+        "address_line1",
+        "address_line2",
+        "city",
+        "state",
+        "pincode",
+    )
+
     update_data = data.model_dump(exclude_unset=True)
 
     if not update_data:
@@ -152,6 +161,24 @@ def update_address(
             detail="No changes provided"
         )
 
+    # Never allow null/zero coordinates to erase existing coordinates
+    lat = update_data.pop("latitude", None)
+    lng = update_data.pop("longitude", None)
+
+    coords_supplied = (
+        lat not in (None, 0, 0.0)
+        and lng not in (None, 0, 0.0)
+    )
+
+    # Check whether the actual address text changed
+    text_changed = any(
+        field in update_data
+        and (update_data[field] or None)
+        != (getattr(address, field) or None)
+        for field in ADDRESS_TEXT_FIELDS
+    )
+
+    # Handle default address
     if update_data.get("is_default") is True:
 
         existing_default_addresses = db.exec(
@@ -165,16 +192,55 @@ def update_address(
         for existing_address in existing_default_addresses:
             existing_address.is_default = False
 
+    # Apply normal field updates
     for field, value in update_data.items():
         setattr(address, field, value)
+
+    # Use supplied coordinates if provided
+    if coords_supplied:
+        address.latitude = lat
+        address.longitude = lng
+
+    # Otherwise, re-geocode when address text changed
+    elif text_changed:
+        full_address = ", ".join(
+            part
+            for part in [
+                address.address_line1,
+                address.address_line2,
+                address.city,
+                address.state,
+                address.pincode,
+            ]
+            if part
+        )
+
+        try:
+            address.latitude, address.longitude = geo_code_address(
+                full_address
+            )
+
+        except ValueError as error:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(error)
+            )
+
+        except requests.RequestException:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Unable to verify customer location"
+            )
+
     db.add(address)
     db.commit()
     db.refresh(address)
 
     return address
 
+
 @router.delete(
-    "addresses/{address_id}",
+    "/addresses/{address_id}",
     status_code=status.HTTP_200_OK
 )
 def delete_address(

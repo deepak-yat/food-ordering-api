@@ -1028,7 +1028,7 @@ background: var(--primary-dark);
 
 .customer-dashboard {
     min-height: 100vh;
-    background: #f7f7f5;
+    background: #eeeeec;
 }
 
 
@@ -1083,6 +1083,7 @@ background: var(--primary-dark);
     margin: 0 auto;
 
     padding: 20px 24px 80px;
+    padding-bottom: 0px;
 }
 
 
@@ -5335,18 +5336,29 @@ background: var(--primary-dark);
     font-weight: 700;
 
     color: #222;
-
+    cursor: pointer;
     white-space: nowrap;
+
+    transition: transform 0.25s ease, color 0.25s ease;
 }
 
+.logo:hover {
+    transform: scale(1.06);
+    color: var(--primary);
+}
 .logo-icon {
     width: 32px;
     height: 32px;
-
     object-fit: contain;
-
     display: block;
+
+    transition: transform 0.3s ease;
 }
+
+.logo:hover .logo-icon {
+    transform: rotate(-8deg) scale(1.1);
+}
+
 
 /* =========================================================
    INCOMING ORDERS SECTION
@@ -16265,4 +16277,11 @@ height: 42px;
         padding: 7px 11px;
         font-size: 12px;
     }
+}
+
+
+
+
+.footer-love{
+    margin-right: 40px;
 }
