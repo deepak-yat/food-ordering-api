@@ -25,3 +25,14 @@ class OrderItem(SQLModel, table=True):
     quantity: int
 
     subtotal: float
+
+    original_unit_price: float | None = None
+
+    discount_amount: float = 0.0
+
+    offer_id: int | None = Field(
+        default=None,
+        foreign_key="offers.offer_id"
+    )
+
+    offer_title: str | None = None

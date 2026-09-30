@@ -23,3 +23,15 @@ class Shop(SQLModel,table=True):
     is_active :bool = Field(
         default=False )
 
+    phone: str | None = None
+
+    address_line1: str | None = None
+    address_line2: str | None = None
+    city: str | None = None
+    state: str | None = None
+    pincode: str | None = None
+
+    latitude: float | None = None
+    longitude: float | None = None
+    image_url: str | None = None
+

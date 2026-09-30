@@ -7,7 +7,13 @@ function Navbar() {
 
                 <span to="/" className="logo">
                     Foodly
+                    <img
+        src="/logo1.png"
+        alt="Foodly"
+        className="logo-icon"
+    />
                 </span>
+                
 
                 <nav className="nav-links">
                     <Link to="/">

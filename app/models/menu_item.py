@@ -28,3 +28,8 @@ class MenuItem(SQLModel,table=True):
     is_available: bool = Field(
         default=True
     )
+    image_url : str | None =  None
+
+    has_options: bool = Field(default=False)
+    allow_parent_purchase: bool = Field(default=True)
+

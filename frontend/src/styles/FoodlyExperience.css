@@ -1,0 +1,137 @@
+.foodly-experience {
+    width: 100%;
+    min-height: auto;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+
+    padding: 20px 24px 80px;
+
+    background: #eeeeec;
+    overflow: hidden;
+}
+.foodly-experience-content {
+    width: min(1000px, 100%);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    text-align: center;
+
+    gap: 10px;
+}
+.foodly-experience-text {
+    max-width: 500px;
+}
+
+.foodly-experience-text .eyebrow {
+    display: block;
+
+    margin-bottom: 14px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+
+    color: var(--primary);
+}
+
+.foodly-experience-text h2 {
+    margin: 0;
+
+    font-size: clamp(3rem, 5vw, 5rem);
+    line-height: 0.95;
+
+    color: #202124;
+}
+
+.foodly-experience-text p {
+    max-width: 430px;
+
+    margin-top: 24px;
+
+    font-size: 1.05rem;
+    line-height: 1.7;
+
+    color: #666;
+}
+
+.foodly-experience-animation {
+    width: 100%;
+    height: 480px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    position: relative;
+
+    transition:
+        height 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+
+    overflow: hidden;
+}
+
+.foodly-experience-animation.finished {
+    height: 300px;
+}
+
+.burger-placeholder {
+    width: 280px;
+    height: 280px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 180px;
+
+    filter: drop-shadow(0 25px 25px rgba(0, 0, 0, 0.15));
+
+    transition: transform 0.3s ease;
+}
+
+.foodly-experience-animation:hover .burger-placeholder {
+    transform: scale(1.05);
+}
+
+.burger-animation {
+    width: 650px;
+    max-width: 90vw;
+    height: auto;
+
+    display: block;
+    object-fit: contain;
+
+    mix-blend-mode: multiply;
+
+    transition:
+        width 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.foodly-experience-animation.finished .burger-animation {
+    width: 420px;
+}
+
+.foodly-experience-text {
+    opacity: 0;
+    transform: translateY(40px);
+}
+
+.foodly-experience-text.visible {
+    animation: foodlyTextReveal 0.9s ease forwards;
+}
+
+@keyframes foodlyTextReveal {
+    from {
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

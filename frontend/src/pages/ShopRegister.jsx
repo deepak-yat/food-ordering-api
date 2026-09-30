@@ -9,13 +9,18 @@ function ShopRegister() {
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
-        user_name: "",
-        user_email: "",
-        password: "",
-        confirm_password: "",
-        shop_name: "",
-        description: ""
-    });
+    user_name: "",
+    user_email: "",
+    password: "",
+    confirm_password: "",
+    shop_name: "",
+    description: "",
+    address_line1: "",
+    address_line2: "",
+    city: "",
+    state: "",
+    pincode: ""
+});
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -51,12 +56,17 @@ function ShopRegister() {
         try {
 
             const shopData = {
-                user_name: form.user_name,
-                user_email: form.user_email,
-                password: form.password,
-                shop_name: form.shop_name,
-                description: form.description || null
-            };
+    user_name: form.user_name,
+    user_email: form.user_email,
+    password: form.password,
+    shop_name: form.shop_name,
+    description: form.description || null,
+    address_line1: form.address_line1,
+    address_line2: form.address_line2 || null,
+    city: form.city,
+    state: form.state,
+    pincode: form.pincode
+};
 
             await apiFetch(
                 "/auth/register/shop",
@@ -247,6 +257,99 @@ function ShopRegister() {
                             />
 
                         </div>
+
+                        <div className="form-group">
+
+    <label htmlFor="address_line1">
+        Address Line 1
+    </label>
+
+    <input
+        id="address_line1"
+        name="address_line1"
+        type="text"
+        placeholder="House / Building / Street"
+        value={form.address_line1}
+        onChange={handleChange}
+        required
+    />
+
+</div>
+
+
+<div className="form-group">
+
+    <label htmlFor="address_line2">
+        Address Line 2
+    </label>
+
+    <input
+        id="address_line2"
+        name="address_line2"
+        type="text"
+        placeholder="Area / Landmark (optional)"
+        value={form.address_line2}
+        onChange={handleChange}
+    />
+
+</div>
+
+
+<div className="form-group">
+
+    <label htmlFor="city">
+        City
+    </label>
+
+    <input
+        id="city"
+        name="city"
+        type="text"
+        placeholder="Enter your city"
+        value={form.city}
+        onChange={handleChange}
+        required
+    />
+
+</div>
+
+
+<div className="form-group">
+
+    <label htmlFor="state">
+        State
+    </label>
+
+    <input
+        id="state"
+        name="state"
+        type="text"
+        placeholder="Enter your state"
+        value={form.state}
+        onChange={handleChange}
+        required
+    />
+
+</div>
+
+
+<div className="form-group">
+
+    <label htmlFor="pincode">
+        Pincode
+    </label>
+
+    <input
+        id="pincode"
+        name="pincode"
+        type="text"
+        placeholder="Enter your pincode"
+        value={form.pincode}
+        onChange={handleChange}
+        required
+    />
+
+</div>
 
 
                         {error && (

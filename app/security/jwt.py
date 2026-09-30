@@ -30,4 +30,4 @@ def decode_access_token(token:str):
             algorithms=[ALGORITHM]
         )
     except JWTError:
-        return "An error occured"
+        return None

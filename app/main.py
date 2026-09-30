@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request , Depends
+from fastapi.staticfiles import StaticFiles  
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -12,11 +13,25 @@ from app.routers.menu_item import router as menu_item_router
 from app.routers.customer_cart import router as customer_cart_router
 from app.routers.customer_order import router as customer_order_router
 from app.routers.shop_orders import router as shop_orders_router
+from app.routers.customer import router as customer_router
 from app.dependencies import require_page_role,UserRole
 from app.models.user import User
+from app.routers.shop_overview import router as shop_overview_router
+from app.routers.customer_search import router as customer_search_router
+from app.routers.shop_menu_options import router as shop_menu_options_router
+from app.routers.shop_offers import router as shop_offers_router
+from app.routers.customer_offers import router as customer_offers_router
+from app.routers.customer_featured_items import router as customer_featured_items_router
+from app.routers.customer_reviews import router as customer_reviews_router
+from app.routers import customer_notifications
 app = FastAPI(
     title="Food Ordering API",
     version="1.0.0"
+)
+app.mount(
+    "/uploads",
+    StaticFiles(directory="uploads"),
+    name="uploads"
 )
 
 app.add_middleware(
@@ -50,7 +65,7 @@ def home(request: Request):
             "request": request
         }
     )
-
+app.include_router(shop_overview_router)
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(shop_router)
@@ -60,7 +75,14 @@ app.include_router(menu_item_router)
 app.include_router(customer_cart_router)
 app.include_router(customer_order_router)
 app.include_router(shop_orders_router)
-
+app.include_router(customer_router)
+app.include_router(customer_search_router)
+app.include_router(shop_menu_options_router)
+app.include_router(shop_offers_router)
+app.include_router(customer_offers_router)
+app.include_router(customer_featured_items_router)
+app.include_router(customer_reviews_router)
+app.include_router(customer_notifications.router)
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(

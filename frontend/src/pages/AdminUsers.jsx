@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 import { apiFetch } from "../api/client";
 
@@ -7,6 +8,7 @@ import { apiFetch } from "../api/client";
 function AdminUsers() {
 
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     const [users, setUsers] = useState({
         customers: [],
@@ -63,10 +65,10 @@ function AdminUsers() {
         }
     }
 
-    async function handleLogout(){
-        try{
+    async function handleLogout() {
+        try {
             await logout();
-        }finally {
+        } finally {
             navigate("/login");
         }
     }
@@ -102,9 +104,6 @@ function AdminUsers() {
                         >
                             Shops
                         </button>
-
-                        
-
                     </nav>
 
                     <button
@@ -118,6 +117,7 @@ function AdminUsers() {
 
             </header>
 
+                            
 
             <main className="admin-content">
 
@@ -250,107 +250,107 @@ function AdminUsers() {
                         !error &&
                         displayedUsers.length === 0 && (
 
-                        <div className="empty-state">
+                            <div className="empty-state">
 
-                            <h3>
-                                No users found
-                            </h3>
+                                <h3>
+                                    No users found
+                                </h3>
 
-                            <p>
-                                There are no users in
-                                this category.
-                            </p>
+                                <p>
+                                    There are no users in
+                                    this category.
+                                </p>
 
-                        </div>
-                    )}
+                            </div>
+                        )}
 
 
                     {!loading &&
                         !error &&
                         displayedUsers.length > 0 && (
 
-                        <div className="users-table">
+                            <div className="users-table">
 
-                            <div className="users-table-header">
+                                <div className="users-table-header">
 
-                                <span>
-                                    User
-                                </span>
-
-                                <span>
-                                    Email
-                                </span>
-
-                                <span>
-                                    Status
-                                </span>
-
-                                <span>
-                                    Role
-                                </span>
-
-                            </div>
-
-
-                            {displayedUsers.map(user => (
-
-                                <div
-                                    className="users-table-row"
-                                    key={user.user_id}
-                                >
-
-                                    <div className="user-info">
-
-                                        <div className="user-avatar">
-                                            {user.user_name
-                                                .charAt(0)
-                                                .toUpperCase()}
-                                        </div>
-
-                                        <div>
-                                            <strong>
-                                                {user.user_name}
-                                            </strong>
-
-                                            <small>
-                                                #{user.user_id}
-                                            </small>
-                                        </div>
-
-                                    </div>
-
-
-                                    <span className="user-email">
-                                        {user.user_email}
+                                    <span>
+                                        User
                                     </span>
 
-
-                                    <span
-                                        className={
-                                            user.is_active
-                                                ? "status-approved"
-                                                : "status-pending"
-                                        }
-                                    >
-                                        {user.is_active
-                                            ? "Active"
-                                            : "Inactive"}
+                                    <span>
+                                        Email
                                     </span>
 
+                                    <span>
+                                        Status
+                                    </span>
 
-                                    <span className="role-badge">
-                                        {user.role ===
-                                            "shop_owner"
-                                            ? "Shop Owner"
-                                            : "Customer"}
+                                    <span>
+                                        Role
                                     </span>
 
                                 </div>
 
-                            ))}
 
-                        </div>
-                    )}
+                                {displayedUsers.map(user => (
+
+                                    <div
+                                        className="users-table-row"
+                                        key={user.user_id}
+                                    >
+
+                                        <div className="user-info">
+
+                                            <div className="user-avatar">
+                                                {user.user_name
+                                                    .charAt(0)
+                                                    .toUpperCase()}
+                                            </div>
+
+                                            <div>
+                                                <strong>
+                                                    {user.user_name}
+                                                </strong>
+
+                                                <small>
+                                                    #{user.user_id}
+                                                </small>
+                                            </div>
+
+                                        </div>
+
+
+                                        <span className="user-email">
+                                            {user.user_email}
+                                        </span>
+
+
+                                        <span
+                                            className={
+                                                user.is_active
+                                                    ? "status-approved"
+                                                    : "status-pending"
+                                            }
+                                        >
+                                            {user.is_active
+                                                ? "Active"
+                                                : "Inactive"}
+                                        </span>
+
+
+                                        <span className="role-badge">
+                                            {user.role ===
+                                                "shop_owner"
+                                                ? "Shop Owner"
+                                                : "Customer"}
+                                        </span>
+
+                                    </div>
+
+                                ))}
+
+                            </div>
+                        )}
 
                 </section>
 

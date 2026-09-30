@@ -15,6 +15,22 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import ShopDashboard from "./pages/ShopDashboard";
+import CustomerOrderPage from "./pages/CustomerOrderPage";
+import CustomerOrders from "./pages/CustomerOrder";
+import ShopOrders from "./pages/ShopOrders";
+import CustomerOrderDetails from "./pages/CustomerOrderDetails";
+import ShopOverview from "./pages/ShopOverview";
+import ShopProfile from "./pages/ShopProfile";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import ShopMessages from "./pages/ShopMessages";
+import ShopMessageDetails from "./pages/ShopMessageDetails";
+import ShopOffers from "./components/ShopOffers";
+import CustomerLayout from "./layouts/CustomerLayout";
+import CustomerCart from "./pages/CustomerCart";
+import CustomerProfile from "./pages/CustomerProfile";
+import { CustomerProvider } from "./context/CustomerContext";
+import CustomerNotifications from "./pages/CustomerNotifications";
 function App() {
 
     return (
@@ -43,13 +59,38 @@ function App() {
                         element={<ShopRegister />}
                     />
                     <Route
-                        path="/customer/dashboard"
-                        element={
-                      <ProtectedRoute role="customer">
-                        <CustomerDashboard />
-                      </ProtectedRoute>
-                    }
-                    />
+    path="/customer"
+    element={
+        <ProtectedRoute role="customer">
+            <CustomerProvider>
+                <CustomerLayout />
+            </CustomerProvider>
+        </ProtectedRoute>
+    }
+>
+    <Route
+        path="dashboard"
+        element={<CustomerDashboard />}
+    />
+<Route
+    path="profile"
+    element={<CustomerProfile />}
+/>
+    <Route
+        path="cart"
+        element={<CustomerCart />}
+    />
+    <Route
+    path="notifications"
+    element={<CustomerNotifications />}
+/>
+<Route
+    path="orders"
+    element={<CustomerOrders />}
+/>
+</Route>
+
+
                     <Route
                     path="/admin/dashboard"
                     element={
@@ -59,6 +100,54 @@ function App() {
                     }
                     />
                     <Route
+    path="/forgot-password"
+    element={<ForgotPassword />}
+/>
+
+<Route
+    path="/reset-password"
+    element={<ResetPassword />}
+/>
+                    <Route
+    path="/shop/profile"
+    element={<ShopProfile />}
+/>
+                    <Route
+    path="/shop/orders"
+    element={
+        <ProtectedRoute allowedRoles={["shop_owner"]}>
+            <ShopOrders />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/customer/orders/:orderId/details"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderDetails />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/shop/messages"
+    element={<ShopMessages />}
+/>
+<Route
+    path="/shop/offers"
+    element={
+        <ProtectedRoute role="shop_owner">
+            <ShopOffers />
+        </ProtectedRoute>
+    }
+/>
+<Route
+    path="/shop/messages/:recipientId"
+    element={<ShopMessageDetails />}
+/>
+
+                    <Route
                     path="/admin/users"
                     element={
                             <ProtectedRoute role="admin">
@@ -66,6 +155,32 @@ function App() {
                             </ProtectedRoute>
                     }
                     />
+                    <Route
+    path="/customer/orders/:orderId"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderPage />
+        </ProtectedRoute>
+    }
+/>
+
+<Route
+    path="/customer/orders/review"
+    element={
+        <ProtectedRoute allowedRoles={["customer"]}>
+            <CustomerOrderPage />
+        </ProtectedRoute>
+    }
+/>  
+<Route
+    path="/shop/overview"
+    element={
+        <ProtectedRoute allowedRoles={["shop_owner"]}>
+            <ShopOverview />
+        </ProtectedRoute>
+    }
+/>
+
                     <Route
     path="/shop/dashboard"
     element={

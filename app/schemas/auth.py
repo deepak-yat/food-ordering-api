@@ -19,6 +19,11 @@ class ShopRegister(BaseModel):
     password: str
     shop_name: str
     description: str | None = None
+    address_line1 : str
+    address_line2 : str | None = None
+    city : str
+    state : str
+    pincode : str    
 
 
 class ShopRegisterResponse(BaseModel):
@@ -30,3 +35,23 @@ class ShopRegisterResponse(BaseModel):
 class LoginRequest(BaseModel):
     user_name: str
     password: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class ForgotPasswordRequest(BaseModel):
+    user_email: str
+
+class GoogleLoginRequest(BaseModel):
+    id_token: str
+
+class RegisterVerificationRequest(BaseModel):
+    user_name: str
+    user_email: EmailStr
+    password: str
+
+
+class VerifyRegistrationRequest(BaseModel):
+    email: EmailStr
+    verification_code: str

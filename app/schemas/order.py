@@ -7,6 +7,8 @@ from app.models.order import OrderStatus
 
 class CreateOrderRequest(BaseModel):
     cart_id: int
+    address_id: int
+    delivery_instruction: str | None = None
 
 
 class OrderItemResponse(BaseModel):
@@ -17,14 +19,40 @@ class OrderItemResponse(BaseModel):
     quantity: int
     subtotal: float
 
+    original_unit_price: float | None = None
+    discount_amount: float = 0.0
+    offer_id: int | None = None
+    offer_title: str | None = None
+
+class OrderDeliveryAddressResponse(BaseModel):
+    delivery_address_id: int
+    order_id: int
+    address_line1: str
+    address_line2: str | None
+    city: str
+    state: str
+    pincode: str
+
 
 class OrderResponse(BaseModel):
     order_id: int
     customer_id: int
     shop_id: int
+    shop_name: str
+
     status: OrderStatus
+
     total_amount: float
+
+    delivery_distance: float | None
+    delivery_fee: float | None
+
     created_at: datetime
+
+    delivery_instruction: str | None
+
+    delivery_address: OrderDeliveryAddressResponse
+
     items: list[OrderItemResponse]
 
 
@@ -40,8 +68,26 @@ class ShopOrderItemResponse(BaseModel):
 class ShopOrderResponse(BaseModel):
     order_id: int
     customer_id: int
+    customer_name: str
+    customer_phone: str | None
+
     shop_id: int
+
     status: OrderStatus
+
     total_amount: float
+
+    delivery_distance: float | None = None
+    delivery_fee: float | None = None
+
     created_at: datetime
+
+    delivery_instruction: str | None
+
+    delivery_address: OrderDeliveryAddressResponse
+
     items: list[ShopOrderItemResponse]
+
+
+class ShopOrderStatusUpdate(BaseModel):
+    status: OrderStatus

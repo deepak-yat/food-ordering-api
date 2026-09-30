@@ -10,8 +10,7 @@ import {
 
 import { apiFetch } from "../api/client";
 import { useAuth } from "../context/AuthContext";
-
-
+import GoogleSignInButton from "../components/GoogleSignInButton";
 function Login() {
 
     const navigate = useNavigate();
@@ -210,10 +209,23 @@ function Login() {
                             ? "Signing in..."
                             : "Login"}
                     </button>
-
+                            <p className="forgot-password-wrapper">
+    <Link
+        to="/forgot-password"
+        className="forgot-password-link"
+    >
+        Forgot Password?
+    </Link>
+</p>
                 </form>
 
+                            <div className="google-signin-section">
+    <div className="google-signin-divider">
+        <span>OR</span>
+    </div>
 
+    <GoogleSignInButton />
+</div>
                 <p className="auth-footer">
 
                     Don't have an account?
