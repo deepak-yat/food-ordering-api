@@ -86,7 +86,27 @@ function CustomerOrders() {
         );
     }
 
-    
+    const handleReorder = async () => {
+    try {
+        setLoading(true);
+        setError("");
+
+        const response = await apiFetch(
+            `/customer/orders/${orderId}/reorder`,
+            {
+                method: "POST",
+            }
+        );
+
+        console.log("Reorder response:", response);
+
+    } catch (error) {
+        console.error("Reorder failed:", error);
+        setError(error.message || "Unable to reorder this order");
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="customer-orders-page">
@@ -197,7 +217,7 @@ function CustomerOrders() {
                                 </span>
 
                                 <span className="view-order-link">
-                                    View Order →
+                                    View Order | Reorder →
                                 </span>
 
                             </div>

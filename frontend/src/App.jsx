@@ -84,6 +84,10 @@ function App() {
     path="notifications"
     element={<CustomerNotifications />}
 />
+<Route
+    path="orders"
+    element={<CustomerOrders />}
+/>
 </Route>
 
 
@@ -176,14 +180,7 @@ function App() {
         </ProtectedRoute>
     }
 />
-<Route
-    path="/customer/orders"
-    element={
-        <ProtectedRoute allowedRoles={["customer"]}>
-            <CustomerOrders />
-        </ProtectedRoute>
-    }
-/>
+
                     <Route
     path="/shop/dashboard"
     element={

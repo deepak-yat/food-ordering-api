@@ -7978,19 +7978,44 @@ background: var(--primary-dark);
 }
 
 .customer-order-details-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid #eee;
 }
 
-.customer-order-details-total strong {
-    font-size: 19px;
+.customer-order-details-price-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 10px;
+
+    font-size: 14px;
+    color: #777;
+}
+
+.customer-order-details-price-row strong {
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.customer-order-details-grand-total {
+    margin-top: 14px;
+    margin-bottom: 0;
+    padding-top: 14px;
+    border-top: 1px solid #eee;
+
+    font-size: 16px;
+    font-weight: 600;
     color: #222;
 }
 
+.customer-order-details-grand-total strong {
+    font-size: 20px;
+    font-weight: 700;
+    color: #222;
+}
 .customer-order-details-address {
     margin-top: 12px;
     padding: 14px;
@@ -8033,13 +8058,16 @@ background: var(--primary-dark);
 }
 
 .customer-order-contact-shop-btn {
-    padding: 10px 18px;
+    
+    align-self: end;
+    padding: 12px 20px;
     border: none;
     border-radius: 8px;
-    background: #facc15;
+    background: var(--primary);
+
     color: #111;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
     cursor: pointer;
     transition:
         background 0.2s ease,
@@ -16317,4 +16345,267 @@ height: 42px;
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
+}
+
+
+
+/* =========================
+   CUSTOMER NAVBAR - MOBILE
+   ========================= */
+
+.customer-menu-toggle {
+    display: none;
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    background: transparent;
+
+    padding: 8px;
+
+    cursor: pointer;
+
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    gap: 5px;
+}
+
+.customer-menu-toggle span {
+    display: block;
+
+    width: 24px;
+    height: 2px;
+
+    background: #202124;
+    border-radius: 2px;
+
+    transition:
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.customer-mobile-menu {
+    display: none;
+}
+
+
+@media (max-width: 650px) {
+
+    .customer-navbar-container {
+        min-height: 64px;
+        padding: 0 16px;
+
+        gap: 10px;
+    }
+
+    /* Hide desktop navigation */
+    .customer-nav-links,
+    .customer-logout-button {
+        display: none;
+    }
+
+    /* Show hamburger */
+    .customer-menu-toggle {
+        display: flex;
+        margin-left: auto;
+    }
+
+    /* Mobile dropdown */
+    .customer-mobile-menu {
+        display: flex;
+
+        flex-direction: column;
+
+        width: 100%;
+
+        padding: 8px 16px 14px;
+
+        background: #ffffff;
+
+        border-top: 1px solid #eeeeee;
+        border-bottom: 1px solid #e8e8e8;
+
+        box-shadow:
+            0 8px 20px rgba(0, 0, 0, 0.06);
+    }
+
+    .customer-mobile-menu button {
+        display: flex;
+
+        align-items: center;
+
+        width: 100%;
+
+        min-height: 46px;
+
+        padding: 10px 12px;
+
+        border: none;
+        border-radius: 9px;
+
+        background: transparent;
+
+        color: #202124;
+
+        font-size: 0.95rem;
+        font-weight: 600;
+
+        text-align: left;
+
+        cursor: pointer;
+
+        transition:
+            background 0.2s ease,
+            color 0.2s ease;
+    }
+
+    .customer-mobile-menu button:hover {
+        background: #fff8e5;
+        color: #9a6b00;
+    }
+
+    .mobile-logout-button {
+        margin-top: 6px;
+
+        border-top: 1px solid #eeeeee !important;
+        border-radius: 0 !important;
+
+        color: #c0392b !important;
+    }
+
+    .mobile-logout-button:hover {
+        background: #fff2f0 !important;
+    }
+
+    .mobile-notification-badge {
+        display: inline-flex;
+
+        align-items: center;
+        justify-content: center;
+
+        min-width: 18px;
+        height: 18px;
+
+        margin-left: 8px;
+        padding: 0 5px;
+
+        background: #e53935;
+        color: #ffffff;
+
+        border-radius: 20px;
+
+        font-size: 10px;
+        font-weight: 700;
+    }
+}
+
+@media (max-width: 650px) {
+
+    .special-offers-heading {
+        margin-bottom: 18px;
+    }
+
+    .special-offers-heading h2 {
+        font-size: 24px;
+    }
+
+    .special-offers-heading p {
+        font-size: 14px;
+        line-height: 1.5;
+    }
+
+    .special-offers-carousel {
+        height: 430px;
+    }
+
+    .special-offer-center {
+        width: min(320px, calc(100vw - 70px));
+        max-width: none;
+    }
+
+    .special-offer-image-wrapper {
+        height: 190px;
+    }
+
+    .special-offer-content {
+        padding: 16px 17px 18px;
+    }
+
+    .special-offer-content h3 {
+        font-size: 18px;
+        line-height: 1.3;
+    }
+
+    .special-offer-content p {
+        font-size: 13px;
+        line-height: 1.45;
+        margin-bottom: 14px;
+    }
+
+    .special-offer-dates {
+        font-size: 12px;
+        margin-bottom: 14px;
+    }
+
+    .special-offer-discount {
+        top: 10px;
+        right: 10px;
+
+        padding: 6px 9px;
+        font-size: 11px;
+    }
+
+    .special-offer-button {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+}
+
+/* =================================
+   SHOP GRID - MOBILE
+   ================================= */
+
+@media (max-width: 650px) {
+
+    .dashboard-shops {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .foodly-shops-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .shop-card .primary-button {
+        padding: 13px 16px;
+        font-size: 0.9rem;
+        min-height: 46px;
+    }
+
+}
+
+.customer-order-again-button {
+    margin-top: 16px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 9px;
+    background: var(--primary);
+    color: #202124;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.customer-order-again-button:hover {
+    background: #e6a600;
+    transform: translateY(-1px);
 }

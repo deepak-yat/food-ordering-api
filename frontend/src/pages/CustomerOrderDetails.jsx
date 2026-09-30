@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import { apiFetch } from "../api/client";
 function CustomerOrderDetails() {
 
     const navigate = useNavigate();
@@ -72,6 +72,34 @@ function CustomerOrderDetails() {
             </div>
         );
     }
+
+const handleReorder = async () => {
+    try {
+        setLoading(true);
+        setError("");
+
+        const response = await apiFetch(
+            `/customer/orders/${orderId}/reorder`,
+            {
+                method: "POST",
+            }
+        );
+
+        console.log("Reorder response:", response);
+
+        if (response.cart_ready) {
+            navigate("/customer/cart");
+        } else {
+            setError("None of the items could be added to your cart.");
+        }
+
+    } catch (error) {
+        console.error("Reorder failed:", error);
+        setError(error.message || "Unable to reorder this order");
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <div className="customer-order-details-page">
@@ -179,16 +207,37 @@ function CustomerOrderDetails() {
 
                 <div className="customer-order-details-total">
 
-                    <span>
-                        Total
-                    </span>
+    <div className="customer-order-details-price-row">
+        <span>
+            Items Total
+        </span>
 
-                    <strong>
-                        ₹{order.total_amount}
-                    </strong>
+        <strong>
+            ₹{Number(order.total_amount - order.delivery_fee).toFixed(2)}
+        </strong>
+    </div>
 
-                </div>
+    <div className="customer-order-details-price-row">
+        <span>
+            Delivery Fee
+        </span>
 
+        <strong>
+            ₹{Number(order.delivery_fee).toFixed(2)}
+        </strong>
+    </div>
+
+    <div className="customer-order-details-price-row customer-order-details-grand-total">
+        <span>
+            Total
+        </span>
+
+        <strong>
+            ₹{Number(order.total_amount).toFixed(2)}
+        </strong>
+    </div>
+
+</div>
             </section>
 
 
@@ -252,6 +301,13 @@ function CustomerOrderDetails() {
                     <p>
                         Have an issue with this order?
                     </p>
+                    <button
+    className="customer-order-again-button"
+    onClick={handleReorder}
+    disabled={loading}
+>
+    {loading ? "Adding to Cart..." : "🔄 Order Again"}
+</button>
                 </div>
 
                 <button
