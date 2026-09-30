@@ -30,6 +30,7 @@ import CustomerLayout from "./layouts/CustomerLayout";
 import CustomerCart from "./pages/CustomerCart";
 import CustomerProfile from "./pages/CustomerProfile";
 import { CustomerProvider } from "./context/CustomerContext";
+import CustomerNotifications from "./pages/CustomerNotifications";
 function App() {
 
     return (
@@ -79,7 +80,12 @@ function App() {
         path="cart"
         element={<CustomerCart />}
     />
+    <Route
+    path="notifications"
+    element={<CustomerNotifications />}
+/>
 </Route>
+
 
                     <Route
                     path="/admin/dashboard"

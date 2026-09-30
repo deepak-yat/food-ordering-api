@@ -1,8 +1,31 @@
 import { Outlet, useNavigate } from "react-router-dom";
-
+import { useEffect, useState } from "react";
 function CustomerLayout() {
     const navigate = useNavigate();
+    const [unreadCount, setUnreadCount] = useState(0);
+    useEffect(() => {
+    const loadUnreadCount = async () => {
+        try {
+            const response = await fetch(
+                "http://127.0.0.1:8000/customer/notifications/unread-count",
+                {
+                    credentials: "include",
+                }
+            );
 
+            if (!response.ok) {
+                throw new Error("Failed to fetch unread count");
+            }
+
+            const data = await response.json();
+            setUnreadCount(data.count);
+        } catch (error) {
+            console.error("Failed to load notification count:", error);
+        }
+    };
+
+    loadUnreadCount();
+}, []);
     return (
         <div className="customer-dashboard">
             <header className="customer-navbar">
@@ -24,7 +47,9 @@ function CustomerLayout() {
                     </span>
 
                     <nav className="customer-nav-links">
-
+ <button onClick={() => navigate("/customer/dashboard")}>
+    Home
+</button>
                         <button
                             className="customer-orders-nav-btn"
                             onClick={() =>
@@ -44,6 +69,20 @@ function CustomerLayout() {
 
                        <button onClick={() => navigate("/customer/profile")}>
     Profile
+</button>
+<button
+    onClick={() => navigate("/customer/notifications")}
+    className="notification-bell-button"
+>
+    <span className="notification-bell">
+        🔔
+    </span>
+
+    {unreadCount > 0 && (
+        <span className="notification-badge">
+            {unreadCount > 99 ? "99+" : unreadCount}
+        </span>
+    )}
 </button>
 
                     </nav>

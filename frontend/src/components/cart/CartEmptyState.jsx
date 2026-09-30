@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 function CartEmptyState({ onContinueShopping }) {
+    const navigate = useNavigate();
     return (
         <div className="cartpage-empty-state">
             <div className="cartpage-empty-icon">🛒</div>
@@ -12,7 +14,9 @@ function CartEmptyState({ onContinueShopping }) {
             <button
                 type="button"
                 className="cartpage-empty-button"
-                onClick={onContinueShopping}
+               onClick={() =>
+                                navigate("/customer/dashboard")
+                            }
             >
                 Explore Restaurants
             </button>

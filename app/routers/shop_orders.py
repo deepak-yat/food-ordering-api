@@ -17,7 +17,8 @@ from app.schemas.order import (
     ShopOrderResponse,
     ShopOrderStatusUpdate
 )
-
+from app.models.notification import Notification, NotificationType
+from app.services.order_notifications import STATUS_INFO
 
 
 router = APIRouter(
@@ -170,14 +171,29 @@ def update_shop_order_status(
         )
 
     order.status = new_status
-
     db.add(order)
+
+    info = STATUS_INFO.get(new_status)
+
+    if info and info["notify"]:
+        db.add(
+            Notification(
+                customer_id=order.customer_id,
+                order_id=order.order_id,
+                title=info["title"],
+                message=info["message"].format(
+                    shop_name=current_shop.shop_name
+                ),
+                notification_type=NotificationType.ORDER_STATUS,
+            )
+        )
+
     db.commit()
     db.refresh(order)
 
     return {
         "message": "Order status updated successfully",
         "order_id": order.order_id,
-        "status": order.status
+        "status": order.status,
     }
 

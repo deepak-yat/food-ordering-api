@@ -16282,6 +16282,39 @@ height: 42px;
 
 
 
-.footer-love{
-    margin-right: 40px;
+
+.notification-bell-button {
+    position: relative;
+    border: none;
+    background: none;
+    cursor: pointer;
+    padding: 6px 8px;
+}
+
+.notification-bell {
+    font-size: 20px;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #e53935;
+    color: white;
+
+    border-radius: 50%;
+    border: 2px solid white;
+
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
 }
