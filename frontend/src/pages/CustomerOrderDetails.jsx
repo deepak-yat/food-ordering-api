@@ -12,6 +12,9 @@ function CustomerOrderDetails() {
     const [shopReviews, setShopReviews] = useState(null);
     const [reviewLoading, setReviewLoading] = useState(false);
     const [reviewError, setReviewError] = useState("");
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState("");
+    const [reviewSubmitting, setReviewSubmitting] = useState(false);
     useEffect(() => {
         loadOrder();
     }, [orderId]);
@@ -37,6 +40,7 @@ function CustomerOrderDetails() {
             }
 
             setOrder(data);
+            await loadShopReviews(data.shop_id);
 
         } catch (error) {
             console.error("Failed to load order:", error);
@@ -64,6 +68,39 @@ function CustomerOrderDetails() {
         setReviewLoading(false);
     }
 }   
+
+    async function submitShopReview(){
+        try{
+            setReviewSubmitting(true);
+            setReviewError("");
+
+            const response = await apiFetch(
+                `/customer/shops/${order.shop_id}/reviews`,
+                {
+                    method:"POST",
+                    headers:{
+                        "Content-Type":"application/json",
+                    },
+                    body: JSON.stringify({
+                        rating: reviewRating,
+                        comment: reviewComment.trim() || null,
+                    }),
+                }
+            );
+            console.log("Shop review Submitted :",response);
+            await loadShopReviews(order.shop_id);
+
+            setReviewRating(5);
+            setReviewComment("");
+        } catch (error){
+            console.error("Failed to submit shop review: ", error);
+            setReviewError(
+                error.message || "Failed to submit shop review"
+            );
+        } finally {
+            setReviewSubmitting(false);
+        }
+    }
 
     if (loading) {
         return (
@@ -309,6 +346,118 @@ const handleReorder = async () => {
                 </section>
             )}
 
+
+    {/* Shop Rating */}
+
+{/* Shop Rating */}
+
+{shopReviews?.can_review && (
+    <section className="customer-order-details-section shop-review-section">
+
+        <span className="eyebrow">
+            RATE YOUR EXPERIENCE
+        </span>
+
+        <div className="shop-review-content">
+
+            <h3>
+                How was your experience with {order.shop_name}?
+            </h3>
+
+            <div className="shop-rating-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                        key={star}
+                        type="button"
+                        className={
+                            star <= reviewRating
+                                ? "shop-rating-star active"
+                                : "shop-rating-star"
+                        }
+                        onClick={() => setReviewRating(star)}
+                        aria-label={`Rate ${star} out of 5`}
+                    >
+                        ★
+                    </button>
+                ))}
+            </div>
+
+            <p className="shop-rating-value">
+                {reviewRating} out of 5
+            </p>
+
+            <textarea
+                className="shop-review-textarea"
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Tell us about your experience with this shop..."
+                maxLength={500}
+                rows={4}
+            />
+
+            <div className="shop-review-character-count">
+                {reviewComment.length}/500
+            </div>
+
+            <button
+                type="button"
+                className="shop-review-submit-button"
+                onClick={submitShopReview}
+                disabled={reviewSubmitting}
+            >
+                {reviewSubmitting
+                    ? "Submitting..."
+                    : "Submit Review"}
+            </button>
+
+            {reviewError && (
+                <p className="shop-review-error">
+                    {reviewError}
+                </p>
+            )}
+
+        </div>
+
+    </section>
+)}
+
+{shopReviews?.reviews?.some((review) => review.is_own) && (
+    <section className="customer-order-details-section shop-review-section">
+
+        <span className="eyebrow">
+            YOUR SHOP REVIEW
+        </span>
+
+        {shopReviews.reviews
+            .filter((review) => review.is_own)
+            .map((review) => (
+                <div
+                    key={review.review_id}
+                    className="shop-existing-review"
+                >
+
+                    <div className="shop-existing-review-rating">
+                        {"★".repeat(review.rating)}
+                        {"☆".repeat(5 - review.rating)}
+                    </div>
+
+                    {review.comment && (
+                        <p className="shop-existing-review-comment">
+                            "{review.comment}"
+                        </p>
+                    )}
+
+                    <span className="shop-existing-review-date">
+                        {review.updated_at
+                            ? "Updated"
+                            : "Submitted"}
+                    </span>
+
+                </div>
+            ))}
+
+    </section>
+)}
 
             {/* Contact Shop */}
 
