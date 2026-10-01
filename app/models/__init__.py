@@ -23,3 +23,4 @@ from app.models.menu_item_review import MenuItemReview
 from app.models.menu_item_review_tag import MenuItemReviewTag
 from app.models.notification import Notification
 from app.models.order_item_option import OrderItemOption
+from app.models.shop_review import ShopReview

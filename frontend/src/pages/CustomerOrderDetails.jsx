@@ -9,7 +9,9 @@ function CustomerOrderDetails() {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-
+    const [shopReviews, setShopReviews] = useState(null);
+    const [reviewLoading, setReviewLoading] = useState(false);
+    const [reviewError, setReviewError] = useState("");
     useEffect(() => {
         loadOrder();
     }, [orderId]);
@@ -27,7 +29,7 @@ function CustomerOrderDetails() {
             );
 
             const data = await response.json();
-
+            console.log("Order details:", data);
             if (!response.ok) {
                 throw new Error(
                     data.detail || "Failed to load order"
@@ -43,6 +45,25 @@ function CustomerOrderDetails() {
             setLoading(false);
         }
     }
+    async function loadShopReviews(shopId) {
+    try {
+        setReviewLoading(true);
+        setReviewError("");
+
+        const response = await apiFetch(
+            `/customer/shops/${shopId}/reviews`
+        );
+
+        setShopReviews(response);
+    } catch (error) {
+        console.error("Failed to load shop reviews:", error);
+        setReviewError(
+            error.message || "Failed to load shop reviews"
+        );
+    } finally {
+        setReviewLoading(false);
+    }
+}   
 
     if (loading) {
         return (
