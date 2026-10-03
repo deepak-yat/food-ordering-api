@@ -17,6 +17,7 @@ class MenuItemCreate(BaseModel):
 
     allow_parent_purchase: bool = True
 
+    is_veg : bool = True
 
 class MenuItemUpdate(BaseModel):
 
@@ -34,6 +35,7 @@ class MenuItemUpdate(BaseModel):
 
     allow_parent_purchase: bool | None = None
 
+    is_veg : bool | None = None
 
 class MenuItemResponse(BaseModel):
 
@@ -56,3 +58,5 @@ class MenuItemResponse(BaseModel):
     has_options: bool
 
     allow_parent_purchase: bool
+
+    is_veg : bool

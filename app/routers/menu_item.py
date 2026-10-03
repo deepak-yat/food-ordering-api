@@ -73,7 +73,8 @@ def create_menu_item(
         description=data.description,
         is_available=data.is_available,
         has_options=data.has_options,
-        allow_parent_purchase=data.allow_parent_purchase
+        allow_parent_purchase=data.allow_parent_purchase,
+        is_veg=data.is_veg
     )
     db.add(new_item)
     db.commit()
@@ -295,6 +296,8 @@ def update_menu_item(
 
     if data.is_available is not None:
         existing_item.is_available = data.is_available
+    if data.is_veg is not None:
+        existing_item.is_veg = data.is_veg
     if data.has_options is not None:
         existing_item.has_options = data.has_options
 

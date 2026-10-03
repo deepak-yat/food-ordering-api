@@ -39,6 +39,7 @@ function ShopDashboard() {
         name: "",
         description: "",
         price: "",
+        is_veg:true,
         has_options: false,
         allow_parent_purchase: true
     });
@@ -84,6 +85,7 @@ const [optionSaving, setOptionSaving] = useState(false);
         name: "",
         description: "",
         price: "",
+        is_veg: true,
         is_available: true,
         has_options: false,
         allow_parent_purchase: true
@@ -961,6 +963,7 @@ async function updateOption() {
                         description:
                             itemForm.description.trim() || null,
                         price: Number(itemForm.price),
+                        is_veg: itemForm.is_veg,
                         has_options: itemForm.has_options,
                         allow_parent_purchase: itemForm.allow_parent_purchase
                     })
@@ -1062,6 +1065,7 @@ async function updateOption() {
             name: item.name || "",
             description: item.description || "",
             price: item.price ?? "",
+            is_veg: item.is_veg ?? true,
             is_available: item.is_available ?? true,
             has_options: item.has_options ?? false,
             allow_parent_purchase: item.allow_parent_purchase ?? true
@@ -1135,6 +1139,12 @@ async function updateOption() {
             ) {
                 changes.is_available =
                     itemEditForm.is_available;
+            }
+            if (
+                itemEditForm.is_veg !==
+                selectedItem.is_veg
+            ) {
+                changes.is_veg = itemEditForm.is_veg;
             }
             if (
                 itemEditForm.has_options !==
@@ -1593,15 +1603,31 @@ async function updateOption() {
 
                                                                     <div className="shop-item-info">
 
-                                                                        <h4>
-                                                                            {item.name}
-                                                                        </h4>
+    <div className="shop-item-title">
+        <h4>
+            {item.name}
+        </h4>
 
-                                                                        <p>
-                                                                            {item.description || "No description"}
-                                                                        </p>
+        <div className="shop-item-food-type">
+            <span
+                className={`food-type-icon ${
+                    item.is_veg ? "veg" : "non-veg"
+                }`}
+            >
+                <span></span>
+            </span>
 
-                                                                    </div>
+            <span>
+                {item.is_veg ? "Veg" : "Non-Veg"}
+            </span>
+        </div>
+    </div>
+
+    <p>
+        {item.description || "No description"}
+    </p>
+
+</div>
 
                                                                     <div className="shop-item-actions">
 
@@ -1669,6 +1695,7 @@ async function updateOption() {
                                                                     name: "",
                                                                     description: "",
                                                                     price: "",
+                                                                    is_veg: true,
                                                                     has_options: false,
                                                                     allow_parent_purchase: true
                                                                 });
@@ -2266,7 +2293,41 @@ async function updateOption() {
                             </div>
 
 
+<div className="form-group">
+    <label>Food Type</label>
 
+    <div className="food-type-control">
+
+       <span className="food-type-current">
+    <span
+        className={`food-type-icon ${
+            itemForm.is_veg ? "veg" : "non-veg"
+        }`}
+    >
+        <span></span>
+    </span>
+
+    {itemForm.is_veg ? "Veg" : "Non-Veg"}
+</span>
+
+        <button
+            type="button"
+            className={`food-type-toggle ${
+                itemForm.is_veg ? "veg" : "non-veg"
+            }`}
+            onClick={() =>
+                setItemForm((previous) => ({
+                    ...previous,
+                    is_veg: !previous.is_veg
+                }))
+            }
+            aria-label="Toggle food type"
+        >
+            <span className="food-type-toggle-knob"></span>
+        </button>
+
+    </div>
+</div>
 
 
                             <div className="form-group">
@@ -2395,6 +2456,41 @@ async function updateOption() {
                                     step="0.01"
                                 />
                             </div>
+                            <div className="form-group">
+    <label>Food Type</label>
+
+    <div className="food-type-control">
+
+        <span className="food-type-current">
+            <span
+                className={`food-type-icon ${
+                    itemEditForm.is_veg ? "veg" : "non-veg"
+                }`}
+            >
+                <span></span>
+            </span>
+
+            {itemEditForm.is_veg ? "Veg" : "Non-Veg"}
+        </span>
+
+        <button
+            type="button"
+            className={`food-type-toggle ${
+                itemEditForm.is_veg ? "veg" : "non-veg"
+            }`}
+            onClick={() =>
+                setItemEditForm((previous) => ({
+                    ...previous,
+                    is_veg: !previous.is_veg
+                }))
+            }
+            aria-label="Toggle food type"
+        >
+            <span className="food-type-toggle-knob"></span>
+        </button>
+
+    </div>
+</div>
 
                             <div className="option-toggle-row">
     <label className="option-toggle">

@@ -15,6 +15,8 @@ function CustomerOrderDetails() {
     const [reviewRating, setReviewRating] = useState(5);
     const [reviewComment, setReviewComment] = useState("");
     const [reviewSubmitting, setReviewSubmitting] = useState(false);
+    const [editingReview, setEditingReview] = useState(false);
+const [editingReviewId, setEditingReviewId] = useState(null);
     useEffect(() => {
         loadOrder();
     }, [orderId]);
@@ -101,7 +103,43 @@ function CustomerOrderDetails() {
             setReviewSubmitting(false);
         }
     }
+async function updateShopReview() {
+    if (!editingReviewId) return;
 
+    try {
+        setReviewSubmitting(true);
+        setReviewError("");
+
+        await apiFetch(
+            `/customer/shop-reviews/${editingReviewId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    rating: reviewRating,
+                    comment: reviewComment.trim() || null,
+                }),
+            }
+        );
+
+        await loadShopReviews(order.shop_id);
+
+        setEditingReview(false);
+        setEditingReviewId(null);
+        setReviewRating(5);
+        setReviewComment("");
+
+    } catch (error) {
+        console.error("Failed to update shop review:", error);
+        setReviewError(
+            error.message || "Failed to update shop review"
+        );
+    } finally {
+        setReviewSubmitting(false);
+    }
+}
     if (loading) {
         return (
             <div className="customer-order-details-page">
@@ -158,6 +196,42 @@ const handleReorder = async () => {
         setLoading(false);
     }
 };
+
+async function deleteShopReview(reviewId) {
+    const confirmed = window.confirm(
+        "Are you sure you want to delete your shop review?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+        setReviewSubmitting(true);
+        setReviewError("");
+
+        await apiFetch(
+            `/customer/shop-reviews/${reviewId}`,
+            {
+                method: "DELETE",
+            }
+        );
+
+        await loadShopReviews(order.shop_id);
+
+        setEditingReview(false);
+        setEditingReviewId(null);
+        setReviewRating(5);
+        setReviewComment("");
+
+    } catch (error) {
+        console.error("Failed to delete shop review:", error);
+        setReviewError(
+            error.message || "Failed to delete shop review"
+        );
+    } finally {
+        setReviewSubmitting(false);
+    }
+}
+
 
     return (
         <div className="customer-order-details-page">
@@ -351,7 +425,7 @@ const handleReorder = async () => {
 
 {/* Shop Rating */}
 
-{shopReviews?.can_review && (
+{(shopReviews?.can_review || editingReview) && (
     <section className="customer-order-details-section shop-review-section">
 
         <span className="eyebrow">
@@ -398,17 +472,31 @@ const handleReorder = async () => {
             <div className="shop-review-character-count">
                 {reviewComment.length}/500
             </div>
-
-            <button
-                type="button"
-                className="shop-review-submit-button"
-                onClick={submitShopReview}
-                disabled={reviewSubmitting}
-            >
-                {reviewSubmitting
-                    ? "Submitting..."
-                    : "Submit Review"}
-            </button>
+{editingReview && (
+    <button
+        type="button"
+        className="shop-review-cancel-button"
+        onClick={() => {
+            setEditingReview(false);
+            setEditingReviewId(null);
+            setReviewError("");
+        }}
+    >
+        Cancel
+    </button>
+)}
+           <button
+    type="button"
+    className="shop-review-submit-button"
+    onClick={editingReview ? updateShopReview : submitShopReview}
+    disabled={reviewSubmitting}
+>
+    {reviewSubmitting
+        ? "Saving..."
+        : editingReview
+            ? "Save Changes"
+            : "Submit Review"}
+</button>
 
             {reviewError && (
                 <p className="shop-review-error">
@@ -452,7 +540,30 @@ const handleReorder = async () => {
                             ? "Updated"
                             : "Submitted"}
                     </span>
+<div className="shop-review-actions">
 
+    <button
+        type="button"
+        className="shop-review-edit-button"
+        onClick={() => {
+            setReviewRating(review.rating);
+            setReviewComment(review.comment || "");
+            setEditingReviewId(review.review_id);
+            setEditingReview(true);
+            setReviewError("");
+        }}
+    >
+        ✏️ Edit Review
+    </button>
+<button
+    type="button"
+    className="shop-review-delete-button"
+    onClick={() => deleteShopReview(review.review_id)}
+    disabled={reviewSubmitting}
+>
+    🗑️ Delete Review
+</button>
+</div>
                 </div>
             ))}
 

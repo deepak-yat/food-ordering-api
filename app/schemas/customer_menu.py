@@ -20,6 +20,8 @@ class CustomerMenuItemResponse(BaseModel):
     description: str | None
     price: float
     is_available: bool
+    is_veg: bool
+
     image_url: str | None = None
 
     has_options: bool

@@ -1866,14 +1866,25 @@ async function addConfiguredItem(item) {
 
                 <div className="food-card-info">
 
-                    <h4>
-                        {item.name}
-                    </h4>
+                   <div className="customer-food-title">
+    <h4>{item.name}</h4>
 
-                    <p>
-                        {item.description || "No description"}
-                    </p>
+    <div className="customer-food-type">
+        <span
+            className={`food-type-icon ${
+                item.is_veg ? "veg" : "non-veg"
+            }`}
+        >
+            <span></span>
+        </span>
 
+        <span>
+            {item.is_veg ? "Veg" : "Non-Veg"}
+        </span>
+    </div>
+</div>
+
+<p>{item.description || "No description"}</p>
                     {item.offer ? (
     <div className="customer-offer-price">
         <span className="customer-original-price">
@@ -2404,28 +2415,29 @@ async function addConfiguredItem(item) {
 )}
 
 <footer className="site-footer">
-
     <div className="footer-container">
 
+        {/* Brand */}
         <div className="footer-brand">
-
             <span className="footer-logo">
-                Foodly
+                Foodly<span>.</span>
             </span>
 
             <p>
-                Good food, great choices, and a
-                simple ordering experience.
+                Discover delicious food from your favourite
+                restaurants and get it delivered to your doorstep.
             </p>
 
+            <div className="footer-tagline">
+                <span>🍴</span>
+                Made for food lovers
+            </div>
         </div>
 
 
+        {/* Explore */}
         <div className="footer-column">
-
-            <h3>
-                Explore
-            </h3>
+            <h3>Explore</h3>
 
             <a href="/customer/dashboard">
                 Home
@@ -2446,18 +2458,19 @@ async function addConfiguredItem(item) {
                 Restaurants
             </a>
 
+            <a href="/customer/orders">
+                Orders
+            </a>
+
             <a href="/customer/profile">
                 Profile
             </a>
-
         </div>
 
 
+        {/* For Partners */}
         <div className="footer-column">
-
-            <h3>
-                For Partners
-            </h3>
+            <h3>For Partners</h3>
 
             <a href="/register/shop">
                 Register Your Shop
@@ -2466,15 +2479,12 @@ async function addConfiguredItem(item) {
             <a href="/login">
                 Shop Login
             </a>
-
         </div>
 
 
+        {/* Support */}
         <div className="footer-column">
-
-            <h3>
-                Support
-            </h3>
+            <h3>Support</h3>
 
             <a href="#">
                 Help Center
@@ -2487,24 +2497,23 @@ async function addConfiguredItem(item) {
             <a href="#">
                 Privacy Policy
             </a>
-
         </div>
 
     </div>
 
 
+    {/* Footer Bottom */}
     <div className="footer-bottom">
 
         <span>
             © 2026 Foodly. All rights reserved.
         </span>
 
-        <span>
-            Made for food lovers ❤️
+        <span className="footer-love">
+            Made with ❤️ for food lovers
         </span>
 
     </div>
-
 </footer>
         </div>
     )

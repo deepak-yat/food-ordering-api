@@ -32,4 +32,4 @@ class MenuItem(SQLModel,table=True):
 
     has_options: bool = Field(default=False)
     allow_parent_purchase: bool = Field(default=True)
-
+    is_veg : bool = Field(default=True)

@@ -295,6 +295,7 @@ def get_shop_menu(
     name=option.name,
     price=option.price,
     is_available=option.is_available,
+    is_veg=item.is_veg,
     display_order=option.display_order,
     offer_price=(
         best_offer(
@@ -325,6 +326,7 @@ def get_shop_menu(
                     description=item.description,
                     price=item.price,
                     is_available=item.is_available,
+                    is_veg=item.is_veg,
                     image_url=item.image_url,
                     has_options=item.has_options,
                     allow_parent_purchase=item.allow_parent_purchase,
