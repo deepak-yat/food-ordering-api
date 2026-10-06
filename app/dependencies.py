@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 from app.models.customer import Customer
 from app.models.shop import Shop
 from app.models.user import User, UserRole
-
+from app.models.kitchen_staff import KitchenStaff
 bearer_scheme = HTTPBearer()
 
 
@@ -109,6 +109,44 @@ def get_current_shop(
 
     return shop
 
+def get_current_kitchen_staff(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> Shop:
+
+    if current_user.role != UserRole.KITCHEN_STAFF:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only kitchen staff can access kitchen resources"
+        )
+
+    if current_user.shop_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No shop linked to this kitchen account"
+        )
+
+    shop = db.get(
+        Shop,
+        current_user.shop_id
+    )
+
+    if shop is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shop not found for this kitchen account"
+        )
+
+    if not shop.is_approved:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Shop is not approved"
+        )
+
+    return shop
+
+
+
 def require_role(required_role:UserRole):
     def role_checker(
             current_user:User=Depends(get_current_user)
@@ -201,3 +239,34 @@ def get_optional_customer(
             Customer.user_id == user.user_id
         )
     ).first()
+
+def get_current_kitchen_staff_user(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> KitchenStaff:
+
+    if current_user.role != UserRole.KITCHEN_STAFF:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only kitchen staff can access kitchen resources"
+        )
+
+    if current_user.shop_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No shop linked to this kitchen account"
+        )
+
+    staff = db.exec(
+        select(KitchenStaff).where(
+            KitchenStaff.user_id == current_user.user_id
+        )
+    ).first()
+
+    if staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff profile not found"
+        )
+
+    return staff

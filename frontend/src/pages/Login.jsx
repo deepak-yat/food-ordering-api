@@ -102,7 +102,14 @@ function Login() {
                     "/admin/dashboard"
                 );
 
-            } else {
+            } else if(
+                user.role === "kitchen_staff"
+            ) {
+                navigate(
+                    "/kitchen/dashboard"
+                )
+            }
+            else {
 
                 throw new Error(
                     "Unknown user role"

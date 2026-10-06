@@ -5,7 +5,7 @@ class UserRole(str, Enum):
     ADMIN = "admin"
     SHOP_OWNER = "shop_owner"
     CUSTOMER = "customer"
-
+    KITCHEN_STAFF = "kitchen_staff"
 
 class User(SQLModel,table=True):
     __tablename__="users"
@@ -32,3 +32,9 @@ class User(SQLModel,table=True):
     is_active : bool
 
     google_id: str | None = Field(default=None, unique=True, index=True)
+
+    shop_id: int | None = Field(
+    default=None,
+    foreign_key="shops.shop_id",
+    index=True
+)

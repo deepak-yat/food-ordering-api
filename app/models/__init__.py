@@ -24,3 +24,5 @@ from app.models.menu_item_review_tag import MenuItemReviewTag
 from app.models.notification import Notification
 from app.models.order_item_option import OrderItemOption
 from app.models.shop_review import ShopReview
+from app.models.kitchen_staff import KitchenStaff
+from app.models.kitchen_staff_attendance import KitchenStaffAttendance

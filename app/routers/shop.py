@@ -16,6 +16,14 @@ from app.schemas.shop import (
 from app.models.message_recipient import MessageRecipient
 from app.services.geocoding import geo_code_address
 from app.models.message import Message
+from app.models.kitchen_staff import KitchenStaff
+from app.schemas.kitchen_staff import KitchenStaffCreate,KitchenStaffResponse, KitchenStaffUpdate, KitchenStaffPasswordUpdate
+from app.models.user import User, UserRole
+from app.security.password import hash_password
+from app.models.kitchen_staff_attendance import (
+    KitchenStaffAttendance,
+    AttendanceStatus
+)
 router = APIRouter(
     prefix="/shop",
     tags=["Shop"]
@@ -295,3 +303,380 @@ async def upload_shop_image(
             status.HTTP_500_INTERNAL_SERVER_ERROR,
             "Unable to upload shop image"
         ) from error
+
+@router.post(
+    "/kitchen-staff",
+    response_model=KitchenStaffResponse,
+    status_code=status.HTTP_201_CREATED
+)
+def create_kitchen_staff(
+    data:KitchenStaffCreate,
+    current_shop : Shop= Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    #check user name
+    existing_user = db.exec(
+        select(User).where(
+            User.user_name==data.user_name
+        )
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already taken"
+        )
+    #create login account
+
+    user = User(
+        user_name=data.user_name,
+        user_email=f"{data.user_name}+kitchen@foodly.local",
+        password_hash=hash_password(data.password),
+        role=UserRole.KITCHEN_STAFF,
+        is_active=True,
+        shop_id=current_shop.shop_id
+    )
+    db.add(user)
+    db.flush()
+    #create kitchen staff
+
+    staff = KitchenStaff(
+        user_id=user.user_id,
+        full_name=data.full_name,
+        phone_number=data.phone_number,
+        address=data.address,
+        age=data.age,
+        gender=data.gender,
+        food_preference=data.food_preference,
+        specialties=data.specialties,
+    )
+
+    db.add(staff)
+    db.commit()
+
+    db.refresh(user)
+    db.refresh(staff)
+
+    return KitchenStaffResponse(
+        staff_id=staff.staff_id,
+        user_id=user.user_id,
+        user_name=user.user_name,
+        full_name=staff.full_name,
+        phone_number=staff.phone_number,
+        address=staff.address,
+        age=staff.age,
+        gender=staff.gender,
+        food_preference=staff.food_preference,
+        specialties=staff.specialties,
+        is_active=user.is_active,
+    )
+
+@router.get(
+    "/kitchen-staff",
+    response_model=list[KitchenStaffResponse]
+)
+def get_kitchen_staff(
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    staff_records = db.exec(
+        select(KitchenStaff, User)
+        .join(
+            User,
+            User.user_id == KitchenStaff.user_id
+        )
+        .where(
+            User.shop_id == current_shop.shop_id,
+            User.role == UserRole.KITCHEN_STAFF
+        )
+        .order_by(
+            KitchenStaff.staff_id.desc()
+        )
+    ).all()
+
+    return [
+        KitchenStaffResponse(
+            staff_id=staff.staff_id,
+            user_id=user.user_id,
+            user_name=user.user_name,
+            full_name=staff.full_name,
+            phone_number=staff.phone_number,
+            address=staff.address,
+            age=staff.age,
+            gender=staff.gender,
+            food_preference=staff.food_preference,
+            specialties=staff.specialties,
+            is_active=user.is_active,
+        )
+        for staff, user in staff_records
+    ]
+
+@router.put(
+    "/kitchen-staff/{staff_id}",
+    response_model=KitchenStaffResponse
+)
+def update_kitchen_staff(
+    staff_id: int,
+    data: KitchenStaffUpdate,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    staff = db.exec(
+        select(KitchenStaff)
+        .join(
+            User,
+            User.user_id == KitchenStaff.user_id
+        )
+        .where(
+            KitchenStaff.staff_id == staff_id,
+            User.shop_id == current_shop.shop_id,
+            User.role == UserRole.KITCHEN_STAFF
+        )
+    ).first()
+
+    if staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff not found"
+        )
+
+    user = db.get(User, staff.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Staff user account not found"
+        )
+
+    update_data = data.model_dump(exclude_unset=True)
+
+    for field, value in update_data.items():
+        setattr(staff, field, value)
+
+    db.add(staff)
+    db.commit()
+    db.refresh(staff)
+    db.refresh(user)
+
+    return KitchenStaffResponse(
+        staff_id=staff.staff_id,
+        user_id=user.user_id,
+        user_name=user.user_name,
+        full_name=staff.full_name,
+        phone_number=staff.phone_number,
+        address=staff.address,
+        age=staff.age,
+        gender=staff.gender,
+        food_preference=staff.food_preference,
+        specialties=staff.specialties,
+        is_active=user.is_active,
+    )
+
+
+@router.put("/kitchen-staff/{staff_id}/status")
+def change_kitchen_staff_status(
+    staff_id: int,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    staff = db.exec(
+        select(KitchenStaff)
+        .join(
+            User,
+            User.user_id == KitchenStaff.user_id
+        )
+        .where(
+            KitchenStaff.staff_id == staff_id,
+            User.shop_id == current_shop.shop_id,
+            User.role == UserRole.KITCHEN_STAFF
+        )
+    ).first()
+
+    if staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff not found"
+        )
+
+    user = db.get(User, staff.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Staff user account not found"
+        )
+
+    user.is_active = not user.is_active
+
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "message": "Kitchen staff status updated",
+        "staff_id": staff.staff_id,
+        "is_active": user.is_active
+    }
+
+@router.put("/kitchen-staff/{staff_id}/password")
+def update_kitchen_staff_password(
+    staff_id: int,
+    data: KitchenStaffPasswordUpdate,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    staff = db.exec(
+        select(KitchenStaff)
+        .join(
+            User,
+            User.user_id == KitchenStaff.user_id
+        )
+        .where(
+            KitchenStaff.staff_id == staff_id,
+            User.shop_id == current_shop.shop_id,
+            User.role == UserRole.KITCHEN_STAFF
+        )
+    ).first()
+
+    if staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff not found"
+        )
+
+    user = db.get(User, staff.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Staff user account not found"
+        )
+
+    user.password_hash = hash_password(data.new_password)
+
+    db.add(user)
+    db.commit()
+
+    return {
+        "message": "Kitchen staff password updated successfully"
+    }
+
+@router.put("/kitchen-staff/{staff_id}/leave")
+def mark_kitchen_staff_leave(
+    staff_id: int,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    staff = db.exec(
+        select(KitchenStaff)
+        .join(
+            User,
+            User.user_id == KitchenStaff.user_id
+        )
+        .where(
+            KitchenStaff.staff_id == staff_id,
+            User.shop_id == current_shop.shop_id,
+            User.role == UserRole.KITCHEN_STAFF
+        )
+    ).first()
+
+    if staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff not found"
+        )
+
+    today = datetime.now(timezone.utc).date()
+
+    attendance = db.exec(
+        select(KitchenStaffAttendance).where(
+            KitchenStaffAttendance.staff_id == staff.staff_id,
+            KitchenStaffAttendance.attendance_date == today
+        )
+    ).first()
+
+    if attendance is None:
+        attendance = KitchenStaffAttendance(
+            staff_id=staff.staff_id,
+            attendance_date=today,
+            login_at=None,
+            logout_at=None,
+            status=AttendanceStatus.ON_LEAVE
+        )
+
+    else:
+        attendance.status = AttendanceStatus.ON_LEAVE
+        attendance.login_at = None
+        attendance.logout_at = None
+
+    db.add(attendance)
+    db.commit()
+    db.refresh(attendance)
+
+    return {
+        "message": "Kitchen staff marked as on leave",
+        "staff_id": staff.staff_id,
+        "attendance_date": attendance.attendance_date,
+        "status": attendance.status
+    }
+
+@router.put("/kitchen-staff/{staff_id}/leave/cancel")
+def cancel_kitchen_staff_leave(
+    staff_id: int,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    staff = db.exec(
+        select(KitchenStaff)
+        .join(
+            User,
+            User.user_id == KitchenStaff.user_id
+        )
+        .where(
+            KitchenStaff.staff_id == staff_id,
+            User.shop_id == current_shop.shop_id,
+            User.role == UserRole.KITCHEN_STAFF
+        )
+    ).first()
+
+    if staff is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff not found"
+        )
+
+    today = datetime.now(timezone.utc).date()
+
+    attendance = db.exec(
+        select(KitchenStaffAttendance).where(
+            KitchenStaffAttendance.staff_id == staff.staff_id,
+            KitchenStaffAttendance.attendance_date == today
+        )
+    ).first()
+
+    if attendance is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No attendance record found for today"
+        )
+
+    if attendance.status != AttendanceStatus.ON_LEAVE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kitchen staff is not currently on leave"
+        )
+
+    attendance.status = AttendanceStatus.PRESENT
+    attendance.login_at = None
+    attendance.logout_at = datetime.utcnow()
+
+    db.add(attendance)
+    db.commit()
+    db.refresh(attendance)
+
+    return {
+        "message": "Kitchen staff leave cancelled",
+        "staff_id": staff.staff_id,
+        "attendance_date": attendance.attendance_date,
+        "status": attendance.status
+    }

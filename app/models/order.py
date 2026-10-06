@@ -53,3 +53,18 @@ class Order(SQLModel, table=True):
 
     delivery_distance: float | None = None
     delivery_fee: float | None = None
+    preparation_started_at: datetime | None = Field(
+    default=None,
+    sa_column=sa.Column(sa.DateTime(timezone=True))
+    )
+
+    kitchen_ready_at: datetime | None = Field(
+    default=None,
+    sa_column=sa.Column(sa.DateTime(timezone=True))
+    )
+
+    assigned_kitchen_staff_id: int | None = Field(
+    default=None,
+    foreign_key="kitchen_staff.staff_id",
+    index=True
+    )

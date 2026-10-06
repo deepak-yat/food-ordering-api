@@ -31,6 +31,7 @@ import CustomerCart from "./pages/CustomerCart";
 import CustomerProfile from "./pages/CustomerProfile";
 import { CustomerProvider } from "./context/CustomerContext";
 import CustomerNotifications from "./pages/CustomerNotifications";
+import KitchenDashboard from "./pages/KitchenDashboard";
 function App() {
 
     return (
@@ -90,7 +91,14 @@ function App() {
 />
 </Route>
 
-
+<Route
+    path="/kitchen/dashboard"
+    element={
+        <ProtectedRoute role="kitchen_staff">
+            <KitchenDashboard />
+        </ProtectedRoute>
+    }
+/>
                     <Route
                     path="/admin/dashboard"
                     element={

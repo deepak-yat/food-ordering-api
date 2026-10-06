@@ -5,7 +5,7 @@ import hashlib
 import secrets
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.services.email import send_password_reset_email
 from app.models.password_reset_token import PasswordResetToken
 from app.database import get_db
@@ -33,6 +33,11 @@ from app.services.google_auth import verify_google_id_token
 from app.services.username import generate_unique_username
 from app.models.email_verification import EmailVerification
 from app.services.email import send_email_verification_code
+from app.models.kitchen_staff import KitchenStaff
+from app.models.kitchen_staff_attendance import (
+    KitchenStaffAttendance,
+    AttendanceStatus
+)
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -453,7 +458,54 @@ def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is inactive"
         )
+    if user.role == UserRole.KITCHEN_STAFF:
 
+        kitchen_staff = db.exec(
+            select(KitchenStaff).where(
+                KitchenStaff.user_id == user.user_id
+            )
+        ).first()
+
+        if kitchen_staff is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Kitchen staff profile not found"
+            )
+
+        today = date.today()
+
+        attendance = db.exec(
+            select(KitchenStaffAttendance).where(
+                KitchenStaffAttendance.staff_id == kitchen_staff.staff_id,
+                KitchenStaffAttendance.attendance_date == today
+            )
+        ).first()
+
+        if attendance is not None:
+            if attendance.status == AttendanceStatus.ON_LEAVE:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You are marked as on leave today"
+                )
+
+            attendance.login_at = datetime.utcnow()
+            attendance.logout_at = None
+            attendance.status = AttendanceStatus.PRESENT
+
+            db.add(attendance)
+
+        else:
+            attendance = KitchenStaffAttendance(
+                staff_id=kitchen_staff.staff_id,
+                attendance_date=today,
+                login_at=datetime.utcnow(),
+                logout_at=None,
+                status=AttendanceStatus.PRESENT
+                )
+
+            db.add(attendance)
+
+        db.commit()
     access_token = create_access_token(
         user_id=user.user_id,
         role=user.role.value
@@ -608,7 +660,34 @@ def get_me(
     }
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(
+    response: Response,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role == UserRole.KITCHEN_STAFF:
+
+        kitchen_staff = db.exec(
+            select(KitchenStaff).where(
+                KitchenStaff.user_id == current_user.user_id
+            )
+        ).first()
+
+        if kitchen_staff:
+            today = date.today()
+
+            attendance = db.exec(
+                select(KitchenStaffAttendance).where(
+                    KitchenStaffAttendance.staff_id == kitchen_staff.staff_id,
+                    KitchenStaffAttendance.attendance_date == today
+                )
+            ).first()
+
+            if attendance:
+                attendance.logout_at = datetime.utcnow()
+                db.add(attendance)
+                db.commit()
+
     response.delete_cookie(
         key="access_token"
     )

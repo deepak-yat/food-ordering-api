@@ -2,8 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 
 from app.database import get_db
-from app.dependencies import get_current_shop
+from app.dependencies import get_current_shop, get_current_kitchen_staff_user
+from datetime import datetime, timezone
 
+from app.models.kitchen_staff import KitchenStaff
+from app.models.kitchen_staff_attendance import (
+    KitchenStaffAttendance,
+    AttendanceStatus
+)
 from app.models.customer import Customer
 from app.models.order import Order,OrderStatus
 from app.models.order_delivery_address import OrderDeliveryAddress
@@ -145,9 +151,7 @@ def update_shop_order_status(
             OrderStatus.ACCEPTED,
             OrderStatus.REJECTED,
         },
-        OrderStatus.ACCEPTED: {
-            OrderStatus.PREPARING,
-        },
+        OrderStatus.ACCEPTED: set(),
         OrderStatus.PREPARING: {
             OrderStatus.READY,
         },
@@ -160,7 +164,22 @@ def update_shop_order_status(
         current_status,
         set()
     )
+    if (
+    current_status == OrderStatus.PREPARING
+    and new_status == OrderStatus.READY
+    ):
+        if order.assigned_kitchen_staff_id is None:
+            raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order has not been assigned to a kitchen staff member"
+                )
 
+        if order.kitchen_ready_at is None:
+            raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Kitchen has not marked this order as ready"
+            )
+        
     if new_status not in allowed_statuses:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -197,3 +216,190 @@ def update_shop_order_status(
         "status": order.status,
     }
 
+@router.put(
+    "/{order_id}/start-preparing"
+)
+def start_kitchen_order(
+    order_id: int,
+    current_staff: KitchenStaff = Depends(
+        get_current_kitchen_staff_user
+    ),
+    db: Session = Depends(get_db)
+):
+    # Get the kitchen staff's user account
+    user = db.get(User, current_staff.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Kitchen staff user account not found"
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Kitchen staff account is inactive"
+        )
+
+    # Get today's attendance
+    today = datetime.now(timezone.utc).date()
+
+    attendance = db.exec(
+        select(KitchenStaffAttendance).where(
+            KitchenStaffAttendance.staff_id == current_staff.staff_id,
+            KitchenStaffAttendance.attendance_date == today
+        )
+    ).first()
+
+    if attendance is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Kitchen staff has not logged in today"
+        )
+
+    if attendance.status == AttendanceStatus.ON_LEAVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Kitchen staff is on leave"
+        )
+
+    if attendance.logout_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Kitchen staff is currently offline"
+        )
+
+    # Make sure this chef isn't already preparing another order
+    existing_order = db.exec(
+        select(Order).where(
+            Order.assigned_kitchen_staff_id == current_staff.staff_id,
+            Order.status == OrderStatus.PREPARING,
+            Order.kitchen_ready_at.is_(None)
+        )
+    ).first()
+
+    if existing_order is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Kitchen staff is already preparing "
+                f"order #{existing_order.order_id}"
+            )
+        )
+
+    # Get the order belonging to this shop
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id,
+            Order.shop_id == user.shop_id
+        )
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Re-check the current status immediately before mutation
+    if order.status != OrderStatus.ACCEPTED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Order cannot be started because its current "
+                f"status is {order.status}"
+            )
+        )
+
+    # Make sure another chef hasn't claimed it
+    if order.assigned_kitchen_staff_id is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order has already been assigned to another chef"
+        )
+
+    now = datetime.now(timezone.utc)
+
+    order.assigned_kitchen_staff_id = current_staff.staff_id
+    order.status = OrderStatus.PREPARING
+    order.preparation_started_at = now
+    order.kitchen_ready_at = None
+
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    return {
+        "message": "Order assigned and preparation started",
+        "order_id": order.order_id,
+        "status": order.status,
+        "assigned_kitchen_staff_id": order.assigned_kitchen_staff_id,
+        "preparation_started_at": order.preparation_started_at
+    }
+
+@router.put("/{order_id}/kitchen-ready")
+def mark_kitchen_ready(
+    order_id: int,
+    current_staff: KitchenStaff = Depends(
+        get_current_kitchen_staff_user
+    ),
+    db: Session = Depends(get_db)
+):
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id
+        )
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Make sure the order belongs to the chef's shop
+    user = db.get(User, current_staff.user_id)
+
+    if user is None or user.shop_id != order.shop_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to access this order"
+        )
+
+    # Re-check current status before changing anything
+    if order.status != OrderStatus.PREPARING:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                f"Order cannot be marked kitchen-ready "
+                f"because its current status is {order.status}"
+            )
+        )
+
+    # Only the chef who claimed the order can mark it ready
+    if order.assigned_kitchen_staff_id != current_staff.staff_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This order is assigned to another chef"
+        )
+
+    # Prevent duplicate completion
+    if order.kitchen_ready_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order is already marked kitchen-ready"
+        )
+
+    order.kitchen_ready_at = datetime.now(timezone.utc)
+
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+
+    return {
+        "message": "Order marked as kitchen-ready",
+        "order_id": order.order_id,
+        "status": order.status,
+        "assigned_kitchen_staff_id": order.assigned_kitchen_staff_id,
+        "kitchen_ready_at": order.kitchen_ready_at
+    }
