@@ -1,0 +1,572 @@
+.shop-kitchen-staff-page {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    box-sizing: border-box;
+    padding: 24px;
+}
+/* =========================
+   Header
+========================= */
+
+.shop-kitchen-staff-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.shop-kitchen-staff-header h1 {
+    justify-self: center;
+    margin: 0;
+    color: #202124;
+    font-size: 26px;
+    line-height: 1.2;
+}
+
+.shop-kitchen-staff-header p {
+    margin: 6px 0 0;
+    color: #777;
+    font-size: 14px;
+}
+
+/* =========================
+   Buttons
+========================= */
+
+.kitchen-staff-primary-btn,
+.kitchen-staff-secondary-btn,
+.kitchen-staff-danger-btn,
+.kitchen-staff-activate-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.kitchen-staff-primary-btn {
+    background: #ffb800;
+    color: #202124;
+}
+
+.kitchen-staff-secondary-btn {
+    background: #f1f1ef;
+    color: #333;
+}
+
+.kitchen-staff-danger-btn {
+    background: #ffe7e7;
+    color: #c62828;
+}
+
+.kitchen-staff-activate-btn {
+    background: #e8f7ed;
+    color: #16733a;
+}
+
+.kitchen-staff-primary-btn:hover {
+    filter: brightness(0.97);
+}
+
+.kitchen-staff-secondary-btn:hover {
+    background: #e7e7e4;
+}
+
+.kitchen-staff-danger-btn:hover {
+    background: #ffdada;
+}
+
+.kitchen-staff-activate-btn:hover {
+    background: #d9f0e2;
+}
+
+.kitchen-staff-primary-btn:disabled,
+.kitchen-staff-secondary-btn:disabled,
+.kitchen-staff-danger-btn:disabled,
+.kitchen-staff-activate-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* =========================
+   Messages
+========================= */
+
+.kitchen-staff-message {
+    padding: 11px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.kitchen-staff-message.error {
+    background: #fff0f0;
+    border: 1px solid #ffd0d0;
+    color: #b42318;
+}
+
+.kitchen-staff-message.success {
+    background: #edf9f1;
+    border: 1px solid #ccebd5;
+    color: #16733a;
+}
+
+/* =========================
+   Add / Edit Form
+========================= */
+
+.kitchen-staff-form {
+    width: 100%;
+    box-sizing: border-box;
+    background: #fff;
+    border: 1px solid #e6e6e2;
+    border-radius: 14px;
+    padding: 22px;
+    margin-bottom: 24px;
+}
+
+.kitchen-staff-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.kitchen-staff-form-header h2 {
+    margin: 0;
+    font-size: 20px;
+    color: #202124;
+}
+
+.kitchen-staff-form-header p {
+    margin: 5px 0 0;
+    color: #777;
+    font-size: 13px;
+}
+
+.kitchen-staff-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 7px;
+    background: #f2f2f0;
+    color: #444;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.kitchen-staff-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.kitchen-staff-field {
+    min-width: 0;
+}
+
+.kitchen-staff-field.full {
+    grid-column: 1 / -1;
+}
+
+.kitchen-staff-field label {
+    display: block;
+    margin-bottom: 6px;
+    color: #444;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.kitchen-staff-field input,
+.kitchen-staff-field select,
+.kitchen-staff-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #dcdcd8;
+    border-radius: 8px;
+    padding: 10px 11px;
+    background: #fff;
+    color: #202124;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+.kitchen-staff-field textarea {
+    resize: vertical;
+    min-height: 82px;
+}
+
+.kitchen-staff-field input:focus,
+.kitchen-staff-field select:focus,
+.kitchen-staff-field textarea:focus {
+    border-color: #ffb800;
+    box-shadow: 0 0 0 2px rgba(255, 184, 0, 0.12);
+}
+
+.kitchen-staff-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* =========================
+   Staff List
+========================= */
+
+.kitchen-staff-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.kitchen-staff-card {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 22px;
+
+    width: 100%;
+    box-sizing: border-box;
+
+    padding: 18px 20px;
+
+    background: #fff;
+    border: 1px solid #e6e6e2;
+    border-radius: 14px;
+}
+
+.kitchen-staff-card.inactive {
+    opacity: 0.7;
+}
+
+/* =========================
+   Identity
+========================= */
+
+.kitchen-staff-identity {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.kitchen-staff-avatar {
+    width: 46px;
+    height: 46px;
+    min-width: 46px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: #ffb800;
+
+    color: #202124;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.kitchen-staff-name {
+    min-width: 0;
+}
+
+.kitchen-staff-name h3 {
+    margin: 0 0 3px;
+    color: #202124;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.kitchen-staff-name p {
+    margin: 0 0 6px;
+    color: #777;
+    font-size: 12px;
+}
+
+/* =========================
+   Status
+========================= */
+
+.kitchen-staff-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.kitchen-staff-status.active {
+    background: #e8f7ed;
+    color: #16733a;
+}
+
+.kitchen-staff-status.inactive {
+    background: #eeeeec;
+    color: #777;
+}
+
+/* =========================
+   Staff Information
+========================= */
+
+.kitchen-staff-info {
+    display: grid;
+    grid-template-columns:
+        minmax(110px, 1fr)
+        minmax(55px, 0.5fr)
+        minmax(75px, 0.7fr)
+        minmax(90px, 0.8fr)
+        minmax(130px, 1.2fr);
+
+    gap: 18px;
+    min-width: 0;
+}
+
+.kitchen-staff-info div {
+    min-width: 0;
+}
+
+.kitchen-staff-info span {
+    display: block;
+    margin-bottom: 5px;
+
+    color: #888;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.kitchen-staff-info strong {
+    display: block;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    color: #303030;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    text-transform: capitalize;
+}
+
+.kitchen-staff-info .specialties strong {
+    white-space: normal;
+}
+
+/* =========================
+   Actions
+========================= */
+
+.kitchen-staff-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+/* =========================
+   Empty / Loading
+========================= */
+
+.kitchen-staff-state {
+    padding: 50px 20px;
+    border: 1px dashed #d8d8d4;
+    border-radius: 14px;
+    background: #fff;
+    text-align: center;
+    color: #777;
+}
+
+.kitchen-staff-state h3 {
+    margin: 0 0 6px;
+    color: #303030;
+}
+
+.kitchen-staff-state p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* =========================
+   Password Overlay
+========================= */
+
+.kitchen-staff-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0, 0, 0, 0.38);
+}
+
+.kitchen-staff-password-dialog {
+    width: min(420px, 100%);
+    box-sizing: border-box;
+
+    padding: 22px;
+
+    background: #fff;
+    border-radius: 14px;
+}
+
+.password-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+.password-dialog-header h2 {
+    margin: 0;
+    font-size: 19px;
+    color: #202124;
+}
+
+.password-dialog-header p {
+    margin: 5px 0 0;
+    color: #777;
+    font-size: 13px;
+}
+
+.password-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* =========================
+   Tablet
+========================= */
+
+@media (max-width: 1100px) {
+    .kitchen-staff-card {
+        grid-template-columns: 200px minmax(0, 1fr);
+    }
+
+    .kitchen-staff-actions {
+        grid-column: 1 / -1;
+        justify-content: flex-start;
+    }
+
+    .kitchen-staff-info {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+/* =========================
+   Mobile
+========================= */
+
+@media (max-width: 700px) {
+    .shop-kitchen-staff-page {
+        padding: 16px;
+    }
+
+    .shop-kitchen-staff-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .shop-kitchen-staff-header
+        .kitchen-staff-primary-btn {
+        width: 100%;
+    }
+
+    .kitchen-staff-card {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        padding: 16px;
+    }
+
+    .kitchen-staff-info {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .kitchen-staff-actions {
+        justify-content: flex-start;
+    }
+
+    .kitchen-staff-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kitchen-staff-field.full {
+        grid-column: auto;
+    }
+}
+
+/* =========================
+   Small Mobile
+========================= */
+
+@media (max-width: 450px) {
+    .kitchen-staff-form {
+        padding: 16px;
+    }
+
+    .kitchen-staff-info {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .kitchen-staff-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
+    .kitchen-staff-actions button {
+        width: 100%;
+    }
+
+    .kitchen-staff-form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .kitchen-staff-form-actions button {
+        width: 100%;
+    }
+
+    .password-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .password-dialog-actions button {
+        width: 100%;
+    }
+}
+.kitchen-staff-back-btn {
+    border: 1px solid #deded9;
+    border-radius: 8px;
+    padding: 9px 14px;
+    background: #fff;
+    color: #333;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.kitchen-staff-back-btn:hover {
+    background: #f1f1ef;
+}

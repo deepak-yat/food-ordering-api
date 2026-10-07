@@ -93,6 +93,14 @@ def get_shop_orders(
                 detail="Delivery address not found for order"
             )
 
+        assigned_staff = None
+
+        if order.assigned_kitchen_staff_id:
+            assigned_staff = db.get(
+                KitchenStaff,
+                order.assigned_kitchen_staff_id
+            )
+
         response.append(
             ShopOrderResponse(
                 order_id=order.order_id,
@@ -101,6 +109,12 @@ def get_shop_orders(
                 customer_phone=customer.phone,
                 shop_id=order.shop_id,
                 status=order.status,
+                assigned_kitchen_staff_id=order.assigned_kitchen_staff_id,
+                assigned_kitchen_staff_name=(
+                    assigned_staff.full_name
+                    if assigned_staff
+                    else None
+                ),
                 total_amount=order.total_amount,
                 delivery_distance=order.delivery_distance,
                 delivery_fee=order.delivery_fee,
@@ -152,9 +166,7 @@ def update_shop_order_status(
             OrderStatus.REJECTED,
         },
         OrderStatus.ACCEPTED: set(),
-        OrderStatus.PREPARING: {
-            OrderStatus.READY,
-        },
+        OrderStatus.PREPARING: set(),
         OrderStatus.READY: {
             OrderStatus.COMPLETED,
         },
@@ -301,6 +313,14 @@ def start_kitchen_order(
             detail="Order not found"
         )
 
+    shop = db.get(Shop, order.shop_id)
+
+    if shop is None:
+        raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Shop not found"
+    )
+
     # Re-check the current status immediately before mutation
     if order.status != OrderStatus.ACCEPTED:
         raise HTTPException(
@@ -326,6 +346,22 @@ def start_kitchen_order(
     order.kitchen_ready_at = None
 
     db.add(order)
+
+    info = STATUS_INFO[OrderStatus.PREPARING]
+
+    db.add(
+        Notification(
+            customer_id=order.customer_id,
+            order_id=order.order_id,
+            title=info["title"],
+            message=info["message"].format(
+            shop_name=shop.shop_name
+            ),
+            notification_type=NotificationType.ORDER_STATUS,
+        )
+    )
+
+    
     db.commit()
     db.refresh(order)
 
@@ -402,4 +438,282 @@ def mark_kitchen_ready(
         "status": order.status,
         "assigned_kitchen_staff_id": order.assigned_kitchen_staff_id,
         "kitchen_ready_at": order.kitchen_ready_at
+    }
+
+
+@router.get("/kitchen/monitor")
+def get_kitchen_monitor(
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    orders = db.exec(
+        select(Order).where(
+            Order.shop_id == current_shop.shop_id,
+            Order.status.in_([
+                OrderStatus.ACCEPTED,
+                OrderStatus.PREPARING,
+            ])
+        )
+    ).all()
+    preparing_orders = [
+    order
+    for order in orders
+    if (
+        order.status == OrderStatus.PREPARING
+        and order.kitchen_ready_at is None
+    )
+    ]
+    # New orders waiting for a chef
+    new_count = sum(
+        1
+        for order in orders
+        if order.status == OrderStatus.ACCEPTED
+    )
+
+    # Orders currently being prepared
+    preparing_count = sum(
+        1
+        for order in orders
+        if (
+            order.status == OrderStatus.PREPARING
+            and order.kitchen_ready_at is None
+        )
+    )
+    preparing_order_details = []
+
+    for order in preparing_orders:
+        assigned_staff = None
+
+        if order.assigned_kitchen_staff_id:
+            assigned_staff = db.get(
+            KitchenStaff,
+            order.assigned_kitchen_staff_id
+        )
+
+        preparing_order_details.append({
+            "order_id": order.order_id,
+            "customer_id": order.customer_id,
+            "total_amount": order.total_amount,
+            "assigned_kitchen_staff_id": order.assigned_kitchen_staff_id,
+            "assigned_kitchen_staff_name": (
+                assigned_staff.full_name
+                if assigned_staff
+                else None
+            ),
+            "preparation_started_at": order.preparation_started_at,
+        })
+    # Orders finished by kitchen but waiting for manager validation
+    awaiting_validation = [
+        order
+        for order in orders
+        if (
+            order.status == OrderStatus.PREPARING
+            and order.kitchen_ready_at is not None
+        )
+    ]
+
+    # Find the longest active order
+    longest_active = min(
+        orders,
+        key=lambda order: (
+            order.preparation_started_at
+            or order.created_at
+        ),
+        default=None
+    )
+
+    longest_active_minutes = None
+
+    if longest_active:
+        start_time = (
+            longest_active.preparation_started_at
+            or longest_active.created_at
+        )
+
+        now = datetime.now(timezone.utc)
+
+        longest_active_minutes = max(
+            0,
+            int(
+                (
+                    now - start_time
+                ).total_seconds() // 60
+            )
+        )
+
+    return {
+        "new_count": new_count,
+        "preparing_count": preparing_count,
+        "awaiting_validation_count": len(
+            awaiting_validation
+        ),
+        "longest_active_order_id": (
+            longest_active.order_id
+            if longest_active
+            else None
+        ),
+        "longest_active_minutes": longest_active_minutes,
+        "preparing_orders": preparing_order_details,
+
+    }
+
+
+@router.get("/kitchen/validation")
+def get_kitchen_validation_orders(
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    orders = db.exec(
+        select(Order)
+        .where(
+            Order.shop_id == current_shop.shop_id,
+            Order.status == OrderStatus.PREPARING,
+            Order.kitchen_ready_at.is_not(None)
+        )
+        .order_by(Order.kitchen_ready_at.asc())
+    ).all()
+
+    response = []
+
+    for order in orders:
+
+        customer = db.get(
+            Customer,
+            order.customer_id
+        )
+
+        order_items = db.exec(
+            select(OrderItem)
+            .where(
+                OrderItem.order_id == order.order_id
+            )
+        ).all()
+
+        assigned_staff = None
+
+        if order.assigned_kitchen_staff_id:
+            assigned_staff = db.get(
+                KitchenStaff,
+                order.assigned_kitchen_staff_id
+            )
+
+        response.append({
+            "order_id": order.order_id,
+            "customer_id": order.customer_id,
+            "customer_name": (
+                customer.customer_name
+                if customer
+                else "Unknown Customer"
+            ),
+            "total_amount": order.total_amount,
+            "created_at": order.created_at,
+            "preparation_started_at": order.preparation_started_at,
+            "kitchen_ready_at": order.kitchen_ready_at,
+            "assigned_kitchen_staff_id": (
+                order.assigned_kitchen_staff_id
+            ),
+            "assigned_kitchen_staff_name": (
+                assigned_staff.full_name
+                if assigned_staff
+                else None
+            ),
+            "delivery_instruction": order.delivery_instruction,
+            "items": [
+                {
+                    "order_item_id": item.order_item_id,
+                    "menu_item_id": item.menu_item_id,
+                    "item_name": item.item_name,
+                    "quantity": item.quantity,
+                    "unit_price": item.unit_price,
+                    "subtotal": item.subtotal,
+                }
+                for item in order_items
+            ],
+        })
+
+    return response
+
+@router.put("/{order_id}/validate-ready")
+def validate_order_ready(
+    order_id: int,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db)
+):
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id,
+            Order.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Order not found"
+        )
+
+    # Must still be preparing and marked kitchen-ready
+    if (
+    order.status != OrderStatus.PREPARING
+    or order.kitchen_ready_at is None
+    ):
+        raise HTTPException(
+        status_code=status.HTTP_409_CONFLICT,
+        detail="Order is not awaiting kitchen validation"
+    )
+
+# Initial validation
+    if (
+        order.status != OrderStatus.PREPARING
+        or order.kitchen_ready_at is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order is not awaiting kitchen validation"
+        )
+
+    # Fresh re-check immediately before mutation
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id,
+            Order.shop_id == current_shop.shop_id
+        )
+    ).first()
+
+    if (
+        order is None
+        or order.status != OrderStatus.PREPARING
+        or order.kitchen_ready_at is None
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Order is no longer awaiting kitchen validation"
+        )
+
+    order.status = OrderStatus.READY
+
+    db.add(order)
+
+    # Reuse existing READY notification
+    info = STATUS_INFO[OrderStatus.READY]
+
+    notification = Notification(
+        customer_id=order.customer_id,
+        order_id=order.order_id,
+        title=info["title"],
+        message=info["message"].format(
+            shop_name=current_shop.shop_name
+        ),
+        notification_type=NotificationType.ORDER_STATUS,
+    )
+
+    db.add(notification)
+
+    db.commit()
+    db.refresh(order)
+
+    return {
+        "message": "Order marked ready",
+        "order_id": order.order_id,
+        "status": order.status,
     }

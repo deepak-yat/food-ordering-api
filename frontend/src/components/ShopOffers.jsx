@@ -1,12 +1,91 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "../api/client";
 
+
+function OfferList({ offers, selectedOffer, onSelectOffer }) {
+    return (
+        <div className="offers-list-section">
+            <div className="offers-list-header">
+                <div>
+                    <h2>Offers</h2>
+                    <p>Select an offer to view its details.</p>
+                </div>
+
+                <span className="offers-count">
+                    {offers.length} {offers.length === 1 ? "Offer" : "Offers"}
+                </span>
+            </div>
+
+            <div className="offers-list-viewport">
+                {offers.map((offer) => (
+                    <button
+                        key={offer.offer_id}
+                        type="button"
+                        className={`offer-list-item ${
+                            selectedOffer?.offer_id === offer.offer_id
+                                ? "selected"
+                                : ""
+                        }`}
+                        onClick={() => onSelectOffer(offer)}
+                    >
+                        <div className="offer-list-image-wrapper">
+                            {offer.image_url ? (
+                                <img
+                                    src={`http://127.0.0.1:8000${offer.image_url}`}
+                                    alt={offer.title}
+                                    className="offer-list-image"
+                                />
+                            ) : (
+                                <div className="offer-list-image-placeholder">
+                                    OFF
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="offer-list-content">
+                            <div className="offer-list-title-row">
+                                <h3>{offer.title}</h3>
+
+                                <span
+                                    className={`offer-status ${offer.status.toLowerCase()}`}
+                                >
+                                    {offer.status}
+                                </span>
+                            </div>
+
+                            <div className="offer-list-meta">
+                                <strong>
+                                    {offer.discount_type === "PERCENTAGE"
+                                        ? `${offer.discount_value}% OFF`
+                                        : `₹${offer.discount_value} OFF`}
+                                </strong>
+
+                                <span>
+                                    {offer.items?.length || 0}{" "}
+                                    {offer.items?.length === 1
+                                        ? "item"
+                                        : "items"}
+                                </span>
+                            </div>
+
+                            <span className="offer-list-view">
+                                View Details →
+                            </span>
+                        </div>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+
 function ShopOffers() {
     const [offers, setOffers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [showCreateForm, setShowCreateForm] = useState(false);
-
+    const [selectedOffer, setSelectedOffer] = useState(null);
     const [form, setForm] = useState({
         title: "",
         description: "",
@@ -299,7 +378,35 @@ const expiredOffers = offers.filter((offer) => isOfferExpired(offer));
             (offerPrice + Number.EPSILON) * 100
         ) / 100;
     }
+ function calculateSelectedOfferPrice(item, offer) {
+    const originalPrice = Number(item.price);
+    const discountValue = Number(offer.discount_value);
 
+    if (!discountValue || discountValue <= 0) {
+        return originalPrice;
+    }
+
+    let offerPrice = originalPrice;
+
+    if (offer.discount_type === "PERCENTAGE") {
+        offerPrice =
+            originalPrice -
+            (originalPrice * discountValue) / 100;
+    }
+
+    if (offer.discount_type === "FIXED_PRICE") {
+        offerPrice = discountValue;
+    }
+
+    offerPrice = Math.min(
+        offerPrice,
+        originalPrice
+    );
+
+    return Math.round(
+        (offerPrice + Number.EPSILON) * 100
+    ) / 100;
+}
     async function deleteOffer(offer) {
         try {
             setError("");
@@ -357,7 +464,7 @@ const expiredOffers = offers.filter((offer) => isOfferExpired(offer));
                 </button>
             </div>
 
-            {(showCreateForm || editingOffer) && (
+            {showCreateForm && (
                 <div className="offer-form">
 
                     <h2>
@@ -615,174 +722,414 @@ const expiredOffers = offers.filter((offer) => isOfferExpired(offer));
                     </p>
                 </div>
             ) : (
-                <div className="offers-grid">
+                <>
+<OfferList
+    offers={offers}
+    selectedOffer={selectedOffer}
+    onSelectOffer={setSelectedOffer}
+/>
+{selectedOffer && (
+    <div className="selected-offer-section">
 
-                    {offers.map((offer) => (
-                        <div
-                            className="offer-card"
-                            key={offer.offer_id}
-                        >
+        {/* Header */}
+        <div className="selected-offer-header">
+            <div>
+                <span className="selected-offer-eyebrow">
+                    SELECTED OFFER
+                </span>
 
-                            {offer.image_url && (
-                                <img
-                                    src={`http://127.0.0.1:8000${offer.image_url}`}
-                                    alt={offer.title}
-                                    className="offer-card-image"
-                                />
-                            )}
+                <h2>{selectedOffer.title}</h2>
+            </div>
 
-                            <div className="offer-card-content">
+            <span
+                className={`offer-status ${selectedOffer.status.toLowerCase()}`}
+            >
+                {selectedOffer.status}
+            </span>
+        </div>
 
-                                <div className="offer-card-top">
-                                    <h2>{offer.title}</h2>
+        {/* Banner */}
+        {selectedOffer.image_url && (
+            <div className="selected-offer-banner">
+                <img
+                    src={`http://127.0.0.1:8000${selectedOffer.image_url}`}
+                    alt={selectedOffer.title}
+                />
+            </div>
+        )}
 
-                                    <span
-                                        className={`offer-status ${offer.status.toLowerCase()}`}
-                                    >
-                                        {offer.status}
-                                    </span>
-                                </div>
+        {/* Offer Information */}
+        <div className="selected-offer-info">
 
-                                {offer.description && (
-                                    <p className="offer-description">
-                                        {offer.description}
-                                    </p>
-                                )}
+            {/* Discount */}
+            <div className="selected-offer-discount">
+                {getDiscountText(selectedOffer)}
+            </div>
 
-                                <div className="offer-discount">
-                                    {getDiscountText(offer)}
-                                </div>
+            {/* Description */}
+            {selectedOffer.description && (
+                <p className="selected-offer-description">
+                    {selectedOffer.description}
+                </p>
+            )}
 
-                                <div className="offer-dates">
-                                    <p>
-                                        <strong>Starts:</strong>{" "}
-                                        {formatDate(offer.start_at)}
-                                    </p>
-
-                                    <p>
-                                        <strong>Ends:</strong>{" "}
-                                        {formatDate(offer.end_at)}
-                                    </p>
-                                </div>
-
-                                <div className="offer-items">
-                                    <strong>Menu Items</strong>
-
-                                    {offer.items?.length > 0 ? (
-                                        <ul>
-                                            {offer.items.map((item) => {
-                                                const originalPrice = Number(item.item_price);
-
-                                                let offerPrice = originalPrice;
-
-                                                if (offer.discount_type === "PERCENTAGE") {
-                                                    offerPrice =
-                                                        originalPrice -
-                                                        (originalPrice * Number(offer.discount_value)) / 100;
-                                                }
-
-                                                if (offer.discount_type === "FIXED_PRICE") {
-                                                    offerPrice = Number(offer.discount_value);
-                                                }
-
-                                                offerPrice = Math.min(
-                                                    offerPrice,
-                                                    originalPrice
-                                                );
-
-                                                offerPrice =
-                                                    Math.round(
-                                                        (offerPrice + Number.EPSILON) * 100
-                                                    ) / 100;
-
-                                                return (
-                                                    <li key={item.item_id}>
-                                                        <span className="offer-card-item-name">
-                                                            {item.item_name}
-                                                        </span>
-
-                                                        <span className="offer-card-item-prices">
-                                                            <span className="offer-card-original-price">
-                                                                ₹{originalPrice.toFixed(2)}
-                                                            </span>
-
-                                                            <span className="offer-card-new-price">
-                                                                ₹{offerPrice.toFixed(2)}
-                                                            </span>
-                                                        </span>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    ) : (
-                                        <p>No items attached</p>
-                                    )}
-                                </div>
-
-                                <div className="offer-actions">
-                                    <button
-                                        className="secondary-btn"
-                                        onClick={() => {
-                                            setEditingOffer(offer);
-                                            setUpdateError("");
-
-                                            setForm({
-                                                title: offer.title || "",
-                                                description: offer.description || "",
-                                                discount_type: offer.discount_type,
-                                                discount_value: offer.discount_value,
-                                                start_at: offer.start_at
-                                                    ? new Date(offer.start_at)
-                                                        .toISOString()
-                                                        .slice(0, 16)
-                                                    : "",
-                                                end_at: offer.end_at
-                                                    ? new Date(offer.end_at)
-                                                        .toISOString()
-                                                        .slice(0, 16)
-                                                    : "",
-                                                is_active: offer.is_active,
-                                                item_ids: offer.items?.map(
-                                                    (item) => item.item_id
-                                                ) || [],
-                                            });
-
-                                            setOfferImage(null);
-                                        }}
-                                    >
-                                        Edit
-                                    </button>
-
-                                    <button
-                                        className="secondary-btn"
-                                        onClick={() => toggleOffer(offer)}
-                                    >
-                                        {offer.is_active
-                                            ? "Deactivate"
-                                            : "Activate"}
-                                    </button>
-
-                                    <button
-                                        className="danger-btn"
-                                        onClick={() => {
-                                            const confirmed = window.confirm(
-                                                `Are you sure you want to delete "${offer.title}"?`
-                                            );
-
-                                            if (confirmed) {
-                                                deleteOffer(offer);
-                                            }
-                                        }}
-                                    >
-                                        Delete
-                                    </button>
-                                </div>
-
-                            </div>
-                        </div>
-                    ))}
-
+            {/* Dates */}
+            <div className="selected-offer-dates">
+                <div>
+                    <span>Starts</span>
+                    <strong>
+                        {formatDate(selectedOffer.start_at)}
+                    </strong>
                 </div>
+
+                <div>
+                    <span>Ends</span>
+                    <strong>
+                        {formatDate(selectedOffer.end_at)}
+                    </strong>
+                </div>
+            </div>
+
+        </div>
+
+        {/* Offered Items */}
+{selectedOffer.items?.length > 0 && (
+    <div className="selected-offer-items">
+
+        <div className="selected-offer-items-header">
+            <h3>Offered Items</h3>
+
+            <span>
+                {selectedOffer.items.length}{" "}
+                {selectedOffer.items.length === 1
+                    ? "item"
+                    : "items"}
+            </span>
+        </div>
+
+        <div className="selected-offer-items-list">
+
+            {selectedOffer.items.map((item) => {
+                const menuItem = menuItems.find(
+                    (menuItem) =>
+                        menuItem.item_id === item.item_id
+                );
+
+                return (
+                    <div
+                        key={item.item_id}
+                        className="selected-offer-item"
+                    >
+
+                        <div className="selected-offer-item-info">
+                            <strong>
+                                {item.item_name}
+                            </strong>
+
+                            <span>
+                                Original Price: ₹
+                                {menuItem
+                                    ? Number(menuItem.price).toFixed(2)
+                                    : "—"}
+                            </span>
+                        </div>
+
+                        <div className="selected-offer-item-price">
+                            <span>
+                                Offer Price
+                            </span>
+
+                            <strong>
+                                ₹
+                                {menuItem
+                                    ? calculateSelectedOfferPrice(
+                                          menuItem,
+                                          selectedOffer
+                                      ).toFixed(2)
+                                    : "—"}
+                            </strong>
+                        </div>
+
+                    </div>
+                );
+            })}
+
+        </div>
+    </div>
+)}
+
+<div className="selected-offer-actions">
+    <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => {
+            setEditingOffer(selectedOffer);
+
+            setForm({
+                title: selectedOffer.title || "",
+                description: selectedOffer.description || "",
+                discount_type: selectedOffer.discount_type,
+                discount_value: selectedOffer.discount_value,
+                start_at: selectedOffer.start_at
+                    ? new Date(selectedOffer.start_at)
+                          .toISOString()
+                          .slice(0, 16)
+                    : "",
+                end_at: selectedOffer.end_at
+                    ? new Date(selectedOffer.end_at)
+                          .toISOString()
+                          .slice(0, 16)
+                    : "",
+                is_active: selectedOffer.is_active,
+                item_ids: selectedOffer.items?.map(
+                    (item) => item.item_id
+                ) || [],
+            });
+
+            setOfferImage(null);
+            setUpdateError("");
+        }}
+    >
+        Edit Offer
+    </button>
+
+    <button
+        type="button"
+        className="secondary-btn"
+        onClick={() => toggleOffer(selectedOffer)}
+    >
+        {selectedOffer.is_active
+            ? "Deactivate"
+            : "Activate"}
+    </button>
+
+    <button
+        type="button"
+        className="danger-btn"
+        onClick={() => {
+            if (
+                window.confirm(
+                    `Delete "${selectedOffer.title}"?`
+                )
+            ) {
+                deleteOffer(selectedOffer);
+                setSelectedOffer(null);
+            }
+        }}
+    >
+        Delete Offer
+    </button>
+</div>
+{editingOffer && (
+    <div className="offer-form selected-offer-edit-form">
+        <h2>Edit Offer</h2>
+
+        {updateError && (
+            <p className="form-error">
+                {updateError}
+            </p>
+        )}
+
+        <div className="form-group">
+            <label>Title</label>
+
+            <input
+                type="text"
+                value={form.title}
+                onChange={(e) =>
+                    setForm({
+                        ...form,
+                        title: e.target.value,
+                    })
+                }
+                placeholder="Weekend Special"
+            />
+        </div>
+
+        <div className="form-group">
+            <label>Description</label>
+
+            <textarea
+                value={form.description}
+                onChange={(e) =>
+                    setForm({
+                        ...form,
+                        description: e.target.value,
+                    })
+                }
+                placeholder="20% off on selected items."
+            />
+        </div>
+
+        <div className="form-group">
+            <label>Offer Image</label>
+
+            <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={(e) => {
+                    setOfferImage(
+                        e.target.files[0] || null
+                    );
+                }}
+            />
+
+            <small>
+                JPG, PNG or WebP. Maximum size: 5 MB.
+            </small>
+        </div>
+
+        <div className="form-row">
+            <div className="form-group">
+                <label>Discount Type</label>
+
+                <select
+                    value={form.discount_type}
+                    onChange={(e) =>
+                        setForm({
+                            ...form,
+                            discount_type: e.target.value,
+                        })
+                    }
+                >
+                    <option value="PERCENTAGE">
+                        Percentage
+                    </option>
+
+                    <option value="FIXED_PRICE">
+                        Fixed Price
+                    </option>
+                </select>
+            </div>
+
+            <div className="form-group">
+                <label>Discount Value</label>
+
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.discount_value}
+                    onChange={(e) =>
+                        setForm({
+                            ...form,
+                            discount_value: e.target.value,
+                        })
+                    }
+                />
+            </div>
+        </div>
+
+        <div className="form-row">
+            <div className="form-group">
+                <label>Start Date & Time</label>
+
+                <input
+                    type="datetime-local"
+                    value={form.start_at}
+                    onChange={(e) =>
+                        setForm({
+                            ...form,
+                            start_at: e.target.value,
+                        })
+                    }
+                />
+            </div>
+
+            <div className="form-group">
+                <label>End Date & Time</label>
+
+                <input
+                    type="datetime-local"
+                    value={form.end_at}
+                    onChange={(e) =>
+                        setForm({
+                            ...form,
+                            end_at: e.target.value,
+                        })
+                    }
+                />
+            </div>
+        </div>
+<div className="form-group offer-menu-items-edit">
+    <label>Menu Items</label>
+
+    {loadingItems ? (
+        <p className="form-help">Loading menu items...</p>
+    ) : menuItems.length === 0 ? (
+        <p className="form-help">No menu items available.</p>
+    ) : (
+        <div className="menu-items-selection">
+            {menuItems.map((item) => {
+                const isSelected = form.item_ids.includes(item.item_id);
+
+                return (
+                    <label
+                        key={item.item_id}
+                        className={`menu-item-option ${
+                            isSelected ? "selected" : ""
+                        }`}
+                    >
+                        <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {
+                                setForm((prev) => ({
+                                    ...prev,
+                                    item_ids: isSelected
+                                        ? prev.item_ids.filter(
+                                              (id) => id !== item.item_id
+                                          )
+                                        : [
+                                              ...prev.item_ids,
+                                              item.item_id
+                                          ]
+                                }));
+                            }}
+                        />
+
+                        <div className="menu-item-option-info">
+                            <strong>{item.item_name}</strong>
+
+                            <span>
+                                ₹{Number(item.price).toFixed(2)}
+                            </span>
+                        </div>
+                    </label>
+                );
+            })}
+        </div>
+    )}
+</div>
+        <div className="form-actions">
+            <button
+                type="button"
+                className="secondary-btn"
+                onClick={() => {
+                    setEditingOffer(null);
+                    setUpdateError("");
+                    setOfferImage(null);
+                }}
+            >
+                Cancel
+            </button>
+
+            <button
+                type="button"
+                className="primary-btn"
+                onClick={updateOffer}
+                disabled={updating}
+            >
+                {updating ? "Updating..." : "Update Offer"}
+            </button>
+        </div>
+    </div>
+)}
+    </div>
+    
+)}
+
+</>
             )}
 
         </main>

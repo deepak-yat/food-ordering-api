@@ -37,9 +37,9 @@ export async function apiFetch(endpoint, options = {}) {
     let data = null;
 
     if (contentType?.includes("application/json")) {
-        data = await response.json();
-    }
-
+    const text = await response.text();
+    data = text ? JSON.parse(text) : null;
+}
     if (!response.ok) {
         const detail =
             typeof data?.detail === "string"

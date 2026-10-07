@@ -32,6 +32,8 @@ import CustomerProfile from "./pages/CustomerProfile";
 import { CustomerProvider } from "./context/CustomerContext";
 import CustomerNotifications from "./pages/CustomerNotifications";
 import KitchenDashboard from "./pages/KitchenDashboard";
+import ShopKitchenMonitor from "./pages/ShopKitchenMonitor";
+import ShopKitchenStaff from "./pages/ShopKitchenStaff";
 function App() {
 
     return (
@@ -60,143 +62,158 @@ function App() {
                         element={<ShopRegister />}
                     />
                     <Route
-    path="/customer"
-    element={
-        <ProtectedRoute role="customer">
-            <CustomerProvider>
-                <CustomerLayout />
-            </CustomerProvider>
-        </ProtectedRoute>
-    }
->
-    <Route
-        path="dashboard"
-        element={<CustomerDashboard />}
-    />
-<Route
-    path="profile"
-    element={<CustomerProfile />}
-/>
-    <Route
-        path="cart"
-        element={<CustomerCart />}
-    />
-    <Route
-    path="notifications"
-    element={<CustomerNotifications />}
-/>
-<Route
-    path="orders"
-    element={<CustomerOrders />}
-/>
-</Route>
+                        path="/customer"
+                        element={
+                            <ProtectedRoute role="customer">
+                                <CustomerProvider>
+                                    <CustomerLayout />
+                                </CustomerProvider>
+                            </ProtectedRoute>
+                        }
+                    >
+                        <Route
+                            path="dashboard"
+                            element={<CustomerDashboard />}
+                        />
+                        <Route
+                            path="profile"
+                            element={<CustomerProfile />}
+                        />
+                        <Route
+                            path="cart"
+                            element={<CustomerCart />}
+                        />
+                        <Route
+                            path="notifications"
+                            element={<CustomerNotifications />}
+                        />
+                        <Route
+                            path="orders"
+                            element={<CustomerOrders />}
+                        />
+                    </Route>
 
-<Route
-    path="/kitchen/dashboard"
-    element={
-        <ProtectedRoute role="kitchen_staff">
-            <KitchenDashboard />
-        </ProtectedRoute>
-    }
-/>
                     <Route
-                    path="/admin/dashboard"
-                    element={
-                        <ProtectedRoute role="admin">
-                            <AdminDashboard />
-                        </ProtectedRoute>
-                    }
+                        path="/kitchen/dashboard"
+                        element={
+                            <ProtectedRoute role="kitchen_staff">
+                                <KitchenDashboard />
+                            </ProtectedRoute>
+                        }
                     />
                     <Route
-    path="/forgot-password"
-    element={<ForgotPassword />}
-/>
-
-<Route
-    path="/reset-password"
-    element={<ResetPassword />}
-/>
+                        path="/admin/dashboard"
+                        element={
+                            <ProtectedRoute role="admin">
+                                <AdminDashboard />
+                            </ProtectedRoute>
+                        }
+                    />
                     <Route
-    path="/shop/profile"
-    element={<ShopProfile />}
-/>
-                    <Route
-    path="/shop/orders"
-    element={
-        <ProtectedRoute allowedRoles={["shop_owner"]}>
-            <ShopOrders />
-        </ProtectedRoute>
-    }
-/>
-
-<Route
-    path="/customer/orders/:orderId/details"
-    element={
-        <ProtectedRoute allowedRoles={["customer"]}>
-            <CustomerOrderDetails />
-        </ProtectedRoute>
-    }
-/>
-
-<Route
-    path="/shop/messages"
-    element={<ShopMessages />}
-/>
-<Route
-    path="/shop/offers"
-    element={
-        <ProtectedRoute role="shop_owner">
-            <ShopOffers />
-        </ProtectedRoute>
-    }
-/>
-<Route
-    path="/shop/messages/:recipientId"
-    element={<ShopMessageDetails />}
-/>
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                    />
 
                     <Route
-                    path="/admin/users"
-                    element={
+                        path="/reset-password"
+                        element={<ResetPassword />}
+                    />
+                    <Route
+                        path="/shop/profile"
+                        element={<ShopProfile />}
+                    />
+                    <Route
+                        path="/shop/orders"
+                        element={
+                            <ProtectedRoute allowedRoles={["shop_owner"]}>
+                                <ShopOrders />
+                            </ProtectedRoute>
+                        }
+                    />
+                    
+                    <Route
+                        path="/customer/orders/:orderId/details"
+                        element={
+                            <ProtectedRoute allowedRoles={["customer"]}>
+                                <CustomerOrderDetails />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/shop/kitchen-monitor"
+                        element={
+                            <ProtectedRoute role="shop_owner">
+                                <ShopKitchenMonitor />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/shop/kitchen-staff"
+                        element={
+                            <ProtectedRoute role="shop_owner">
+                                <ShopKitchenStaff />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/shop/messages"
+                        element={<ShopMessages />}
+                    />
+                    <Route
+                        path="/shop/offers"
+                        element={
+                            <ProtectedRoute role="shop_owner">
+                                <ShopOffers />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/shop/messages/:recipientId"
+                        element={<ShopMessageDetails />}
+                    />
+
+                    <Route
+                        path="/admin/users"
+                        element={
                             <ProtectedRoute role="admin">
                                 <AdminUsers />
                             </ProtectedRoute>
-                    }
+                        }
                     />
                     <Route
-    path="/customer/orders/:orderId"
-    element={
-        <ProtectedRoute allowedRoles={["customer"]}>
-            <CustomerOrderPage />
-        </ProtectedRoute>
-    }
-/>
-
-<Route
-    path="/customer/orders/review"
-    element={
-        <ProtectedRoute allowedRoles={["customer"]}>
-            <CustomerOrderPage />
-        </ProtectedRoute>
-    }
-/>  
-<Route
-    path="/shop/overview"
-    element={
-        <ProtectedRoute allowedRoles={["shop_owner"]}>
-            <ShopOverview />
-        </ProtectedRoute>
-    }
-/>
+                        path="/customer/orders/:orderId"
+                        element={
+                            <ProtectedRoute allowedRoles={["customer"]}>
+                                <CustomerOrderPage />
+                            </ProtectedRoute>
+                        }
+                    />
 
                     <Route
-    path="/shop/dashboard"
-    element={
-        <ProtectedRoute role="shop_owner">
-            <ShopDashboard />
-        </ProtectedRoute>
-    }
-/>
+                        path="/customer/orders/review"
+                        element={
+                            <ProtectedRoute allowedRoles={["customer"]}>
+                                <CustomerOrderPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/shop/overview"
+                        element={
+                            <ProtectedRoute allowedRoles={["shop_owner"]}>
+                                <ShopOverview />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/shop/dashboard"
+                        element={
+                            <ProtectedRoute role="shop_owner">
+                                <ShopDashboard />
+                            </ProtectedRoute>
+                        }
+                    />
                 </Routes>
 
             </AuthProvider>

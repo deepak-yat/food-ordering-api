@@ -42,9 +42,15 @@ const orderStatuses = [
 
 
 
-    useEffect(() => {
+useEffect(() => {
+    loadOrders();
+
+    const interval = setInterval(() => {
         loadOrders();
-    }, []);
+    }, 5000);
+
+    return () => clearInterval(interval);
+}, []);
 
 
     function changeOrderStatus(status) {
@@ -175,40 +181,10 @@ const orderStatuses = [
                 );
 
             case "accepted":
-                return (
-                    <button
-                        className="shop-order-primary-btn"
-                        disabled={
-                            updatingOrderId === order.order_id
-                        }
-                        onClick={() =>
-                            updateOrderStatus(
-                                order.order_id,
-                                "preparing"
-                            )
-                        }
-                    >
-                        Start Preparing
-                    </button>
-                );
+                return null;
 
             case "preparing":
-                return (
-                    <button
-                        className="shop-order-primary-btn"
-                        disabled={
-                            updatingOrderId === order.order_id
-                        }
-                        onClick={() =>
-                            updateOrderStatus(
-                                order.order_id,
-                                "ready"
-                            )
-                        }
-                    >
-                        Mark Ready
-                    </button>
-                );
+                return null;
 
             case "ready":
                 return (
@@ -503,9 +479,25 @@ const orderStatuses = [
                     )}
 
                     <div className="shop-live-order-action-buttons">
-
                         {getNextAction(order)}
 
+                        {order.status.toLowerCase() === "preparing" && (
+    <div className="shop-order-waiting-message">
+        <strong>Being Prepared by Kitchen</strong>
+
+        {order.assigned_kitchen_staff_name && (
+            <span>
+                Chef: {order.assigned_kitchen_staff_name}
+            </span>
+        )}
+
+        <span>
+            This order is currently being prepared by the kitchen.
+        </span>
+    </div>
+)}
+
+                       
                     </div>
 
                 </div>

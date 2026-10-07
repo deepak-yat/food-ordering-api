@@ -15,7 +15,7 @@ class OrderItemResponse(BaseModel):
     order_item_id: int
     menu_item_id: int
     item_name: str
-    unit_price: float
+    unit_price: float   
     quantity: int
     subtotal: float
 
@@ -74,6 +74,9 @@ class ShopOrderResponse(BaseModel):
     shop_id: int
 
     status: OrderStatus
+
+    assigned_kitchen_staff_id: int | None = None
+    assigned_kitchen_staff_name: str | None = None
 
     total_amount: float
 

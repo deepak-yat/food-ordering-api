@@ -1339,8 +1339,14 @@ async function updateOption() {
 >
     Offers & Discounts
 </button>
-
-
+<button
+    onClick={() => navigate("/shop/kitchen-monitor")}
+>
+    Kitchen Monitor
+</button>
+<button onClick={() => navigate("/shop/kitchen-staff")}>
+    Kitchen Staff
+</button>
                         <button
                             onClick={() => navigate("/shop/orders")}
                         >
