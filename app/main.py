@@ -26,6 +26,7 @@ from app.routers.customer_reviews import router as customer_reviews_router
 from app.routers import customer_notifications
 from app.routers.customer_shop_reviews import router as customer_shop_reviews_router
 from app.routers.kitchen import router as kitchen_router
+from app.routers.delivery_partner import router as delivery_partner_router
 app = FastAPI(
     title="Food Ordering API",
     version="1.0.0"
@@ -87,6 +88,7 @@ app.include_router(customer_reviews_router)
 app.include_router(customer_notifications.router)
 app.include_router(customer_shop_reviews_router)
 app.include_router(kitchen_router)
+app.include_router(delivery_partner_router)
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     return templates.TemplateResponse(

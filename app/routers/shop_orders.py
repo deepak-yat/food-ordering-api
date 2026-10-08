@@ -10,6 +10,7 @@ from app.models.kitchen_staff_attendance import (
     KitchenStaffAttendance,
     AttendanceStatus
 )
+
 from app.models.customer import Customer
 from app.models.order import Order,OrderStatus
 from app.models.order_delivery_address import OrderDeliveryAddress
@@ -25,7 +26,7 @@ from app.schemas.order import (
 )
 from app.models.notification import Notification, NotificationType
 from app.services.order_notifications import STATUS_INFO
-
+from app.services.delivery_assignment import create_delivery_for_order
 
 router = APIRouter(
     prefix="/shop/orders",

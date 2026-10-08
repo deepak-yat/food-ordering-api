@@ -26,3 +26,8 @@ from app.models.order_item_option import OrderItemOption
 from app.models.shop_review import ShopReview
 from app.models.kitchen_staff import KitchenStaff
 from app.models.kitchen_staff_attendance import KitchenStaffAttendance
+from app.models.delivery import Delivery, DeliveryStatus
+from app.models.delivery_partner import (
+    DeliveryPartner,
+    DeliveryPartnerStatus,
+)

@@ -11,7 +11,10 @@ from app.models.shop import Shop
 from app.models.user import User, UserRole
 from app.models.kitchen_staff import KitchenStaff
 bearer_scheme = HTTPBearer()
-
+from app.models.delivery_partner import (
+    DeliveryPartner,
+    DeliveryPartnerStatus
+)
 
 
 def get_current_user(
@@ -270,3 +273,34 @@ def get_current_kitchen_staff_user(
         )
 
     return staff
+
+def get_current_delivery_partner(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> DeliveryPartner:
+
+    if current_user.role != UserRole.DELIVERY_PARTNER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only delivery partners can access delivery resources"
+        )
+
+    partner = db.exec(
+        select(DeliveryPartner).where(
+            DeliveryPartner.user_id == current_user.user_id
+        )
+    ).first()
+
+    if partner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner profile not found"
+        )
+
+    if partner.status != DeliveryPartnerStatus.ACTIVE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Delivery partner account is not active"
+        )
+
+    return partner

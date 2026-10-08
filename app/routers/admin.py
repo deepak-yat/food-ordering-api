@@ -21,8 +21,9 @@ from app.models.shop_billing import (
     ShopMonthlyBilling,
     BillingStatus
 )
+from app.models.delivery_partner import DeliveryPartnerStatus,DeliveryPartner
 from datetime import timedelta
-
+from app.schemas.delivery_partner import DeliveryPartnerAdminResponse, DeliveryPartnerRejectRequest,DeliveryPartnerStatus
 router = APIRouter(
     prefix="/admin",
     tags=["Admin"]
@@ -821,4 +822,166 @@ def get_admin_messages(
 
     return {
         "Messages":messages
+    }
+
+@router.get(
+    "/delivery-partners/pending",
+    response_model=list[DeliveryPartnerAdminResponse]
+)
+def get_pending_delivery_partners(
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(
+            status_code = status.HTTP_403_FORBIDDEN,
+            detail="Authorizatoin revoked since this endpoint can only accessed by admin"
+        )
+    partners = db.exec(
+        select(DeliveryPartner,User)
+        .join(User,DeliveryPartner.user_id == User.user_id)
+        .where(
+            DeliveryPartner.status == DeliveryPartnerStatus.PENDING_VERIFICATION
+        )
+    ).all()
+
+    return [
+        {
+            "partner_id":partner.partner_id,
+            "user_id": user.user_id,
+            "user_name": user.user_name,
+            "user_email": user.user_email,
+            "full_name": partner.full_name,
+            "phone_number": partner.phone_number,
+            "address": partner.address,
+            "vehicle_type": partner.vehicle_type,
+            "vehicle_number": partner.vehicle_number,
+            "status": partner.status,
+        }
+        for partner, user in partners
+    ]
+
+
+@router.put("/delivery-partners/{partner_id}/approve")
+def approve_delivery_partner(
+    partner_id: int,
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db: Session = Depends(get_db)
+):
+    partner = db.get(
+        DeliveryPartner,
+        partner_id
+    )
+
+    if partner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner not found"
+        )
+
+    if partner.status != DeliveryPartnerStatus.PENDING_VERIFICATION:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Delivery partner is not pending verification"
+        )
+
+    partner.status = DeliveryPartnerStatus.APPROVED
+    partner.is_online = False
+    partner.rejection_reason = None
+
+    db.add(partner)
+    db.commit()
+    db.refresh(partner)
+
+    return {
+        "message": "Delivery partner approved successfully",
+        "partner_id": partner.partner_id,
+        "status": partner.status,
+        "is_online": partner.is_online
+    }
+
+
+@router.put("/delivery-partners/{partner_id}/reject")
+def reject_delivery_partner(
+    partner_id: int,
+    rejection_data: DeliveryPartnerRejectRequest,
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db: Session = Depends(get_db)
+):
+    partner = db.get(
+        DeliveryPartner,
+        partner_id
+    )
+
+    if partner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner not found"
+        )
+
+    if partner.status != DeliveryPartnerStatus.PENDING_VERIFICATION:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Delivery partner is not pending verification"
+        )
+
+    partner.status = DeliveryPartnerStatus.REJECTED
+    partner.is_online = False
+    partner.rejection_reason = rejection_data.rejection_reason
+
+    db.add(partner)
+    db.commit()
+    db.refresh(partner)
+
+    return {
+        "message": "Delivery partner rejected successfully",
+        "partner_id": partner.partner_id,
+        "status": partner.status,
+        "rejection_reason": partner.rejection_reason
+    }
+
+
+@router.put("/delivery-partners/{partner_id}/activate")
+def activate_delivery_partner(
+    partner_id: int,
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+    db: Session = Depends(get_db)
+):
+    partner = db.get(
+        DeliveryPartner,
+        partner_id
+    )
+
+    if partner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner not found"
+        )
+
+    if partner.status != DeliveryPartnerStatus.APPROVED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only approved delivery partners can be activated"
+        )
+
+    partner.status = DeliveryPartnerStatus.ACTIVE
+    partner.is_online = False
+
+    db.add(partner)
+    db.commit()
+    db.refresh(partner)
+
+    return {
+        "message": "Delivery partner activated successfully",
+        "partner_id": partner.partner_id,
+        "status": partner.status,
+        "is_online": partner.is_online
     }

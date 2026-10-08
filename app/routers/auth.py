@@ -24,6 +24,8 @@ from app.schemas.auth import (
     ForgotPasswordRequest,
     RegisterVerificationRequest,
     VerifyRegistrationRequest,
+    DeliveryPartnerRegister,
+    DeliveryPartnerRegisterResponse
 )
 from app.security.jwt import create_access_token
 from app.security.password import hash_password, verify
@@ -38,6 +40,7 @@ from app.models.kitchen_staff_attendance import (
     KitchenStaffAttendance,
     AttendanceStatus
 )
+from app.models.delivery_partner import DeliveryPartner
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -879,4 +882,85 @@ def resend_registration_verification(
 
     return {
         "message": "A new verification code has been sent to your email"
+    }
+
+
+
+# =========================================================
+# DELIVERY PARTNER REGISTRATION
+# =========================================================
+
+@router.post(
+    "/register/delivery-partner",
+    response_model=DeliveryPartnerRegisterResponse
+)
+def register_delivery_partner(
+    data : DeliveryPartnerRegister,
+    db:Session = Depends(get_db)
+):
+    #check email
+    existing_user = db.exec(
+        select(User).where(
+            User.user_email == data.user_email
+        )
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code = status.HTTP_409_CONFLICT,
+            detail = "User with this email already exists please use a different email...!"
+        )
+
+    existing_username = db.exec(
+        select(User).where(
+            User.user_name == data.user_name
+        )
+    ).first()
+
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail = "Username already exists"
+        )
+    new_user = User(
+        user_name = data.user_name,
+        user_email = data.user_email,
+        password_hash = hash_password(data.password),
+        role=UserRole.DELIVERY_PARTNER,
+        is_active = True
+    )
+
+    db.add(new_user)
+
+    db.flush()
+
+    #Generate user_id without commiting
+
+    db.flush()
+
+    #Create delivery partner account
+
+    new_partner = DeliveryPartner(
+        user_id = new_user.user_id,
+        full_name=data.full_name,
+        phone_number=data.phone_number,
+        address=data.address,
+        vehicle_type = data.vehicle_type,
+        vehicle_number= data.vehicle_number
+    )
+
+    db.add(new_partner)
+
+    db.commit()
+
+    db.refresh(new_user)
+    db.refresh(new_partner)
+
+    return{
+        "message":(
+            "Delivery partner registration submitted successfully"
+            "wait for admin approval"
+        ),
+        "user_id": new_user.user_id,
+        "partner_id":new_partner.partner_id
     }

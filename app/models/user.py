@@ -1,12 +1,12 @@
 from sqlmodel import Field,SQLModel
 from enum import Enum
-
+import sqlalchemy as sa               
 class UserRole(str, Enum):
-    ADMIN = "admin"
-    SHOP_OWNER = "shop_owner"
-    CUSTOMER = "customer"
-    KITCHEN_STAFF = "kitchen_staff"
-
+    ADMIN = "ADMIN"
+    SHOP_OWNER = "SHOP_OWNER"
+    CUSTOMER = "CUSTOMER"
+    KITCHEN_STAFF = "KITCHEN_STAFF"
+    DELIVERY_PARTNER = "delivery_partner"
 class User(SQLModel,table=True):
     __tablename__="users"
 
@@ -27,7 +27,16 @@ class User(SQLModel,table=True):
 
     password_hash : str | None = None
 
-    role : UserRole
+    role: UserRole = Field(
+    sa_column=sa.Column(
+        sa.Enum(
+            UserRole,
+            name="userrole",
+            values_callable=lambda enum: [item.value for item in enum]
+        ),
+        nullable=False
+    )
+)
 
     is_active : bool
 
