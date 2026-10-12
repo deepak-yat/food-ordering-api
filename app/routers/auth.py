@@ -24,6 +24,8 @@ from app.schemas.auth import (
     ForgotPasswordRequest,
     RegisterVerificationRequest,
     VerifyRegistrationRequest,
+    DeliveryPartnerRegister,
+    DeliveryPartnerRegisterResponse,
 )
 from app.security.jwt import create_access_token
 from app.security.password import hash_password, verify
@@ -38,6 +40,10 @@ from app.models.kitchen_staff_attendance import (
     KitchenStaffAttendance,
     AttendanceStatus
 )
+from app.models.delivery_partner import (
+    DeliveryPartner,
+    DeliveryPartnerStatus,
+)
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
@@ -51,6 +57,7 @@ def hash_reset_token(token: str) -> str:
 # =========================================================
 # CUSTOMER REGISTRATION
 # =========================================================
+
 
 @router.post("/register",
             response_model=CustomerRegisterResponse )
@@ -880,3 +887,88 @@ def resend_registration_verification(
     return {
         "message": "A new verification code has been sent to your email"
     }
+
+
+# =========================================================
+# DELIVERY PARTNER REGISTRATION
+# =========================================================
+
+@router.post(
+    "/register/delivery-partner",
+    response_model=DeliveryPartnerRegisterResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def register_delivery_partner(
+    data: DeliveryPartnerRegister,
+    db: Session = Depends(get_db),
+):
+    # Check email
+    existing_user = db.exec(
+        select(User).where(
+            User.user_email == data.user_email
+        )
+    ).first()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already exists with this email",
+        )
+
+    # Check username
+    existing_username = db.exec(
+        select(User).where(
+            User.user_name == data.user_name
+        )
+    ).first()
+
+    if existing_username:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Username already exists",
+        )
+
+    try:
+        # Create inactive user pending admin approval
+        new_user = User(
+            user_name=data.user_name,
+            user_email=data.user_email,
+            password_hash=hash_password(data.password),
+            role=UserRole.DELIVERY_PARTNER,
+            is_active=False,
+        )
+
+        db.add(new_user)
+        db.flush()
+
+        # Create the delivery partner profile
+        new_partner = DeliveryPartner(
+            user_id=new_user.user_id,
+            full_name=data.full_name,
+            phone_number=data.phone_number,
+            address=data.address,
+            vehicle_type=data.vehicle_type,
+            vehicle_number=data.vehicle_number,
+            status=DeliveryPartnerStatus.PENDING_VERIFICATION,
+            is_online=False,
+        )
+
+        db.add(new_partner)
+        db.commit()
+
+        db.refresh(new_user)
+        db.refresh(new_partner)
+
+        return {
+            "message": (
+                "Delivery partner registration submitted "
+                "successfully. Waiting for admin approval."
+            ),
+            "user_id": new_user.user_id,
+            "partner_id": new_partner.partner_id,
+            "status": new_partner.status.value,
+        }
+
+    except Exception:
+        db.rollback()
+        raise

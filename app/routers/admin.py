@@ -21,6 +21,10 @@ from app.models.shop_billing import (
     ShopMonthlyBilling,
     BillingStatus
 )
+from app.models.delivery_partner import (
+    DeliveryPartner,
+    DeliveryPartnerStatus,
+)
 from datetime import timedelta
 
 router = APIRouter(
@@ -821,4 +825,120 @@ def get_admin_messages(
 
     return {
         "Messages":messages
+    }
+
+# =========================================================
+# DELIVERY PARTNER MANAGEMENT
+# =========================================================
+
+@router.get("/delivery-partners/pending")
+def get_pending_delivery_partners(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    partners = db.exec(
+        select(DeliveryPartner).where(
+            DeliveryPartner.status
+            == DeliveryPartnerStatus.PENDING_VERIFICATION
+        )
+    ).all()
+
+    return partners
+
+
+@router.put("/delivery-partners/{partner_id}/approve")
+def approve_delivery_partner(
+    partner_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    partner = db.get(DeliveryPartner, partner_id)
+
+    if partner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner not found",
+        )
+
+    if partner.status != DeliveryPartnerStatus.PENDING_VERIFICATION:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Delivery partner is not awaiting approval",
+        )
+
+    user = db.get(User, partner.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner user account not found",
+        )
+
+    partner.status = DeliveryPartnerStatus.APPROVED
+    user.is_active = True
+
+    db.add(partner)
+    db.add(user)
+    db.commit()
+    db.refresh(partner)
+
+    return {
+        "message": "Delivery partner approved successfully",
+        "partner_id": partner.partner_id,
+        "user_id": user.user_id,
+        "status": partner.status.value,
+        "user_active": user.is_active,
+    }
+
+
+@router.put("/delivery-partners/{partner_id}/reject")
+def reject_delivery_partner(
+    partner_id: int,
+    rejection_reason: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(
+        require_role(UserRole.ADMIN)
+    ),
+):
+    partner = db.get(DeliveryPartner, partner_id)
+
+    if partner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner not found",
+        )
+
+    if partner.status != DeliveryPartnerStatus.PENDING_VERIFICATION:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Delivery partner is not awaiting approval",
+        )
+
+    user = db.get(User, partner.user_id)
+
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Delivery partner user account not found",
+        )
+
+    partner.status = DeliveryPartnerStatus.REJECTED
+    partner.rejection_reason = rejection_reason.strip()
+    user.is_active = False
+    partner.is_online = False
+
+    db.add(partner)
+    db.add(user)
+    db.commit()
+    db.refresh(partner)
+
+    return {
+        "message": "Delivery partner registration rejected",
+        "partner_id": partner.partner_id,
+        "status": partner.status.value,
+        "rejection_reason": partner.rejection_reason,
     }

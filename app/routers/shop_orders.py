@@ -25,7 +25,7 @@ from app.schemas.order import (
 )
 from app.models.notification import Notification, NotificationType
 from app.services.order_notifications import STATUS_INFO
-
+from app.services.delivery_assignment import create_delivery_assignment
 
 router = APIRouter(
     prefix="/shop/orders",
@@ -662,16 +662,7 @@ def validate_order_ready(
         detail="Order is not awaiting kitchen validation"
     )
 
-# Initial validation
-    if (
-        order.status != OrderStatus.PREPARING
-        or order.kitchen_ready_at is None
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Order is not awaiting kitchen validation"
-        )
-
+    
     # Fresh re-check immediately before mutation
     order = db.exec(
         select(Order).where(
@@ -712,8 +703,32 @@ def validate_order_ready(
     db.commit()
     db.refresh(order)
 
+    try:
+        delivery = create_delivery_assignment(
+            db=db,
+            order_id=order.order_id,
+        )
+    except ValueError as exc:
+        # The order is already READY, so don't pretend validation failed.
+        # Log the assignment problem for investigation.
+        print(
+            f"Delivery assignment failed for order "
+            f"{order.order_id}: {exc}"
+        )
+        delivery = None
+
     return {
         "message": "Order marked ready",
         "order_id": order.order_id,
         "status": order.status,
+        "delivery": (
+            {
+                "delivery_id": delivery.delivery_id,
+                "status": delivery.status.value,
+                "delivery_partner_id": delivery.delivery_partner_id,
+                "offer_expires_at": delivery.offer_expires_at,
+            }
+            if delivery is not None
+            else None
+        ),
     }

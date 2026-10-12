@@ -6,6 +6,7 @@ class UserRole(str, Enum):
     SHOP_OWNER = "shop_owner"
     CUSTOMER = "customer"
     KITCHEN_STAFF = "kitchen_staff"
+    DELIVERY_PARTNER = "delivery_partner"
 
 class User(SQLModel,table=True):
     __tablename__="users"

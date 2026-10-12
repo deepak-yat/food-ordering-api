@@ -55,3 +55,20 @@ class RegisterVerificationRequest(BaseModel):
 class VerifyRegistrationRequest(BaseModel):
     email: EmailStr
     verification_code: str
+
+class DeliveryPartnerRegister(BaseModel):
+    user_name: str
+    user_email: EmailStr
+    password: str
+    full_name: str
+    phone_number: str
+    address: str
+    vehicle_type: str
+    vehicle_number: str
+
+
+class DeliveryPartnerRegisterResponse(BaseModel):
+    message: str
+    user_id: int
+    partner_id: int
+    status: str
