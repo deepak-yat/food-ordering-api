@@ -25,6 +25,11 @@ function DeliveryPartnerDashboard() {
     const [offersLoading, setOffersLoading] = useState(false);
     const [offersError, setOffersError] = useState("");
     const [offerActionLoading, setOfferActionLoading] = useState(null);
+    const [orderHistory, setOrderHistory] = useState([]);
+    const [totalCompletedDeliveries, setTotalCompletedDeliveries] = useState(0);
+    const [totalEarnings, setTotalEarnings] = useState(0);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyError, setHistoryError] = useState("");
 useEffect(() => {
     if (!isOnline) {
         setOffers([]);
@@ -240,6 +245,36 @@ async function loadOffers() {
         setOffersLoading(false);
     }
 }
+
+async function loadOrderHistory() {
+    setHistoryLoading(true);
+    setHistoryError("");
+
+    try {
+        const data = await apiFetch("/delivery-partner/order-history");
+
+        setOrderHistory(data.deliveries || []);
+        setTotalCompletedDeliveries(
+            data.total_completed_deliveries || 0
+        );
+        setTotalEarnings(data.total_earnings || 0);
+    } catch (error) {
+        console.error("Failed to load delivery history:", error);
+
+        setHistoryError(
+            error.data?.detail ||
+                error.message ||
+                "Unable to load order history."
+        );
+    } finally {
+        setHistoryLoading(false);
+    }
+}
+useEffect(() => {
+    if (activeSection === "earnings") {
+        loadOrderHistory();
+    }
+}, [activeSection]);
 async function loadActiveDelivery() {
     setActiveDeliveryLoading(true);
     setActiveDeliveryError("");

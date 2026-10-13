@@ -468,7 +468,7 @@ def get_active_delivery(
             "status": delivery.status.value,
             "distance_km": delivery.distance_km,
             "customer_fee": delivery.customer_fee,
-            "partner_earning": delivery.partner_earning,
+            "partner_earning": delivery.customer_fee,
             "assigned_at": delivery.assigned_at,
             "arrived_at_shop_at": delivery.arrived_at_shop_at,
             "picked_up_at": delivery.picked_up_at,
@@ -918,18 +918,7 @@ def verify_handover_otp(
 
     now = datetime.now(timezone.utc)
 
-    # Enforce the five-minute cooldown.
-    elapsed_seconds = (
-        now - delivery.arrived_at_customer_at
-    ).total_seconds()
-
-    if elapsed_seconds < 300:
-        remaining_seconds = int(300 - elapsed_seconds + 0.999)
-
-        raise HTTPException(
-            status_code=409,
-            detail=f"Please wait {remaining_seconds} seconds before completing delivery",
-        )
+    
 
     if not delivery.handover_otp or not delivery.handover_otp_expires_at:
         raise HTTPException(
