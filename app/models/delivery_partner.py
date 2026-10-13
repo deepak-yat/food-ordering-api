@@ -1,5 +1,5 @@
 from enum import Enum
-
+from datetime import datetime
 from sqlmodel import Field, SQLModel
 
 
@@ -38,6 +38,6 @@ class DeliveryPartner(SQLModel, table=True):
     is_online: bool = Field(default=False)
 
     latitude: float | None = None
-    longitude: float | None = None
-
+    longitude: float | None =  None
+    location_updated_at: datetime | None = None
     rejection_reason: str | None = None

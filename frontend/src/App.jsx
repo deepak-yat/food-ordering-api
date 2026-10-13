@@ -34,6 +34,8 @@ import CustomerNotifications from "./pages/CustomerNotifications";
 import KitchenDashboard from "./pages/KitchenDashboard";
 import ShopKitchenMonitor from "./pages/ShopKitchenMonitor";
 import ShopKitchenStaff from "./pages/ShopKitchenStaff";
+import DeliveryPartnerDashboard from "./pages/DeliveryPartnerDashboard";
+import ActiveDeliveryTracking from "./pages/ActiveDeliveryTracking";
 function App() {
 
     return (
@@ -152,6 +154,23 @@ function App() {
                         element={
                             <ProtectedRoute role="shop_owner">
                                 <ShopKitchenStaff />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/delivery-partner/dashboard"
+                        element={
+                            <ProtectedRoute role="delivery_partner">
+                            <DeliveryPartnerDashboard />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/delivery/active/:deliveryId"
+                        element={
+                            <ProtectedRoute role="delivery_partner">
+                                <ActiveDeliveryTracking />
                             </ProtectedRoute>
                         }
                     />

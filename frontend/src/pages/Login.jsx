@@ -102,17 +102,19 @@ function Login() {
                     "/admin/dashboard"
                 );
 
-            } else if(
+            } else if (
                 user.role === "kitchen_staff"
             ) {
-                navigate(
-                    "/kitchen/dashboard"
-                )
-            }
-            else {
+                navigate("/kitchen/dashboard");
 
-                throw new Error(
-                    "Unknown user role"
+            } else if (
+                user.role === "delivery_partner"
+            ) {
+                navigate("/delivery-partner/dashboard");
+
+            } else {
+            throw new Error(
+                `Unknown user role: ${user.role}`
                 );
             }
 
