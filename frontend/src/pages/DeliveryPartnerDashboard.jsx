@@ -12,6 +12,7 @@ function DeliveryPartnerDashboard() {
     const [locationLabel, setLocationLabel] = useState(
         "Location not available"
     );
+
     const [locationError, setLocationError] = useState("");
     const [availabilityLoading, setAvailabilityLoading] = useState(false);
     const partnerName =
@@ -30,23 +31,23 @@ function DeliveryPartnerDashboard() {
     const [totalEarnings, setTotalEarnings] = useState(0);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState("");
-useEffect(() => {
-    if (!isOnline) {
-        setOffers([]);
-        loadActiveDelivery();
-        return;
-    }
+    useEffect(() => {
+        if (!isOnline) {
+            setOffers([]);
+            loadActiveDelivery();
+            return;
+        }
 
-    loadOffers();
-    loadActiveDelivery();
-
-    const intervalId = setInterval(() => {
         loadOffers();
         loadActiveDelivery();
-    }, 5000);
 
-    return () => clearInterval(intervalId);
-}, [isOnline]);
+        const intervalId = setInterval(() => {
+            loadOffers();
+            loadActiveDelivery();
+        }, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [isOnline]);
     async function handleLogout() {
         try {
             await logout();
@@ -79,291 +80,291 @@ useEffect(() => {
 
 
     function getCurrentPosition() {
-    return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-            reject(
-                new Error(
-                    "Your browser does not support location access."
-                )
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(
+                    new Error(
+                        "Your browser does not support location access."
+                    )
+                );
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    resolve({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    });
+                },
+                (error) => {
+                    let message;
+
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            message =
+                                "Location permission was denied. Please allow location access.";
+                            break;
+
+                        case error.POSITION_UNAVAILABLE:
+                            message =
+                                "Your current location is unavailable.";
+                            break;
+
+                        case error.TIMEOUT:
+                            message =
+                                "Location request timed out. Please try again.";
+                            break;
+
+                        default:
+                            message =
+                                "Unable to obtain your current location.";
+                    }
+
+                    reject(new Error(message));
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0,
+                }
             );
+        });
+    }
+
+
+    async function handleToggleAvailability() {
+        if (availabilityLoading) {
             return;
         }
 
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                resolve({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
+        setAvailabilityLoading(true);
+        setLocationError("");
+
+        try {
+            // If already online, request to go offline.
+            if (isOnline) {
+                await apiFetch("/delivery-partner/availability", {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                        is_online: false,
+                    }),
                 });
-            },
-            (error) => {
-                let message;
 
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                        message =
-                            "Location permission was denied. Please allow location access.";
-                        break;
-
-                    case error.POSITION_UNAVAILABLE:
-                        message =
-                            "Your current location is unavailable.";
-                        break;
-
-                    case error.TIMEOUT:
-                        message =
-                            "Location request timed out. Please try again.";
-                        break;
-
-                    default:
-                        message =
-                            "Unable to obtain your current location.";
-                }
-
-                reject(new Error(message));
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0,
+                setIsOnline(false);
+                return;
             }
-        );
-    });
-}
 
+            // 1. Obtain the device's current location.
+            const position = await getCurrentPosition();
 
-async function handleToggleAvailability() {
-    if (availabilityLoading) {
-        return;
-    }
-
-    setAvailabilityLoading(true);
-    setLocationError("");
-
-    try {
-        // If already online, request to go offline.
-        if (isOnline) {
-            await apiFetch("/delivery-partner/availability", {
+            // 2. Save the coordinates in the backend.
+            await apiFetch("/delivery-partner/location", {
                 method: "PATCH",
                 body: JSON.stringify({
-                    is_online: false,
+                    latitude: position.latitude,
+                    longitude: position.longitude,
                 }),
             });
 
-            setIsOnline(false);
-            return;
-        }
+            // 3. Only after location succeeds, go online.
+            await apiFetch("/delivery-partner/availability", {
+                method: "PATCH",
+                body: JSON.stringify({
+                    is_online: true,
+                }),
+            });
 
-        // 1. Obtain the device's current location.
-        const position = await getCurrentPosition();
+            // 4. Update the dashboard.
+            try {
+                const locationData = await apiFetch(
+                    "/delivery-partner/reverse-geocode",
+                    {
+                        method: "POST",
+                        body: JSON.stringify({
+                            latitude: position.latitude,
+                            longitude: position.longitude,
+                        }),
+                    }
+                );
 
-        // 2. Save the coordinates in the backend.
-        await apiFetch("/delivery-partner/location", {
-            method: "PATCH",
-            body: JSON.stringify({
-                latitude: position.latitude,
-                longitude: position.longitude,
-            }),
-        });
+                const readableLocation = [
+                    locationData?.address_line1,
+                    locationData?.city,
+                    locationData?.state,
+                ]
+                    .filter(Boolean)
+                    .join(", ");
 
-        // 3. Only after location succeeds, go online.
-        await apiFetch("/delivery-partner/availability", {
-            method: "PATCH",
-            body: JSON.stringify({
-                is_online: true,
-            }),
-        });
+                setLocationLabel(
+                    readableLocation ||
+                    `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`
+                );
 
-        // 4. Update the dashboard.
-        try {
-    const locationData = await apiFetch(
-        "/delivery-partner/reverse-geocode",
-        {
-            method: "POST",
-            body: JSON.stringify({
-                latitude: position.latitude,
-                longitude: position.longitude,
-            }),
-        }
-    );
+            } catch (error) {
+                console.error("Reverse geocoding failed:", error);
 
-    const readableLocation = [
-        locationData?.address_line1,
-        locationData?.city,
-        locationData?.state,
-    ]
-        .filter(Boolean)
-        .join(", ");
+                setLocationLabel(
+                    `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`
+                );
+            }
+            setIsOnline(true);
+        } catch (error) {
+            console.error(
+                "Failed to update delivery partner availability:",
+                error
+            );
 
-    setLocationLabel(
-        readableLocation ||
-        `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`
-    );
-
-} catch (error) {
-    console.error("Reverse geocoding failed:", error);
-
-    setLocationLabel(
-        `${position.latitude.toFixed(5)}, ${position.longitude.toFixed(5)}`
-    );
-}
-        setIsOnline(true);
-    } catch (error) {
-        console.error(
-            "Failed to update delivery partner availability:",
-            error
-        );
-
-        setLocationError(
-            error.data?.detail ||
+            setLocationError(
+                error.data?.detail ||
                 error.message ||
                 "Unable to update your availability."
-        );
-    } finally {
-        setAvailabilityLoading(false);
+            );
+        } finally {
+            setAvailabilityLoading(false);
+        }
     }
-}
 
 
-async function loadOffers() {
-    setOffersLoading(true);
-    setOffersError("");
+    async function loadOffers() {
+        setOffersLoading(true);
+        setOffersError("");
 
-    try {
-        const data = await apiFetch("/delivery-partner/offers");
+        try {
+            const data = await apiFetch("/delivery-partner/offers");
 
-        setOffers(data.offers || []);
-    } catch (error) {
-        console.error("Failed to load delivery offers:", error);
+            setOffers(data.offers || []);
+        } catch (error) {
+            console.error("Failed to load delivery offers:", error);
 
-        setOffersError(
-            error.data?.detail ||
-            error.message ||
-            "Unable to load delivery offers."
-        );
-    } finally {
-        setOffersLoading(false);
+            setOffersError(
+                error.data?.detail ||
+                error.message ||
+                "Unable to load delivery offers."
+            );
+        } finally {
+            setOffersLoading(false);
+        }
     }
-}
 
-async function loadOrderHistory() {
-    setHistoryLoading(true);
-    setHistoryError("");
+    async function loadOrderHistory() {
+        setHistoryLoading(true);
+        setHistoryError("");
 
-    try {
-        const data = await apiFetch("/delivery-partner/order-history");
+        try {
+            const data = await apiFetch("/delivery-partner/order-history");
 
-        setOrderHistory(data.deliveries || []);
-        setTotalCompletedDeliveries(
-            data.total_completed_deliveries || 0
-        );
-        setTotalEarnings(data.total_earnings || 0);
-    } catch (error) {
-        console.error("Failed to load delivery history:", error);
+            setOrderHistory(data.deliveries || []);
+            setTotalCompletedDeliveries(
+                data.total_completed_deliveries || 0
+            );
+            setTotalEarnings(data.total_earnings || 0);
+        } catch (error) {
+            console.error("Failed to load delivery history:", error);
 
-        setHistoryError(
-            error.data?.detail ||
+            setHistoryError(
+                error.data?.detail ||
                 error.message ||
                 "Unable to load order history."
-        );
-    } finally {
-        setHistoryLoading(false);
+            );
+        } finally {
+            setHistoryLoading(false);
+        }
     }
-}
-useEffect(() => {
-    if (activeSection === "earnings") {
-        loadOrderHistory();
-    }
-}, [activeSection]);
-async function loadActiveDelivery() {
-    setActiveDeliveryLoading(true);
-    setActiveDeliveryError("");
+    useEffect(() => {
+        if (activeSection === "earnings") {
+            loadOrderHistory();
+        }
+    }, [activeSection]);
+    async function loadActiveDelivery() {
+        setActiveDeliveryLoading(true);
+        setActiveDeliveryError("");
 
-    try {
-        const data = await apiFetch("/delivery-partner/active");
-        setActiveDelivery(data.delivery || null);
-    } catch (error) {
-        console.error("Failed to load active delivery:", error);
+        try {
+            const data = await apiFetch("/delivery-partner/active");
+            setActiveDelivery(data.delivery || null);
+        } catch (error) {
+            console.error("Failed to load active delivery:", error);
 
-        setActiveDeliveryError(
-            error.data?.detail ||
+            setActiveDeliveryError(
+                error.data?.detail ||
                 error.message ||
                 "Unable to load active delivery."
-        );
-    } finally {
-        setActiveDeliveryLoading(false);
+            );
+        } finally {
+            setActiveDeliveryLoading(false);
+        }
     }
-}
-async function handleAcceptOffer(deliveryId) {
-    setOfferActionLoading(deliveryId);
-    setOffersError("");
+    async function handleAcceptOffer(deliveryId) {
+        setOfferActionLoading(deliveryId);
+        setOffersError("");
 
-    try {
-        await apiFetch(
-            `/delivery-partner/offers/${deliveryId}/accept`,
-            {
-                method: "POST",
-            }
-        );
+        try {
+            await apiFetch(
+                `/delivery-partner/offers/${deliveryId}/accept`,
+                {
+                    method: "POST",
+                }
+            );
 
-        setOffers((currentOffers) =>
-    currentOffers.filter(
-        (offer) => offer.delivery_id !== deliveryId
-    )
-);
+            setOffers((currentOffers) =>
+                currentOffers.filter(
+                    (offer) => offer.delivery_id !== deliveryId
+                )
+            );
 
-await Promise.all([
-    loadOffers(),
-    loadActiveDelivery(),
-]);
-    } catch (error) {
-        console.error("Failed to accept delivery offer:", error);
+            await Promise.all([
+                loadOffers(),
+                loadActiveDelivery(),
+            ]);
+        } catch (error) {
+            console.error("Failed to accept delivery offer:", error);
 
-        setOffersError(
-            error.data?.detail ||
-            error.message ||
-            "Unable to accept this delivery offer."
-        );
+            setOffersError(
+                error.data?.detail ||
+                error.message ||
+                "Unable to accept this delivery offer."
+            );
 
-        await loadOffers();
-    } finally {
-        setOfferActionLoading(null);
+            await loadOffers();
+        } finally {
+            setOfferActionLoading(null);
+        }
     }
-}
 
-async function handleDeclineOffer(deliveryId) {
-    setOfferActionLoading(deliveryId);
-    setOffersError("");
+    async function handleDeclineOffer(deliveryId) {
+        setOfferActionLoading(deliveryId);
+        setOffersError("");
 
-    try {
-        await apiFetch(
-            `/delivery-partner/offers/${deliveryId}/decline`,
-            {
-                method: "POST",
-            }
-        );
+        try {
+            await apiFetch(
+                `/delivery-partner/offers/${deliveryId}/decline`,
+                {
+                    method: "POST",
+                }
+            );
 
-        setOffers((currentOffers) =>
-            currentOffers.filter(
-                (offer) => offer.delivery_id !== deliveryId
-            )
-        );
+            setOffers((currentOffers) =>
+                currentOffers.filter(
+                    (offer) => offer.delivery_id !== deliveryId
+                )
+            );
 
-        await loadOffers();
-    } catch (error) {
-        console.error("Failed to decline delivery offer:", error);
+            await loadOffers();
+        } catch (error) {
+            console.error("Failed to decline delivery offer:", error);
 
-        setOffersError(
-            error.data?.detail ||
-            error.message ||
-            "Unable to decline this delivery offer."
-        );
+            setOffersError(
+                error.data?.detail ||
+                error.message ||
+                "Unable to decline this delivery offer."
+            );
 
-        await loadOffers();
-    } finally {
-        setOfferActionLoading(null);
+            await loadOffers();
+        } finally {
+            setOfferActionLoading(null);
+        }
     }
-}
 
     return (
         <div className="dp-dashboard">
@@ -382,10 +383,10 @@ async function handleDeclineOffer(deliveryId) {
 
                     <div className="dp-location">
                         <span className="dp-location-icon">📍</span>
-<div className="dp-location-text">
-    <strong>Current Location</strong>
-    <span>{locationLabel}</span>
-</div>
+                        <div className="dp-location-text">
+                            <strong>Current Location</strong>
+                            <span>{locationLabel}</span>
+                        </div>
                         <span className="dp-chevron">⌄</span>
                     </div>
 
@@ -423,11 +424,10 @@ async function handleDeclineOffer(deliveryId) {
                             <button
                                 type="button"
                                 key={item.id}
-                                className={`dp-nav-item ${
-                                    activeSection === item.id
+                                className={`dp-nav-item ${activeSection === item.id
                                         ? "active"
                                         : ""
-                                }`}
+                                    }`}
                                 onClick={() => {
                                     setActiveSection(item.id);
                                 }}
@@ -477,118 +477,117 @@ async function handleDeclineOffer(deliveryId) {
                             <section className="dp-availability-card">
 
                                 <div className="dp-availability-info">
-<span
-    className={`dp-status-indicator ${
-        isOnline ? "online" : ""
-    }`}
-/>
+                                    <span
+                                        className={`dp-status-indicator ${isOnline ? "online" : ""
+                                            }`}
+                                    />
                                     <div>
                                         <h2>
-    You are currently {isOnline ? "Online" : "Offline"}
-</h2>
+                                            You are currently {isOnline ? "Online" : "Offline"}
+                                        </h2>
 
-<p>
-    {isOnline
-        ? "You are available to receive delivery orders."
-        : "Go online to receive new delivery orders."}
-</p>
+                                        <p>
+                                            {isOnline
+                                                ? "You are available to receive delivery orders."
+                                                : "Go online to receive new delivery orders."}
+                                        </p>
                                     </div>
                                 </div>
 
-                               <button
-    type="button"
-    className="dp-online-button"
-    onClick={handleToggleAvailability}
-    disabled={availabilityLoading}
->
-    <span>
-        {availabilityLoading ? "…" : isOnline ? "Ⅱ" : "▶"}
-    </span>
+                                <button
+                                    type="button"
+                                    className="dp-online-button"
+                                    onClick={handleToggleAvailability}
+                                    disabled={availabilityLoading}
+                                >
+                                    <span>
+                                        {availabilityLoading ? "…" : isOnline ? "Ⅱ" : "▶"}
+                                    </span>
 
-    {availabilityLoading
-        ? "Please wait..."
-        : isOnline
-            ? "Go Offline"
-            : "Go Online"}
-</button>
+                                    {availabilityLoading
+                                        ? "Please wait..."
+                                        : isOnline
+                                            ? "Go Offline"
+                                            : "Go Online"}
+                                </button>
 
                             </section>
                             {/* Active Orders */}
-<section className="dp-active-orders">
-    <div className="dp-section-heading">
-        <div>
-            <h2>Active Orders</h2>
-            <p>Track deliveries you have accepted.</p>
-        </div>
+                            <section className="dp-active-orders">
+                                <div className="dp-section-heading">
+                                    <div>
+                                        <h2>Active Orders</h2>
+                                        <p>Track deliveries you have accepted.</p>
+                                    </div>
 
-        <span className="dp-count-badge">
-            {activeDelivery ? 1 : 0}
-        </span>
-    </div>
+                                    <span className="dp-count-badge">
+                                        {activeDelivery ? 1 : 0}
+                                    </span>
+                                </div>
 
-    {activeDeliveryError && (
-        <p className="dp-error-message">
-            {activeDeliveryError}
-        </p>
-    )}
+                                {activeDeliveryError && (
+                                    <p className="dp-error-message">
+                                        {activeDeliveryError}
+                                    </p>
+                                )}
 
-    {!activeDelivery && !activeDeliveryError && (
-        <div className="dp-empty-activity">
-            <span>🛵</span>
-            <p>No active deliveries yet.</p>
-            <small>
-                Accepted delivery orders will appear here.
-            </small>
-        </div>
-    )}
+                                {!activeDelivery && !activeDeliveryError && (
+                                    <div className="dp-empty-activity">
+                                        <span>🛵</span>
+                                        <p>No active deliveries yet.</p>
+                                        <small>
+                                            Accepted delivery orders will appear here.
+                                        </small>
+                                    </div>
+                                )}
 
-    {activeDelivery && (
-        <article className="dp-active-order-card">
-            <div className="dp-active-order-info">
-                <div>
-                    <h3>Order #{activeDelivery.order_id}</h3>
-                    <p>
-                        {activeDelivery.shop?.shop_name || "Restaurant"}
-                    </p>
-                </div>
+                                {activeDelivery && (
+                                    <article className="dp-active-order-card">
+                                        <div className="dp-active-order-info">
+                                            <div>
+                                                <h3>Order #{activeDelivery.order_id}</h3>
+                                                <p>
+                                                    {activeDelivery.shop?.shop_name || "Restaurant"}
+                                                </p>
+                                            </div>
 
-                <span className="dp-delivery-status">
-                    {activeDelivery.status.replaceAll("_", " ")}
-                </span>
-            </div>
+                                            <span className="dp-delivery-status">
+                                                {activeDelivery.status.replaceAll("_", " ")}
+                                            </span>
+                                        </div>
 
-            <div className="dp-active-order-details">
-                <p>
-                    <strong>Delivery area:</strong>{" "}
-                    {activeDelivery.delivery_address?.city || "N/A"}
-                </p>
+                                        <div className="dp-active-order-details">
+                                            <p>
+                                                <strong>Delivery area:</strong>{" "}
+                                                {activeDelivery.delivery_address?.city || "N/A"}
+                                            </p>
 
-                <p>
-                    <strong>Distance:</strong>{" "}
-                    {activeDelivery.distance_km ?? "N/A"} km
-                </p>
-            </div>
+                                            <p>
+                                                <strong>Distance:</strong>{" "}
+                                                {activeDelivery.distance_km ?? "N/A"} km
+                                            </p>
+                                        </div>
 
-            <button
-                type="button"
-                className="dp-track-delivery-button"
-                onClick={() =>
-                    navigate(
-                        `/delivery/active/${activeDelivery.delivery_id}`
-                    )
-                }
-            >
-                Track Delivery →
-            </button>
-        </article>
-    )}
-</section>
+                                        <button
+                                            type="button"
+                                            className="dp-track-delivery-button"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/delivery/active/${activeDelivery.delivery_id}`
+                                                )
+                                            }
+                                        >
+                                            Track Delivery →
+                                        </button>
+                                    </article>
+                                )}
+                            </section>
 
-                        {locationError && (
-    <div className="dp-location-error" role="alert">
-        {locationError}
-    </div>
-)}
+                            {locationError && (
+                                <div className="dp-location-error" role="alert">
+                                    {locationError}
+                                </div>
+                            )}
 
                             {/* Statistics */}
                             <section className="dp-stats-grid">
@@ -638,199 +637,199 @@ async function handleDeclineOffer(deliveryId) {
                                             </p>
                                         </div>
 
-<span className="dp-count-badge">{offers.length}</span>
+                                        <span className="dp-count-badge">{offers.length}</span>
                                     </div>
 
-{offersError && (
-    <div className="dp-offers-error" role="alert">
-        {offersError}
-    </div>
-)}
+                                    {offersError && (
+                                        <div className="dp-offers-error" role="alert">
+                                            {offersError}
+                                        </div>
+                                    )}
 
-{!isOnline ? (
-    <div className="dp-empty-orders">
-        <div className="dp-empty-illustration">🛵</div>
+                                    {!isOnline ? (
+                                        <div className="dp-empty-orders">
+                                            <div className="dp-empty-illustration">🛵</div>
 
-        <h3>You are offline</h3>
+                                            <h3>You are offline</h3>
 
-        <p>
-            Go online to start receiving delivery orders.
-        </p>
+                                            <p>
+                                                Go online to start receiving delivery orders.
+                                            </p>
 
-        <button
-            type="button"
-            className="dp-online-button dp-empty-online"
-            onClick={handleToggleAvailability}
-            disabled={availabilityLoading}
-        >
-            {availabilityLoading ? "Please wait..." : "Go Online"}
-        </button>
-    </div>
-) : offersLoading && offers.length === 0 ? (
-    <div className="dp-empty-orders">
-        <div className="dp-empty-illustration">⏳</div>
-        <h3>Checking for delivery offers...</h3>
-        <p>Please wait while we check for available orders.</p>
-    </div>
-) : offers.length === 0 ? (
-    <div className="dp-empty-orders">
-        <div className="dp-empty-illustration">🛵</div>
+                                            <button
+                                                type="button"
+                                                className="dp-online-button dp-empty-online"
+                                                onClick={handleToggleAvailability}
+                                                disabled={availabilityLoading}
+                                            >
+                                                {availabilityLoading ? "Please wait..." : "Go Online"}
+                                            </button>
+                                        </div>
+                                    ) : offersLoading && offers.length === 0 ? (
+                                        <div className="dp-empty-orders">
+                                            <div className="dp-empty-illustration">⏳</div>
+                                            <h3>Checking for delivery offers...</h3>
+                                            <p>Please wait while we check for available orders.</p>
+                                        </div>
+                                    ) : offers.length === 0 ? (
+                                        <div className="dp-empty-orders">
+                                            <div className="dp-empty-illustration">🛵</div>
 
-        <h3>No incoming orders</h3>
+                                            <h3>No incoming orders</h3>
 
-        <p>
-            You're online! New delivery offers will appear here
-            when a restaurant has an order ready for delivery.
-        </p>
-    </div>
-) : (
-    <div className="dp-offers-list">
-        {offers.map((offer) => {
-            const address = offer.delivery_address;
+                                            <p>
+                                                You're online! New delivery offers will appear here
+                                                when a restaurant has an order ready for delivery.
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="dp-offers-list">
+                                            {offers.map((offer) => {
+                                                const address = offer.delivery_address;
 
-            const formattedAddress = address
-                ? [
-                      address.address_line1,
-                      address.address_line2,
-                      address.city,
-                      address.state,
-                      address.pincode,
-                  ]
-                      .filter(Boolean)
-                      .join(", ")
-                : "Delivery address unavailable";
+                                                const formattedAddress = address
+                                                    ? [
+                                                        address.address_line1,
+                                                        address.address_line2,
+                                                        address.city,
+                                                        address.state,
+                                                        address.pincode,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(", ")
+                                                    : "Delivery address unavailable";
 
-            const customer = offer.customer;
-            const isProcessing =
-                offerActionLoading === offer.delivery_id;
+                                                const customer = offer.customer;
+                                                const isProcessing =
+                                                    offerActionLoading === offer.delivery_id;
 
-            return (
-                <article
-                    className="dp-offer-card"
-                    key={offer.delivery_id}
-                >
-                    <div className="dp-offer-card-header">
-                        <div>
-                            <span className="dp-offer-label">
-                                NEW DELIVERY OFFER
-                            </span>
+                                                return (
+                                                    <article
+                                                        className="dp-offer-card"
+                                                        key={offer.delivery_id}
+                                                    >
+                                                        <div className="dp-offer-card-header">
+                                                            <div>
+                                                                <span className="dp-offer-label">
+                                                                    NEW DELIVERY OFFER
+                                                                </span>
 
-                            <h3>
-                                {offer.shop?.shop_name ||
-                                    "Restaurant"}
-                            </h3>
+                                                                <h3>
+                                                                    {offer.shop?.shop_name ||
+                                                                        "Restaurant"}
+                                                                </h3>
 
-                            <span className="dp-offer-order-id">
-                                Order #{offer.order_id}
-                            </span>
-                        </div>
+                                                                <span className="dp-offer-order-id">
+                                                                    Order #{offer.order_id}
+                                                                </span>
+                                                            </div>
 
-                        <span className="dp-offer-status">
-                            {offer.delivery_status}
-                        </span>
-                    </div>
+                                                            <span className="dp-offer-status">
+                                                                {offer.delivery_status}
+                                                            </span>
+                                                        </div>
 
-                    <div className="dp-offer-details">
-                        <div className="dp-offer-detail">
-                            <span className="dp-offer-detail-icon">
-                                📍
-                            </span>
+                                                        <div className="dp-offer-details">
+                                                            <div className="dp-offer-detail">
+                                                                <span className="dp-offer-detail-icon">
+                                                                    📍
+                                                                </span>
 
-                            <div>
-                                <small>Delivery address</small>
-                                <p>{formattedAddress}</p>
-                            </div>
-                        </div>
+                                                                <div>
+                                                                    <small>Delivery address</small>
+                                                                    <p>{formattedAddress}</p>
+                                                                </div>
+                                                            </div>
 
-                        {customer && (
-                            <div className="dp-offer-detail">
-                                <span className="dp-offer-detail-icon">
-                                    👤
-                                </span>
+                                                            {customer && (
+                                                                <div className="dp-offer-detail">
+                                                                    <span className="dp-offer-detail-icon">
+                                                                        👤
+                                                                    </span>
 
-                                <div>
-                                    <small>Customer</small>
-                                    <p>{customer.name}</p>
-                                </div>
-                            </div>
-                        )}
+                                                                    <div>
+                                                                        <small>Customer</small>
+                                                                        <p>{customer.name}</p>
+                                                                    </div>
+                                                                </div>
+                                                            )}
 
-                        <div className="dp-offer-summary">
-                            <div>
-                                <small>Delivery distance</small>
-                                <strong>
-                                    {offer.distance_km != null
-                                        ? `${Number(
-                                              offer.distance_km
-                                          ).toFixed(2)} km`
-                                        : "Not available"}
-                                </strong>
-                            </div>
+                                                            <div className="dp-offer-summary">
+                                                                <div>
+                                                                    <small>Delivery distance</small>
+                                                                    <strong>
+                                                                        {offer.distance_km != null
+                                                                            ? `${Number(
+                                                                                offer.distance_km
+                                                                            ).toFixed(2)} km`
+                                                                            : "Not available"}
+                                                                    </strong>
+                                                                </div>
 
-                            <div>
-                                <small>Customer delivery fee</small>
-                                <strong>
-                                    {offer.customer_fee != null
-                                        ? `₹${Number(
-                                              offer.customer_fee
-                                          ).toFixed(2)}`
-                                        : "Not available"}
-                                </strong>
-                            </div>
-                        </div>
+                                                                <div>
+                                                                    <small>Customer delivery fee</small>
+                                                                    <strong>
+                                                                        {offer.customer_fee != null
+                                                                            ? `₹${Number(
+                                                                                offer.customer_fee
+                                                                            ).toFixed(2)}`
+                                                                            : "Not available"}
+                                                                    </strong>
+                                                                </div>
+                                                            </div>
 
-                        <div className="dp-offer-expiry">
-                            <span>Offer expires:</span>
+                                                            <div className="dp-offer-expiry">
+                                                                <span>Offer expires:</span>
 
-                            <strong>
-                                {offer.offer_expires_at
-                                    ? new Date(
-                                          offer.offer_expires_at
-                                      ).toLocaleTimeString([], {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                      })
-                                    : "Unknown"}
-                            </strong>
-                        </div>
-                    </div>
+                                                                <strong>
+                                                                    {offer.offer_expires_at
+                                                                        ? new Date(
+                                                                            offer.offer_expires_at
+                                                                        ).toLocaleTimeString([], {
+                                                                            hour: "2-digit",
+                                                                            minute: "2-digit",
+                                                                        })
+                                                                        : "Unknown"}
+                                                                </strong>
+                                                            </div>
+                                                        </div>
 
-                    <div className="dp-offer-actions">
-                        <button
-                            type="button"
-                            className="dp-offer-decline"
-                            disabled={isProcessing}
-                            onClick={() =>
-                                handleDeclineOffer(
-                                    offer.delivery_id
-                                )
-                            }
-                        >
-                            {isProcessing
-                                ? "Please wait..."
-                                : "Decline"}
-                        </button>
+                                                        <div className="dp-offer-actions">
+                                                            <button
+                                                                type="button"
+                                                                className="dp-offer-decline"
+                                                                disabled={isProcessing}
+                                                                onClick={() =>
+                                                                    handleDeclineOffer(
+                                                                        offer.delivery_id
+                                                                    )
+                                                                }
+                                                            >
+                                                                {isProcessing
+                                                                    ? "Please wait..."
+                                                                    : "Decline"}
+                                                            </button>
 
-                        <button
-                            type="button"
-                            className="dp-offer-accept"
-                            disabled={isProcessing}
-                            onClick={() =>
-                                handleAcceptOffer(
-                                    offer.delivery_id
-                                )
-                            }
-                        >
-                            {isProcessing
-                                ? "Please wait..."
-                                : "Accept Delivery"}
-                        </button>
-                    </div>
-                </article>
-            );
-        })}
-    </div>
-)}
+                                                            <button
+                                                                type="button"
+                                                                className="dp-offer-accept"
+                                                                disabled={isProcessing}
+                                                                onClick={() =>
+                                                                    handleAcceptOffer(
+                                                                        offer.delivery_id
+                                                                    )
+                                                                }
+                                                            >
+                                                                {isProcessing
+                                                                    ? "Please wait..."
+                                                                    : "Accept Delivery"}
+                                                            </button>
+                                                        </div>
+                                                    </article>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
 
                                 </div>
 
@@ -867,15 +866,223 @@ async function handleDeclineOffer(deliveryId) {
                     )}
 
                     {activeSection === "earnings" && (
-                        <section className="dp-placeholder-page">
-                            <div className="dp-placeholder-icon">₹</div>
-                            <h1>Earnings</h1>
-                            <p>
-                                Track revenue from your completed deliveries.
-                            </p>
-                            <span>
-                                Earnings and compensation details will be connected later.
-                            </span>
+                        <section className="dp-history-page">
+
+                            {/* Page Header */}
+                            <div className="dp-history-header">
+                                <div>
+                                    <h1>Earnings & Order History</h1>
+                                    <p>
+                                        Track your completed deliveries and earnings.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    className="dp-history-refresh"
+                                    onClick={loadOrderHistory}
+                                    disabled={historyLoading}
+                                >
+                                    {historyLoading ? "Refreshing..." : "↻ Refresh"}
+                                </button>
+                            </div>
+
+                            {/* Summary Cards */}
+                            <div className="dp-history-summary">
+
+                                <article className="dp-history-summary-card">
+                                    <div className="dp-history-summary-icon">
+                                        🛵
+                                    </div>
+
+                                    <div>
+                                        <span>Completed Deliveries</span>
+                                        <h2>
+                                            {totalCompletedDeliveries}
+                                        </h2>
+                                        <p>
+                                            Successfully delivered orders
+                                        </p>
+                                    </div>
+                                </article>
+
+                                <article className="dp-history-summary-card">
+                                    <div className="dp-history-summary-icon">
+                                        ₹
+                                    </div>
+
+                                    <div>
+                                        <span>Total Earnings</span>
+                                        <h2>
+                                            {Number(totalEarnings).toLocaleString(
+                                                "en-IN",
+                                                {
+                                                    style: "currency",
+                                                    currency: "INR",
+                                                    maximumFractionDigits: 2,
+                                                }
+                                            )}
+                                        </h2>
+                                        <p>
+                                            Earnings from completed deliveries
+                                        </p>
+                                    </div>
+                                </article>
+
+                            </div>
+
+                            {/* Delivery History */}
+                            <div className="dp-history-content">
+
+                                <div className="dp-history-section-header">
+                                    <div>
+                                        <h2>Completed Deliveries</h2>
+                                        <p>
+                                            Your previously completed orders.
+                                        </p>
+                                    </div>
+
+                                    <span className="dp-history-count">
+                                        {orderHistory.length} deliveries
+                                    </span>
+                                </div>
+
+                                {/* Loading State */}
+                                {historyLoading && (
+                                    <div className="dp-history-message">
+                                        <div className="dp-history-spinner"></div>
+                                        <p>Loading your delivery history...</p>
+                                    </div>
+                                )}
+
+                                {/* Error State */}
+                                {!historyLoading && historyError && (
+                                    <div className="dp-history-error">
+                                        <p>{historyError}</p>
+
+                                        <button
+                                            type="button"
+                                            onClick={loadOrderHistory}
+                                        >
+                                            Try Again
+                                        </button>
+                                    </div>
+                                )}
+
+                                {/* Empty State */}
+                                {!historyLoading &&
+                                    !historyError &&
+                                    orderHistory.length === 0 && (
+                                        <div className="dp-history-empty">
+                                            <div>📦</div>
+
+                                            <h3>No completed deliveries yet</h3>
+
+                                            <p>
+                                                Your completed deliveries will appear here
+                                                once you finish your first delivery.
+                                            </p>
+                                        </div>
+                                    )}
+
+                                {/* Completed Delivery List */}
+                                {!historyLoading &&
+                                    !historyError &&
+                                    orderHistory.length > 0 && (
+                                        <div className="dp-history-list">
+
+                                            {orderHistory.map((delivery) => (
+                                                <article
+                                                    className="dp-history-card"
+                                                    key={delivery.delivery_id}
+                                                >
+                                                    <div className="dp-history-card-top">
+
+                                                        <div className="dp-history-restaurant">
+                                                            <div className="dp-history-restaurant-icon">
+                                                                🍽️
+                                                            </div>
+
+                                                            <div>
+                                                                <h3>
+                                                                    {delivery.shop_name ||
+                                                                        "Restaurant"}
+                                                                </h3>
+
+                                                                <p>
+                                                                    Order #
+                                                                    {delivery.order_id}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+
+                                                        <span className="dp-history-status">
+                                                            ✓ Delivered
+                                                        </span>
+
+                                                    </div>
+
+                                                    <div className="dp-history-details">
+
+                                                        <div>
+                                                            <span>Delivery ID</span>
+                                                            <strong>
+                                                                #{delivery.delivery_id}
+                                                            </strong>
+                                                        </div>
+
+                                                        <div>
+                                                            <span>Distance</span>
+                                                            <strong>
+                                                                {delivery.distance_km != null
+                                                                    ? `${Number(
+                                                                        delivery.distance_km
+                                                                    ).toFixed(2)} km`
+                                                                    : "—"}
+                                                            </strong>
+                                                        </div>
+
+                                                        <div>
+                                                            <span>Completed On</span>
+                                                            <strong>
+                                                                {delivery.delivered_at
+                                                                    ? new Date(
+                                                                        delivery.delivered_at
+                                                                    ).toLocaleString("en-IN", {
+                                                                        day: "2-digit",
+                                                                        month: "short",
+                                                                        year: "numeric",
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                    })
+                                                                    : "—"}
+                                                            </strong>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div className="dp-history-card-footer">
+                                                        <span>Delivery Earnings</span>
+
+                                                        <strong>
+                                                            {Number(
+                                                                delivery.partner_earning ?? 0
+                                                            ).toLocaleString("en-IN", {
+                                                                style: "currency",
+                                                                currency: "INR",
+                                                                maximumFractionDigits: 2,
+                                                            })}
+                                                        </strong>
+                                                    </div>
+
+                                                </article>
+                                            ))}
+
+                                        </div>
+                                    )}
+
+                            </div>
+
                         </section>
                     )}
 

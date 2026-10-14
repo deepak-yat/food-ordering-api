@@ -468,7 +468,7 @@ def get_active_delivery(
             "status": delivery.status.value,
             "distance_km": delivery.distance_km,
             "customer_fee": delivery.customer_fee,
-            "partner_earning": delivery.customer_fee,
+            "partner_earning": delivery.partner_earning or 0,
             "assigned_at": delivery.assigned_at,
             "arrived_at_shop_at": delivery.arrived_at_shop_at,
             "picked_up_at": delivery.picked_up_at,
@@ -954,6 +954,16 @@ def verify_handover_otp(
         )
 
     # OTP is correct: complete the delivery.
+    # Split the existing customer delivery fee: 90% partner, 10% platform.
+
+    customer_fee = round(float(delivery.customer_fee or 0), 2)
+
+    delivery.partner_earning = round(customer_fee * 0.90, 2)
+    delivery.platform_fee = round(
+    customer_fee - delivery.partner_earning,
+    2,
+    )
+
     delivery.status = DeliveryStatus.DELIVERED
     delivery.delivered_at = now
 
