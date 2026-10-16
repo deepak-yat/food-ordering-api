@@ -17690,3 +17690,118 @@ height: 42px;
         white-space: normal;
     }
 }
+
+/* =========================================
+   SHOP PICKUP OTP VERIFICATION
+========================================= */
+
+.shop-pickup-verification {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 360px;
+    margin-top: 16px;
+    padding: 18px;
+    background: #fffdf5;
+    border: 1px solid #f0e3b0;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.shop-pickup-verification h3 {
+    margin: 0;
+    color: #292929;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.shop-pickup-verification > p {
+    margin: 0;
+    color: #777;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.shop-pickup-verification input {
+    width: 100%;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    border: 1px solid #ddd5b9;
+    border-radius: 8px;
+    outline: none;
+    background: #fff;
+    color: #222;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 5px;
+    text-align: center;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shop-pickup-verification input:focus {
+    border-color: #d4a900;
+    box-shadow: 0 0 0 3px rgba(212, 169, 0, 0.15);
+}
+
+.shop-pickup-verification input:disabled {
+    background: #f5f5f5;
+    cursor: not-allowed;
+}
+
+.shop-pickup-verification .shop-order-primary-btn {
+    width: 100%;
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    background: #d4a900;
+    color: #222;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.shop-pickup-verification .shop-order-primary-btn:hover:not(:disabled) {
+    background: #bd9700;
+    transform: translateY(-1px);
+}
+
+.shop-pickup-verification .shop-order-primary-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.shop-pickup-verification .shop-orders-error {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 7px;
+    background: #fff0f0;
+    color: #c62828;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.shop-pickup-verification .shop-pickup-success {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 7px;
+    background: #eaf7ed;
+    color: #23763a;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+}
+
+/* Responsive layout */
+@media (max-width: 600px) {
+    .shop-pickup-verification {
+        max-width: 100%;
+        padding: 15px;
+    }
+
+    .shop-pickup-verification h3 {
+        font-size: 15px;
+    }
+}

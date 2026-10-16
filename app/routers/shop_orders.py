@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
+from pydantic import BaseModel
+import secrets
 
 from app.database import get_db
 from app.dependencies import get_current_shop, get_current_kitchen_staff_user
@@ -16,7 +18,7 @@ from app.models.order_delivery_address import OrderDeliveryAddress
 from app.models.order_item import OrderItem
 from app.models.shop import Shop
 from app.models.user import User
-
+from app.models.delivery import Delivery, DeliveryStatus
 from app.schemas.order import (
     OrderDeliveryAddressResponse,
     ShopOrderItemResponse,
@@ -31,7 +33,8 @@ router = APIRouter(
     prefix="/shop/orders",
     tags=["Shop Orders"]
 )
-
+class PickupOTPVerification(BaseModel):
+    otp: str
 
 @router.get(
     "",
@@ -731,4 +734,125 @@ def validate_order_ready(
             if delivery is not None
             else None
         ),
+    }
+
+@router.post("/{order_id}/verify-pickup-otp")
+def verify_pickup_otp(
+    order_id: int,
+    data: PickupOTPVerification,
+    current_shop: Shop = Depends(get_current_shop),
+    db: Session = Depends(get_db),
+):
+    # Confirm that this order belongs to the authenticated shop.
+    order = db.exec(
+        select(Order).where(
+            Order.order_id == order_id,
+            Order.shop_id == current_shop.shop_id,
+        )
+    ).first()
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found",
+        )
+
+    # Find the delivery associated with this order.
+    delivery = db.exec(
+        select(Delivery)
+        .where(Delivery.order_id == order_id)
+        .with_for_update()
+    ).first()
+
+    if delivery is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Delivery not found for this order",
+        )
+
+    # The partner must have arrived at the restaurant.
+    if delivery.status != DeliveryStatus.ARRIVED_AT_SHOP:
+        raise HTTPException(
+            status_code=409,
+            detail="Delivery partner has not arrived at the restaurant",
+        )
+
+    # Prevent verification if the code was already used.
+    if delivery.pickup_verified_at is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Pickup OTP has already been verified",
+        )
+
+    now = datetime.now(timezone.utc)
+
+    if (
+        delivery.pickup_otp_expires_at
+        and delivery.pickup_otp_expires_at.tzinfo is None
+    ):
+        now = now.replace(tzinfo=None)
+    # Check whether an OTP exists.
+    if (
+        not delivery.pickup_otp
+        or not delivery.pickup_otp_expires_at
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="No valid pickup OTP is available",
+        )
+
+    # Check expiration.
+    if delivery.pickup_otp_expires_at <= now:
+        raise HTTPException(
+            status_code=400,
+            detail="Pickup OTP has expired",
+        )
+
+    # Limit incorrect attempts.
+    if delivery.pickup_otp_attempts >= 5:
+        raise HTTPException(
+            status_code=429,
+            detail="Maximum OTP attempts exceeded",
+        )
+
+    # Validate the submitted code.
+    if not secrets.compare_digest(
+        delivery.pickup_otp,
+        data.otp,
+    ):
+        delivery.pickup_otp_attempts += 1
+
+        db.add(delivery)
+        db.commit()
+
+        remaining_attempts = max(
+            0,
+            5 - delivery.pickup_otp_attempts,
+        )
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Incorrect pickup OTP. "
+                f"{remaining_attempts} attempts remaining."
+            ),
+        )
+
+    # Mark the pickup as verified.
+    delivery.pickup_verified_at = now
+
+    # Remove the code so it cannot be reused or displayed.
+    delivery.pickup_otp = None
+    delivery.pickup_otp_expires_at = None
+
+    db.add(delivery)
+    db.commit()
+    db.refresh(delivery)
+
+    return {
+        "message": "Pickup verified successfully",
+        "order_id": order_id,
+        "delivery_id": delivery.delivery_id,
+        "pickup_verified": True,
+        "pickup_verified_at": delivery.pickup_verified_at,
     }

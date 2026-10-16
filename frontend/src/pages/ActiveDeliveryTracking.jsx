@@ -67,6 +67,30 @@ function ActiveDeliveryTracking() {
             isMounted = false;
         };
     }, [deliveryId]);
+
+useEffect(() => {
+    if (delivery?.status !== "ARRIVED_AT_SHOP") {
+        return;
+    }
+
+    const intervalId = setInterval(async () => {
+        try {
+            const data = await apiFetch("/delivery-partner/active");
+
+            if (
+                data.delivery &&
+                String(data.delivery.delivery_id) === String(deliveryId)
+            ) {
+                setDelivery(data.delivery);
+            }
+        } catch (err) {
+            console.error("Failed to refresh pickup verification:", err);
+        }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+}, [delivery?.status, deliveryId]);
+
     useEffect(() => {
     if (
         delivery?.status !== "OUT_FOR_DELIVERY" ||
@@ -487,14 +511,54 @@ setTimeout(() => {
     </button>
 )}
 {delivery?.status === "ARRIVED_AT_SHOP" && (
-    <button
-        type="button"
-        onClick={handlePickedUp}
-        disabled={actionLoading}
-        className="adt-action-button"
-    >
-        {actionLoading ? "Updating..." : "Picked Up Order"}
-    </button>
+    <>
+        <section className="adt-card">
+            <h2>Restaurant Pickup Verification</h2>
+
+            {!delivery.pickup_verified && delivery.pickup_otp ? (
+                <div>
+                    <p>
+                        Share this code with the restaurant staff
+                        to verify the order pickup.
+                    </p>
+
+                    <div className="adt-pickup-otp">
+                        {delivery.pickup_otp}
+                    </div>
+
+                    <p>
+                        Waiting for restaurant verification...
+                    </p>
+                </div>
+            ) : delivery.pickup_verified ? (
+                <div>
+                    <h3>✓ Pickup Verified</h3>
+                    <p>
+                        The restaurant has verified your pickup.
+                        You can now collect the order.
+                    </p>
+                </div>
+            ) : (
+                <p>
+                    Pickup code unavailable or expired.
+                    Please contact the restaurant staff.
+                </p>
+            )}
+        </section>
+
+        <button
+            type="button"
+            onClick={handlePickedUp}
+            disabled={actionLoading || !delivery.pickup_verified}
+            className="adt-action-button"
+        >
+            {actionLoading
+                ? "Updating..."
+                : !delivery.pickup_verified
+                ? "Waiting for Verification"
+                : "Picked Up Order"}
+        </button>
+    </>
 )}
 {delivery?.status === "PICKED_UP" && (
     <button

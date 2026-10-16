@@ -9,7 +9,10 @@ function ShopOrders() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [updatingOrderId, setUpdatingOrderId] = useState(null);
-
+    const [pickupOtpValues, setPickupOtpValues] = useState({});
+    const [pickupOtpLoadingOrderId, setPickupOtpLoadingOrderId] = useState(null);
+    const [pickupOtpErrors, setPickupOtpErrors] = useState({});
+    const [pickupOtpSuccess, setPickupOtpSuccess] = useState({});
  const [selectedStatus, setSelectedStatus] = useState("pending");
 const [currentPage, setCurrentPage] = useState(1);
 
@@ -141,6 +144,72 @@ useEffect(() => {
         }
     }
 
+
+    async function verifyPickupOtp(orderId) {
+    const otp = pickupOtpValues[orderId] || "";
+
+    if (!/^\d{6}$/.test(otp)) {
+        setPickupOtpErrors((previous) => ({
+            ...previous,
+            [orderId]: "Enter a valid 6-digit OTP.",
+        }));
+        return;
+    }
+
+    setPickupOtpLoadingOrderId(orderId);
+
+    setPickupOtpErrors((previous) => ({
+        ...previous,
+        [orderId]: "",
+    }));
+
+    setPickupOtpSuccess((previous) => ({
+        ...previous,
+        [orderId]: "",
+    }));
+
+    try {
+        const response = await fetch(
+            `http://127.0.0.1:8000/shop/orders/${orderId}/verify-pickup-otp`,
+            {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ otp }),
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(
+                data.detail || "Pickup OTP verification failed."
+            );
+        }
+
+        setPickupOtpValues((previous) => ({
+            ...previous,
+            [orderId]: "",
+        }));
+
+        setPickupOtpSuccess((previous) => ({
+            ...previous,
+            [orderId]: data.message || "Pickup verified successfully!",
+        }));
+
+    } catch (error) {
+        setPickupOtpErrors((previous) => ({
+            ...previous,
+            [orderId]: error.message || "Pickup OTP verification failed.",
+        }));
+    } finally {
+        setPickupOtpLoadingOrderId(null);
+    }
+ }
+
+
     function getNextAction(order) {
 
         switch (order.status.toLowerCase()) {
@@ -187,22 +256,7 @@ useEffect(() => {
                 return null;
 
             case "ready":
-                return (
-                    <button
-                        className="shop-order-primary-btn"
-                        disabled={
-                            updatingOrderId === order.order_id
-                        }
-                        onClick={() =>
-                            updateOrderStatus(
-                                order.order_id,
-                                "completed"
-                            )
-                        }
-                    >
-                        Complete Order
-                    </button>
-                );
+                return null;
 
             default:
                 return null;
@@ -478,11 +532,81 @@ useEffect(() => {
                         </span>
                     )}
 
-                    <div className="shop-live-order-action-buttons">
-                        {getNextAction(order)}
+<div className="shop-live-order-action-buttons">
+    {getNextAction(order)}
 
-                        {order.status.toLowerCase() === "preparing" && (
-    <div className="shop-order-waiting-message">
+    {/* PICKUP OTP VERIFICATION — START */}
+    {order.status.toLowerCase() === "ready" && (
+        <div className="shop-pickup-verification">
+            <h3>Pickup Verification</h3>
+
+            <p>
+                Ask the delivery partner for the 6-digit pickup OTP
+                before handing over the order.
+            </p>
+
+            <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="Enter 6-digit OTP"
+                value={pickupOtpValues[order.order_id] || ""}
+                onChange={(event) => {
+                    const value = event.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, 6);
+
+                    setPickupOtpValues((previous) => ({
+                        ...previous,
+                        [order.order_id]: value,
+                    }));
+
+                    setPickupOtpErrors((previous) => ({
+                        ...previous,
+                        [order.order_id]: "",
+                    }));
+                }}
+                disabled={
+                    pickupOtpLoadingOrderId === order.order_id ||
+                    Boolean(pickupOtpSuccess[order.order_id])
+                }
+            />
+
+            <button
+                type="button"
+                className="shop-order-primary-btn"
+                onClick={() => verifyPickupOtp(order.order_id)}
+                disabled={
+                    pickupOtpLoadingOrderId === order.order_id ||
+                    (pickupOtpValues[order.order_id] || "").length !== 6 ||
+                    Boolean(pickupOtpSuccess[order.order_id])
+                }
+            >
+                {pickupOtpLoadingOrderId === order.order_id
+                    ? "Verifying..."
+                    : pickupOtpSuccess[order.order_id]
+                    ? "Pickup Verified"
+                    : "Verify Pickup OTP"}
+            </button>
+
+            {pickupOtpErrors[order.order_id] && (
+                <p className="shop-orders-error">
+                    {pickupOtpErrors[order.order_id]}
+                </p>
+            )}
+
+            {pickupOtpSuccess[order.order_id] && (
+                <p className="shop-pickup-success">
+                    ✓ {pickupOtpSuccess[order.order_id]}
+                </p>
+            )}
+        </div>
+    )}
+    {/* PICKUP OTP VERIFICATION — END */}
+
+    {order.status.toLowerCase() === "preparing" && (
+        <div className="shop-order-waiting-message">
         <strong>Being Prepared by Kitchen</strong>
 
         {order.assigned_kitchen_staff_name && (

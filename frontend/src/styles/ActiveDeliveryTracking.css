@@ -873,3 +873,22 @@
         font-size: 15px;
     }
 }
+
+.adt-pickup-otp {
+    display: inline-block;
+    margin: 16px 0;
+    padding: 14px 28px;
+    border: 2px dashed #d97706;
+    border-radius: 12px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 8px;
+    text-align: center;
+}
+
+.adt-action-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}

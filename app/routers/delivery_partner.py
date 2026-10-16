@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time
 import requests
 import secrets
 from datetime import timedelta
@@ -258,11 +258,13 @@ def accept_delivery_offer(
 ):
     now = datetime.now(timezone.utc)
 
+    # Lock the delivery record to prevent concurrent acceptance.
     delivery = db.exec(
         select(Delivery)
         .where(Delivery.delivery_id == delivery_id)
         .with_for_update()
     ).first()
+
     if delivery is None:
         raise HTTPException(
             status_code=404,
@@ -276,12 +278,14 @@ def accept_delivery_offer(
             detail="This delivery offer is not assigned to you",
         )
 
+    # Only an offered delivery can be accepted.
     if delivery.status != DeliveryStatus.OFFERED:
         raise HTTPException(
             status_code=409,
             detail="This delivery is no longer available for acceptance",
         )
 
+    # Check whether the offer has expired.
     if (
         delivery.offer_expires_at is None
         or delivery.offer_expires_at <= now
@@ -291,19 +295,21 @@ def accept_delivery_offer(
             detail="This delivery offer has expired",
         )
 
+    # The partner must be online.
     if not partner.is_online:
         raise HTTPException(
             status_code=409,
             detail="You must be online to accept a delivery offer",
         )
 
+    # Only approved delivery partners can accept offers.
     if partner.status != DeliveryPartnerStatus.APPROVED:
         raise HTTPException(
             status_code=403,
             detail="Your delivery partner account is not approved",
         )
 
-    # Ensure the associated order still exists and is READY.
+    # Ensure the associated order exists.
     order = db.get(Order, delivery.order_id)
 
     if order is None:
@@ -312,16 +318,25 @@ def accept_delivery_offer(
             detail="Associated order not found",
         )
 
-    from app.models.order import OrderStatus
-
-    if order.status != OrderStatus.READY:   
+    # The order must still be ready for delivery.
+    if order.status != OrderStatus.READY:
         raise HTTPException(
             status_code=409,
             detail="The order is no longer ready for delivery",
         )
 
+    # Accept the delivery.
     delivery.status = DeliveryStatus.ASSIGNED
     delivery.assigned_at = now
+
+    # Generate a unique six-digit pickup verification code.
+    delivery.pickup_otp = f"{secrets.randbelow(1_000_000):06d}"
+
+    # Set the pickup code expiration time.
+    delivery.pickup_otp_expires_at = now + timedelta(hours=2)
+
+    # Ensure this delivery has not been marked as verified.
+    delivery.pickup_verified_at = None
 
     db.add(delivery)
     db.commit()
@@ -333,8 +348,8 @@ def accept_delivery_offer(
         "order_id": delivery.order_id,
         "status": delivery.status.value,
         "assigned_at": delivery.assigned_at,
+        "pickup_verification_required": True,
     }
-
 
 @router.post("/offers/{delivery_id}/decline")
 def decline_delivery_offer(
@@ -466,6 +481,16 @@ def get_active_delivery(
             "delivery_id": delivery.delivery_id,
             "order_id": delivery.order_id,
             "status": delivery.status.value,
+            "pickup_otp": (
+    delivery.pickup_otp
+    if (
+        delivery.status == DeliveryStatus.ARRIVED_AT_SHOP
+        and delivery.pickup_verified_at is None
+        and delivery.pickup_otp_expires_at is not None
+        and delivery.pickup_otp_expires_at > datetime.now(timezone.utc).replace(tzinfo=None)    )
+    else None
+),
+"pickup_verified": delivery.pickup_verified_at is not None,
             "distance_km": delivery.distance_km,
             "customer_fee": delivery.customer_fee,
             "partner_earning": delivery.partner_earning or 0,
@@ -572,7 +597,13 @@ def mark_picked_up(
                 f"{delivery.status.value}"
             ),
         )
-
+        # The shop must verify the pickup OTP before collection.
+    if delivery.pickup_verified_at is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Pickup must be verified by the shop before collecting the order",
+        )   
+    
     now = datetime.now(timezone.utc)
 
     delivery.status = DeliveryStatus.PICKED_UP
@@ -1034,4 +1065,132 @@ def get_delivery_partner_order_history(
         "total_completed_deliveries": len(history),
         "total_earnings": round(total_earnings, 2),
         "deliveries": history,
+    }
+
+
+
+@router.get("/recent-activity")
+def get_delivery_partner_recent_activity(
+    current_partner: DeliveryPartner = Depends(get_current_delivery_partner),
+    db: Session = Depends(get_db),
+):
+    # Calculate today's date range using the server's local timezone.
+    today = datetime.now().date()
+    start_of_day = datetime.combine(today, time.min)
+    end_of_day = start_of_day + timedelta(days=1)
+
+    # Fetch all deliveries assigned to this delivery partner.
+    deliveries = db.exec(
+        select(Delivery)
+        .where(
+            Delivery.delivery_partner_id == current_partner.partner_id
+        )
+    ).all()
+
+    activities = []
+
+    # Delivery lifecycle events and their corresponding timestamps.
+    status_events = [
+        (
+            "assigned_at",
+            "ASSIGNED",
+            "Delivery Accepted",
+            "You accepted a delivery",
+            "🛵",
+        ),
+        (
+            "arrived_at_shop_at",
+            "ARRIVED_AT_SHOP",
+            "Arrived at Restaurant",
+            "You arrived at the restaurant",
+            "📍",
+        ),
+        (
+            "picked_up_at",
+            "PICKED_UP",
+            "Order Picked Up",
+            "You picked up the order",
+            "📦",
+        ),
+        (
+            "out_for_delivery_at",
+            "OUT_FOR_DELIVERY",
+            "Out for Delivery",
+            "You started delivering the order",
+            "🚴",
+        ),
+        (
+            "arrived_at_customer_at",
+            "ARRIVED_AT_CUSTOMER",
+            "Arrived at Customer",
+            "You arrived at the customer",
+            "📍",
+        ),
+        (
+            "delivered_at",
+            "DELIVERED",
+            "Delivery Completed",
+            "You completed the delivery",
+            "✅",
+        ),
+    ]
+
+    for delivery in deliveries:
+        order = db.get(Order, delivery.order_id)
+        shop = db.get(Shop, order.shop_id) if order else None
+
+        for (
+            timestamp_field,
+            status,
+            title,
+            description,
+            icon,
+        ) in status_events:
+
+            event_time = getattr(delivery, timestamp_field, None)
+
+            if event_time is None:
+                continue
+
+            # Include only events that occurred today.
+            # Handle timezone-aware and timezone-naive timestamps.
+            if event_time.tzinfo is not None:
+                event_date = event_time.date()
+                today_date = datetime.now(event_time.tzinfo).date()
+            else:
+                event_date = event_time.date()
+                today_date = today
+
+            if event_date != today_date:
+                continue
+
+            activities.append(
+                {
+                    "delivery_id": delivery.delivery_id,
+                    "order_id": delivery.order_id,
+                    "shop_name": (
+                        shop.shop_name if shop else "Unknown Restaurant"
+                    ),
+                    "status": status,
+                    "title": title,
+                    "description": description,
+                    "icon": icon,
+                    "timestamp": event_time,
+                    "partner_earning": (
+                        float(delivery.partner_earning or 0)
+                        if status == "DELIVERED"
+                        else None
+                    ),
+                }
+            )
+
+    # Sort newest activity first.
+    activities.sort(
+        key=lambda activity: activity["timestamp"],
+        reverse=True,
+    )
+
+    return {
+        "activities": activities[:20],
+        "total": len(activities),
     }

@@ -64,6 +64,11 @@ class Delivery(SQLModel, table=True):
     handover_otp: str | None = None
     handover_otp_attempts: int = Field(default=0)
     handover_otp_expires_at: datetime | None = None
+        # Shop pickup verification
+    pickup_otp: str | None = None
+    pickup_otp_expires_at: datetime | None = None
+    pickup_verified_at: datetime | None = None
+    pickup_otp_attempts: int = Field(default=0)
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "../styles/DeliveryPartnerDashboard.css";
+import DeliveryPartnerAccount from "../components/DeliveryPartnerAccount";
 import { apiFetch } from "../api/client";
 function DeliveryPartnerDashboard() {
     const { user, logout } = useAuth();
@@ -9,6 +10,7 @@ function DeliveryPartnerDashboard() {
 
     const [activeSection, setActiveSection] = useState("orders");
     const [isOnline, setIsOnline] = useState(false);
+    const [availabilityInitialized, setAvailabilityInitialized] = useState(false);
     const [locationLabel, setLocationLabel] = useState(
         "Location not available"
     );
@@ -29,9 +31,136 @@ function DeliveryPartnerDashboard() {
     const [orderHistory, setOrderHistory] = useState([]);
     const [totalCompletedDeliveries, setTotalCompletedDeliveries] = useState(0);
     const [totalEarnings, setTotalEarnings] = useState(0);
+    const [todayCompletedDeliveries, setTodayCompletedDeliveries] = useState(0);
+    const [todayEarnings, setTodayEarnings] = useState(0);
     const [historyLoading, setHistoryLoading] = useState(false);
     const [historyError, setHistoryError] = useState("");
+    const [selectedHistoryDate, setSelectedHistoryDate] = useState(() => {
+    const today = new Date();
+    
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+    });
+    const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+};
+const [recentActivities, setRecentActivities] = useState([]);
+const [activityLoading, setActivityLoading] = useState(true);
+const [activityError, setActivityError] = useState("");
+const changeHistoryDate = (days) => {
+    const currentDate = new Date(`${selectedHistoryDate}T12:00:00`);
+    currentDate.setDate(currentDate.getDate() + days);
+
+    const today = getLocalDateString(new Date());
+    const newDate = getLocalDateString(currentDate);
+
+    // Prevent selecting a future date.
+    if (newDate > today) {
+        return;
+    }
+
+    setSelectedHistoryDate(newDate);
+};
+
+const filteredOrderHistory = orderHistory.filter((delivery) => {
+    if (!delivery.delivered_at) {
+        return false;
+    }
+
+    const deliveryDate = getLocalDateString(
+        new Date(delivery.delivered_at)
+    );
+
+    return deliveryDate === selectedHistoryDate;
+});
+const selectedDateCompletedDeliveries = filteredOrderHistory.length;
+
+const selectedDateTotalEarnings = filteredOrderHistory.reduce(
+    (total, delivery) => total + (Number(delivery.partner_earning) || 0),
+    0
+);
+useEffect(() => {
+  const fetchRecentActivities = async () => {
+    try {
+      setActivityLoading(true);
+      setActivityError("");
+
+      const response = await apiFetch(
+        "/delivery-partner/recent-activity"
+      );
+
+      setRecentActivities(response.activities || []);
+    } catch (error) {
+      console.error("Failed to fetch recent activities:", error);
+      setActivityError("Unable to load recent activity.");
+    } finally {
+      setActivityLoading(false);
+    }
+  };
+
+  fetchRecentActivities();
+}, []);
     useEffect(() => {
+        let cancelled = false;
+
+        async function loadSavedAvailability() {
+            try {
+                const profile = await apiFetch("/delivery-partner/profile");
+
+                if (cancelled) return;
+
+                setIsOnline(Boolean(profile.is_online));
+
+                // Restore the saved location when coordinates are available.
+                if (
+                    profile.latitude != null &&
+                    profile.longitude != null
+                ) {
+                    setLocationLabel(
+                        `${Number(profile.latitude).toFixed(5)}, ${Number(
+                            profile.longitude
+                        ).toFixed(5)}`
+                    );
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to load delivery partner availability:",
+                    error
+                );
+
+                if (!cancelled) {
+                    setLocationError(
+                        error.data?.detail ||
+                        error.message ||
+                        "Unable to load your saved availability."
+                    );
+                }
+            } finally {
+                if (!cancelled) {
+                    setAvailabilityInitialized(true);
+                }
+            }
+        }
+
+        loadSavedAvailability();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+    useEffect(() => {
+        // Wait until the backend availability has been loaded.
+        if (!availabilityInitialized) {
+            return;
+        }
+
         if (!isOnline) {
             setOffers([]);
             loadActiveDelivery();
@@ -47,7 +176,7 @@ function DeliveryPartnerDashboard() {
         }, 5000);
 
         return () => clearInterval(intervalId);
-    }, [isOnline]);
+    }, [isOnline, availabilityInitialized]);
     async function handleLogout() {
         try {
             await logout();
@@ -254,11 +383,42 @@ function DeliveryPartnerDashboard() {
         try {
             const data = await apiFetch("/delivery-partner/order-history");
 
-            setOrderHistory(data.deliveries || []);
+            const deliveries = data.deliveries || [];
+
+            setOrderHistory(deliveries);
+
             setTotalCompletedDeliveries(
                 data.total_completed_deliveries || 0
             );
+
             setTotalEarnings(data.total_earnings || 0);
+
+            // Calculate today's statistics using the local calendar date.
+            const now = new Date();
+
+            const todayDeliveries = deliveries.filter((delivery) => {
+                if (!delivery.delivered_at) {
+                    return false;
+                }
+
+                const deliveredAt = new Date(delivery.delivered_at);
+
+                return (
+                    deliveredAt.getFullYear() === now.getFullYear() &&
+                    deliveredAt.getMonth() === now.getMonth() &&
+                    deliveredAt.getDate() === now.getDate()
+                );
+            });
+
+            setTodayCompletedDeliveries(todayDeliveries.length);
+
+            setTodayEarnings(
+                todayDeliveries.reduce(
+                    (total, delivery) =>
+                        total + Number(delivery.partner_earning || 0),
+                    0
+                )
+            );
         } catch (error) {
             console.error("Failed to load delivery history:", error);
 
@@ -271,11 +431,12 @@ function DeliveryPartnerDashboard() {
             setHistoryLoading(false);
         }
     }
-    useEffect(() => {
-        if (activeSection === "earnings") {
-            loadOrderHistory();
-        }
-    }, [activeSection]);
+useEffect(() => {
+    if (activeSection === "earnings" || activeSection === "orders") {
+        loadOrderHistory();
+    }
+}, [activeSection]);
+
     async function loadActiveDelivery() {
         setActiveDeliveryLoading(true);
         setActiveDeliveryError("");
@@ -425,8 +586,8 @@ function DeliveryPartnerDashboard() {
                                 type="button"
                                 key={item.id}
                                 className={`dp-nav-item ${activeSection === item.id
-                                        ? "active"
-                                        : ""
+                                    ? "active"
+                                    : ""
                                     }`}
                                 onClick={() => {
                                     setActiveSection(item.id);
@@ -483,7 +644,9 @@ function DeliveryPartnerDashboard() {
                                     />
                                     <div>
                                         <h2>
-                                            You are currently {isOnline ? "Online" : "Offline"}
+                                            {!availabilityInitialized
+                                                ? "Checking availability..."
+                                                : `You are currently ${isOnline ? "Online" : "Offline"}`}
                                         </h2>
 
                                         <p>
@@ -596,9 +759,9 @@ function DeliveryPartnerDashboard() {
                                     <div className="dp-stat-icon">🛵</div>
 
                                     <div>
-                                        <strong>0</strong>
-                                        <span>Orders Completed</span>
-                                        <small>Today</small>
+<strong>{todayCompletedDeliveries}</strong>
+<span>Orders Completed</span>
+<small>Today</small>
                                     </div>
                                 </div>
 
@@ -606,9 +769,9 @@ function DeliveryPartnerDashboard() {
                                     <div className="dp-stat-icon">₹</div>
 
                                     <div>
-                                        <strong>₹0</strong>
-                                        <span>Earnings</span>
-                                        <small>Today</small>
+<strong>₹{todayEarnings.toFixed(2)}</strong>
+<span>Earnings</span>
+<small>Today</small>
                                     </div>
                                 </div>
 
@@ -660,8 +823,7 @@ function DeliveryPartnerDashboard() {
                                                 type="button"
                                                 className="dp-online-button dp-empty-online"
                                                 onClick={handleToggleAvailability}
-                                                disabled={availabilityLoading}
-                                            >
+                                                disabled={availabilityLoading || !availabilityInitialized}                                            >
                                                 {availabilityLoading ? "Please wait..." : "Go Online"}
                                             </button>
                                         </div>
@@ -833,37 +995,82 @@ function DeliveryPartnerDashboard() {
 
                                 </div>
 
-                                <aside className="dp-activity-panel">
+<aside className="dp-activity-panel">
+  <div className="dp-panel-heading">
+    <div>
+      <h2>Recent Activity</h2>
+      <p className="dp-activity-subtitle">Today's delivery updates</p>
+    </div>
 
-                                    <div className="dp-panel-heading">
-                                        <h2>Recent Activity</h2>
-                                    </div>
+    <span className="dp-activity-count">
+      {recentActivities.length}
+    </span>
+  </div>
 
-                                    <div className="dp-empty-activity">
-                                        <span>◷</span>
-                                        <p>
-                                            Your delivery activity will appear here.
-                                        </p>
-                                    </div>
+  {activityLoading ? (
+    <div className="dp-empty-activity">
+      <span>◷</span>
+      <p>Loading today's activity...</p>
+    </div>
+  ) : activityError ? (
+    <div className="dp-empty-activity">
+      <p>{activityError}</p>
+    </div>
+  ) : recentActivities.length === 0 ? (
+    <div className="dp-empty-activity">
+      <span>◷</span>
+      <p>No delivery activity yet today.</p>
+      <small>Your delivery updates will appear here.</small>
+    </div>
+  ) : (
+    <div className="dp-activity-list">
+      {recentActivities.map((activity, index) => (
+        <div
+          className="dp-activity-item"
+          key={`${activity.delivery_id}-${activity.status}-${activity.timestamp}-${index}`}
+        >
+          <div className="dp-activity-icon">
+            {activity.icon || "📦"}
+          </div>
 
-                                </aside>
+          <div className="dp-activity-content">
+            <h3>{activity.title}</h3>
+
+            <p>
+              Order #{activity.order_id}
+              {activity.shop_name
+                ? ` · ${activity.shop_name}`
+                : ""}
+            </p>
+
+            <time dateTime={activity.timestamp}>
+              {new Date(activity.timestamp).toLocaleTimeString(
+                "en-IN",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }
+              )}
+            </time>
+
+            {activity.status === "DELIVERED" && (
+              <span className="dp-activity-earning">
+                Earned ₹
+                {Number(activity.partner_earning || 0).toFixed(2)}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</aside>
 
                             </section>
                         </>
                     )}
 
-                    {activeSection === "account" && (
-                        <section className="dp-placeholder-page">
-                            <div className="dp-placeholder-icon">👤</div>
-                            <h1>Account</h1>
-                            <p>
-                                Manage your personal profile and vehicle details.
-                            </p>
-                            <span>
-                                Account management will be implemented in a later step.
-                            </span>
-                        </section>
-                    )}
+{activeSection === "account" && <DeliveryPartnerAccount />}
 
                     {activeSection === "earnings" && (
                         <section className="dp-history-page">
@@ -886,7 +1093,53 @@ function DeliveryPartnerDashboard() {
                                     {historyLoading ? "Refreshing..." : "↻ Refresh"}
                                 </button>
                             </div>
+                        <div className="dp-history-date-navigation">
+    <button
+        type="button"
+        onClick={() => changeHistoryDate(-1)}
+        aria-label="Previous day"
+    >
+        &#8592;
+    </button>
 
+    <span>
+        {new Date(`${selectedHistoryDate}T12:00:00`).toLocaleDateString(
+            "en-IN",
+            {
+                weekday: "short",
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            }
+        )}
+    </span>
+
+    <button
+        type="button"
+        onClick={() => changeHistoryDate(1)}
+        disabled={
+            selectedHistoryDate >= getLocalDateString(new Date())
+        }
+        aria-label="Next day"
+    >
+        &#8594;
+    </button>
+
+    <input
+        type="date"
+        value={selectedHistoryDate}
+        max={getLocalDateString(new Date())}
+        onChange={(event) => {
+            const date = event.target.value;
+            const today = getLocalDateString(new Date());
+
+            if (date && date <= today) {
+                setSelectedHistoryDate(date);
+            }
+        }}
+        aria-label="Select delivery history date"
+    />
+</div>
                             {/* Summary Cards */}
                             <div className="dp-history-summary">
 
@@ -898,8 +1151,7 @@ function DeliveryPartnerDashboard() {
                                     <div>
                                         <span>Completed Deliveries</span>
                                         <h2>
-                                            {totalCompletedDeliveries}
-                                        </h2>
+{selectedDateCompletedDeliveries}                                        </h2>
                                         <p>
                                             Successfully delivered orders
                                         </p>
@@ -913,16 +1165,16 @@ function DeliveryPartnerDashboard() {
 
                                     <div>
                                         <span>Total Earnings</span>
-                                        <h2>
-                                            {Number(totalEarnings).toLocaleString(
-                                                "en-IN",
-                                                {
-                                                    style: "currency",
-                                                    currency: "INR",
-                                                    maximumFractionDigits: 2,
-                                                }
-                                            )}
-                                        </h2>
+                                       <h2>
+    {Number(selectedDateTotalEarnings).toLocaleString(
+        "en-IN",
+        {
+            style: "currency",
+            currency: "INR",
+            maximumFractionDigits: 2,
+        }
+    )}
+</h2>
                                         <p>
                                             Earnings from completed deliveries
                                         </p>
@@ -943,8 +1195,7 @@ function DeliveryPartnerDashboard() {
                                     </div>
 
                                     <span className="dp-history-count">
-                                        {orderHistory.length} deliveries
-                                    </span>
+{filteredOrderHistory.length} deliveries                                    </span>
                                 </div>
 
                                 {/* Loading State */}
@@ -979,8 +1230,7 @@ function DeliveryPartnerDashboard() {
                                             <h3>No completed deliveries yet</h3>
 
                                             <p>
-                                                Your completed deliveries will appear here
-                                                once you finish your first delivery.
+                                                <p>No deliveries were made on this day.</p>
                                             </p>
                                         </div>
                                     )}
@@ -991,8 +1241,8 @@ function DeliveryPartnerDashboard() {
                                     orderHistory.length > 0 && (
                                         <div className="dp-history-list">
 
-                                            {orderHistory.map((delivery) => (
-                                                <article
+{filteredOrderHistory.map((delivery) => (
+                                                    <article
                                                     className="dp-history-card"
                                                     key={delivery.delivery_id}
                                                 >
