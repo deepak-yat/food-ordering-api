@@ -1039,7 +1039,7 @@ background: var(--primary-dark);
     height: 350px;
     max-width: 1200px;
     margin: 0 auto;
-    margin-top: 20px;
+    margin-top: 5px;
     padding: 55px 24px 35px;
 
     background-image:
@@ -1053,7 +1053,7 @@ background: var(--primary-dark);
     background-position: center;
     background-repeat: no-repeat;
 
-    border-radius: 18px;
+    
     overflow: visible;
 }
 

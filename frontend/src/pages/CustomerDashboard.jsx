@@ -11,6 +11,7 @@ import {
     useNavigate
 } from "react-router-dom";
 import "../styles/FoodlyExperience.css";
+import RecommendedItemsCarousel from "../components/RecommendedItemsCarousel";
 function CustomerDashboard() {
     const [shops, setShops] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -235,33 +236,34 @@ const {
     }
 
 }
+async function viewShopMenu(shopId, shopNameOverride = "") {
+    try {
+        setMenuLoading(true);
+        setError("");
 
-    async function viewShopMenu(shopId) {
+        const shop = shops.find(
+            (shop) => shop.shop_id === shopId
+        );
 
-        try {
-            setMenuLoading(true);
-            setError("");
-            const shop = shops.find(
-                shop => shop.shop_id === shopId
-            );
+        setSelectedShop(
+            shop || {
+                shop_id: shopId,
+                shop_name: shopNameOverride || "Restaurant",
+            }
+        );
 
-            setSelectedShop(shop);
-            const data = await apiFetch(
-                `/customer/view-shop/${shopId}/menu`
-            );
-            setMenu(data);
-        } catch (error) {
-            console.error(error);
+        const data = await apiFetch(
+            `/customer/view-shop/${shopId}/menu`
+        );
 
-            setError(
-                error.message ||
-                "Unable to load menu"
-            );
-        } finally {
-            setMenuLoading(false)
-        }
-
+        setMenu(data);
+    } catch (error) {
+        console.error(error);
+        setError(error.message || "Unable to load menu");
+    } finally {
+        setMenuLoading(false);
     }
+}
 
     function backToShops() {
     setSelectedShop(null);
@@ -274,7 +276,8 @@ async function addToCart(
     itemId,
     optionIds = [],
     quantity = 1,
-    optionQuantities = {}
+    optionQuantities = {},
+    requestedShopNameOverride = ""
 ) {
     try {
         await apiFetch(
@@ -305,8 +308,10 @@ async function addToCart(
             quantity: quantity,
             optionQuantities: optionQuantities,
             currentShopName: cart?.shop_name || "your current shop",
-            requestedShopName: selectedShop?.shop_name || "the selected shop"
-        });
+requestedShopName:
+    requestedShopNameOverride ||
+    selectedShop?.shop_name ||
+    "the selected shop"        });
 
         setError("");
         return;
@@ -858,7 +863,46 @@ async function addConfiguredItem(item) {
     }
 
 
- 
+ async function handleRecommendedItemClick(item) {
+    try {
+        setError("");
+
+        // Remember which item the customer selected.
+        setSearchedItemId(item.item_id);
+
+        // Open the restaurant menu for this recommended item.
+        await viewShopMenu(item.shop_id, item.shop_name);
+
+        // Configurable items must go through the options flow.
+        if (item.has_options) {
+            setExpandedItems((previous) => ({
+                ...previous,
+                [item.item_id]: true,
+            }));
+
+            return;
+        }
+
+        // Add ordinary items directly to the cart.
+        await addToCart(
+            item.item_id,
+            [],
+            1,
+            {},
+            item.shop_name
+        );
+    } catch (error) {
+        console.error(
+            "Error handling recommended item:",
+            error
+        );
+
+        setError(
+            error.message ||
+            "Unable to open the recommended item"
+        );
+    }
+}
 
     async function searchFoodly(query) {
         const value = query.trim();
@@ -1092,6 +1136,11 @@ async function addConfiguredItem(item) {
 
       {!selectedShop && (
         <>
+
+         <RecommendedItemsCarousel
+            onItemClick={handleRecommendedItemClick}
+        />
+
        <FeaturedItemsCarousel
     onAddToCart={(item) =>
         addToCart(
