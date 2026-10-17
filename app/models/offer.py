@@ -1,8 +1,14 @@
 from datetime import datetime, timezone
+from typing import Any
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    JSON,
+    text,
+)
 from sqlmodel import Field, SQLModel
-
 
 class Offer(SQLModel, table=True):
 
@@ -43,7 +49,23 @@ class Offer(SQLModel, table=True):
     )
 
     image_url: str | None = None
+        # Selected visual template for rendering this offer
+    template_id: str = Field(
+        default="premium_feast",
+        max_length=50,
+        index=True,
+    )
 
+    # Template-specific visual settings
+    design_config: dict[str, Any] = Field(
+        default_factory=dict,
+        sa_column=Column(
+            JSON,
+            nullable=False,
+            default=dict,
+            server_default=text("'{}'"),
+        ),
+    )
     discount_type: str
 
     discount_value: float

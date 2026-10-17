@@ -1,0 +1,646 @@
+/* =========================================
+   PREMIUM FEAST — FOODLY OFFER TEMPLATE
+   ========================================= */
+
+.premium-feast {
+    --feast-accent: #d4af37;
+
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    min-height: 320px;
+    overflow: hidden;
+    border: 1px solid rgba(212, 175, 55, 0.45);
+    border-radius: 22px;
+    background:
+        radial-gradient(
+            circle at 85% 45%,
+            rgba(212, 175, 55, 0.12),
+            transparent 38%
+        ),
+        linear-gradient(135deg, #17140e 0%, #080808 65%, #211a0c 100%);
+    color: #fffaf0;
+    box-shadow:
+        0 16px 38px rgba(0, 0, 0, 0.22),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+    font-family: inherit;
+    transition:
+        box-shadow 350ms ease,
+        border-color 350ms ease,
+        transform 350ms ease;
+}
+
+/* Decorative gold texture */
+
+.premium-feast__texture {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.3;
+    background-image:
+        radial-gradient(
+            circle at 15% 20%,
+            rgba(255, 255, 255, 0.08) 0,
+            transparent 25%
+        ),
+        repeating-linear-gradient(
+            125deg,
+            transparent 0,
+            transparent 34px,
+            rgba(212, 175, 55, 0.035) 35px,
+            transparent 36px
+        );
+}
+
+/* Text area */
+
+.premium-feast__content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: clamp(22px, 3vw, 38px);
+    min-width: 0;
+}
+
+/* Promotional badge */
+
+.premium-feast__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 100%;
+    padding: 9px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 999px;
+    background: var(--feast-accent);
+    color: #171208;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: 1.15px;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+    box-shadow: 0 4px 18px color-mix(
+        in srgb,
+        var(--feast-accent) 22%,
+        transparent
+    );
+}
+
+.premium-feast__badge-dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #171208;
+    box-shadow: 0 0 0 3px rgba(23, 18, 8, 0.12);
+}
+
+/* Shop identity */
+
+.premium-feast__shop {
+    margin: 22px 0 8px;
+    color: var(--feast-accent);
+    font-size: 10px;
+    font-weight: 750;
+    letter-spacing: 2.8px;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+
+/* Main title */
+
+.premium-feast__title {
+    max-width: 440px;
+    margin: 0;
+    color: #fffaf0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(28px, 3.1vw, 46px);
+    font-weight: 500;
+    letter-spacing: -1.1px;
+    line-height: 1.05;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+
+/* Description */
+
+.premium-feast__description {
+    max-width: 350px;
+    margin: 14px 0 20px;
+    color: rgba(255, 250, 240, 0.74);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+/* Discount panel */
+
+.premium-feast__discount {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    max-width: 100%;
+    padding: 11px 17px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--feast-accent) 65%,
+        transparent
+    );
+    border-radius: 12px;
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--feast-accent) 24%, #17140e),
+        rgba(0, 0, 0, 0.6)
+    );
+}
+
+.premium-feast__discount-value {
+    color: var(--feast-accent);
+    font-size: clamp(22px, 2.5vw, 32px);
+    font-weight: 900;
+    letter-spacing: -0.8px;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.premium-feast__discount-caption {
+    color: rgba(255, 250, 240, 0.65);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+}
+
+.premium-feast__eligibility {
+    margin: 13px 0 0;
+    color: rgba(255, 250, 240, 0.7);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* Food image area */
+
+.premium-feast__visual {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 100%;
+    overflow: hidden;
+}
+
+.premium-feast__image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    opacity: 0.9;
+    transform: scale(1.02);
+    transition:
+        transform 850ms cubic-bezier(0.2, 0.7, 0.2, 1),
+        opacity 350ms ease;
+}
+
+/* Blend the image into the dark background */
+
+.premium-feast__visual::before {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    content: "";
+    pointer-events: none;
+    background: linear-gradient(
+        90deg,
+        #080808 0%,
+        rgba(8, 8, 8, 0.68) 12%,
+        rgba(8, 8, 8, 0.05) 55%,
+        rgba(8, 8, 8, 0.12) 100%
+    );
+}
+
+.premium-feast__image-glow {
+    position: absolute;
+    z-index: 1;
+    inset: 15%;
+    border-radius: 50%;
+    background: var(--feast-accent);
+    opacity: 0.09;
+    filter: blur(45px);
+    pointer-events: none;
+}
+
+/* Fallback when no image is provided */
+
+.premium-feast__image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    color: var(--feast-accent);
+    opacity: 0.45;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 4px;
+}
+
+.premium-feast__image-placeholder span:first-child {
+    font-size: 74px;
+    line-height: 1;
+}
+
+/* Corner ornament */
+
+.premium-feast__ornament {
+    position: absolute;
+    z-index: 3;
+    top: -65px;
+    right: -65px;
+    width: 145px;
+    height: 145px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--feast-accent) 48%,
+        transparent
+    );
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.premium-feast__ornament::after {
+    position: absolute;
+    inset: 13px;
+    border: 1px solid color-mix(
+        in srgb,
+        var(--feast-accent) 35%,
+        transparent
+    );
+    border-radius: 50%;
+    content: "";
+}
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+
+.premium-feast--animated {
+    animation: feast-enter 650ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.premium-feast--animated .premium-feast__badge {
+    animation: feast-badge-enter 700ms 100ms both;
+}
+
+.premium-feast--animated .premium-feast__discount {
+    animation: feast-discount-enter 650ms 180ms both;
+}
+
+.premium-feast--animated .premium-feast__image {
+    animation: feast-image-enter 900ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes feast-enter {
+    from {
+        opacity: 0;
+        transform: translateY(14px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes feast-badge-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes feast-discount-enter {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes feast-image-enter {
+    from {
+        opacity: 0.4;
+        transform: scale(1.1);
+    }
+
+    to {
+        opacity: 0.9;
+        transform: scale(1.02);
+    }
+}
+
+/* Hover effects only for devices with a real pointer */
+
+@media (hover: hover) and (pointer: fine) {
+    .premium-feast:hover {
+        border-color: var(--feast-accent);
+        box-shadow:
+            0 22px 48px rgba(0, 0, 0, 0.3),
+            0 0 22px color-mix(
+                in srgb,
+                var(--feast-accent) 13%,
+                transparent
+            );
+    }
+
+    .premium-feast:hover .premium-feast__image {
+        transform: scale(1.07);
+    }
+}
+
+/* Compact layout */
+
+@media (max-width: 640px) {
+    .premium-feast {
+        grid-template-columns: minmax(0, 1fr) minmax(105px, 0.65fr);
+        min-height: 280px;
+        border-radius: 18px;
+    }
+
+    .premium-feast__content {
+        padding: 20px 12px 20px 18px;
+    }
+
+    .premium-feast__badge {
+        gap: 6px;
+        padding: 7px 9px;
+        font-size: 8px;
+        letter-spacing: 0.7px;
+    }
+
+    .premium-feast__shop {
+        margin-top: 19px;
+        font-size: 8px;
+        letter-spacing: 1.6px;
+    }
+
+    .premium-feast__title {
+        font-size: clamp(23px, 6vw, 32px);
+        letter-spacing: -0.6px;
+    }
+
+    .premium-feast__description {
+        margin: 11px 0 15px;
+        font-size: 11px;
+        line-height: 1.55;
+    }
+
+    .premium-feast__discount {
+        padding: 9px 10px;
+    }
+
+    .premium-feast__discount-value {
+        font-size: 21px;
+    }
+
+    .premium-feast__discount-caption {
+        font-size: 7px;
+        letter-spacing: 0.6px;
+    }
+
+    .premium-feast__eligibility {
+        font-size: 10px;
+    }
+
+    .premium-feast__visual::before {
+        background: linear-gradient(
+            90deg,
+            #080808 0%,
+            rgba(8, 8, 8, 0.38) 30%,
+            rgba(8, 8, 8, 0.05) 100%
+        );
+    }
+}
+
+/* Very narrow screens */
+
+@media (max-width: 360px) {
+    .premium-feast {
+        grid-template-columns: minmax(0, 1fr) 100px;
+    }
+
+    .premium-feast__content {
+        padding-left: 13px;
+    }
+
+    .premium-feast__title {
+        font-size: 22px;
+    }
+
+    .premium-feast__description {
+        font-size: 10px;
+    }
+
+    .premium-feast__discount-value {
+        font-size: 19px;
+    }
+}
+
+/* Accessibility: respect reduced motion */
+
+@media (prefers-reduced-motion: reduce) {
+    .premium-feast,
+    .premium-feast *,
+    .premium-feast::before,
+    .premium-feast::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Dynamic background and image blending */
+.premium-feast {
+    background:
+        radial-gradient(
+            ellipse at 82% 48%,
+            color-mix(in srgb, var(--feast-image-color) 35%, transparent),
+            transparent 55%
+        ),
+        linear-gradient(
+            135deg,
+            var(--feast-background, #100F0B),
+            #080807
+        );
+    isolation: isolate;
+    overflow: hidden;
+}
+
+/* Smooth ambient lighting behind the food image */
+.premium-feast__visual {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(
+            ellipse at center,
+            color-mix(in srgb, var(--feast-image-color) 45%, transparent),
+            transparent 70%
+        );
+}
+
+/* Food image with natural blending */
+.premium-feast__image {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--feast-image-x, 50%) var(--feast-image-y, 50%);
+    filter: saturate(1.08) contrast(1.03);
+    -webkit-mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, 0.3) 12%,
+        black 38%,
+        black 100%
+    );
+    mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(0, 0, 0, 0.3) 12%,
+        black 38%,
+        black 100%
+    );
+    transition:
+        filter 300ms ease,
+        transform 500ms ease;
+}
+
+/* Image glow adapts to the extracted image color */
+.premium-feast__image-glow {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse at 65% 50%,
+        color-mix(in srgb, var(--feast-image-color) 42%, transparent),
+        transparent 72%
+    );
+    filter: blur(24px);
+    opacity: 0.85;
+}
+
+/* Make the image feel alive on hover */
+.premium-feast:hover .premium-feast__image {
+    transform: scale(1.035);
+    filter: saturate(1.15) contrast(1.04);
+}
+
+/* Cleaner fallback when an offer has no image */
+.premium-feast__image-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: var(--feast-accent);
+    background:
+        radial-gradient(
+            circle,
+            color-mix(in srgb, var(--feast-accent) 18%, transparent),
+            transparent 65%
+        );
+    letter-spacing: 0.35em;
+}
+
+/* Respect the image-blending setting */
+.premium-feast:not(.premium-feast--image-blend) .premium-feast__image {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .premium-feast__image {
+        transition: none;
+    }
+
+    .premium-feast:hover .premium-feast__image {
+        transform: none;
+    }
+}
+
+/* Mobile adjustments */
+@media (max-width: 640px) {
+    .premium-feast__image {
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 0%,
+            black 25%,
+            black 100%
+        );
+        mask-image: linear-gradient(
+            to bottom,
+            transparent 0%,
+            black 25%,
+            black 100%
+        );
+    }
+}
+
+/* =========================================
+   LIVE TYPOGRAPHY CUSTOMIZATION
+========================================= */
+
+/* Apply the selected alignment to the content column. */
+.premium-feast__content {
+    text-align: var(--feast-text-align, left);
+    align-items: var(--feast-content-align, flex-start);
+}
+
+/* Make the title size respond to the slider. */
+.premium-feast__title {
+    font-size: var(--feast-title-size, 40px);
+    text-align: var(--feast-text-align, left);
+    width: 100%;
+}
+
+/* Keep supporting text aligned with the title. */
+.premium-feast__shop,
+.premium-feast__description,
+.premium-feast__eligibility {
+    text-align: var(--feast-text-align, left);
+    width: 100%;
+}
+
+/* Align the discount panel with the selected text alignment. */
+.premium-feast__discount {
+    align-self: var(--feast-content-align, flex-start);
+    text-align: var(--feast-text-align, left);
+}
+
+/* Center or right-align the text inside the discount panel too. */
+.premium-feast__discount {
+    align-items: var(--feast-content-align, flex-start);
+}

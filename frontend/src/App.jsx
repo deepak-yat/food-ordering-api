@@ -36,6 +36,10 @@ import ShopKitchenMonitor from "./pages/ShopKitchenMonitor";
 import ShopKitchenStaff from "./pages/ShopKitchenStaff";
 import DeliveryPartnerDashboard from "./pages/DeliveryPartnerDashboard";
 import ActiveDeliveryTracking from "./pages/ActiveDeliveryTracking";
+import PremiumFeastPreview from "./components/offers/PremiumFeastPreview";
+import SweetPlayfulPreview from "./components/offers/SweetPlayfulPreview";
+import UrbanCravePreview from "./components/offers/UrbanCravePreview";
+import EditorialPopPreview from "./components/offers/EditorialPopPreview";  
 function App() {
 
     return (
@@ -132,7 +136,22 @@ function App() {
                             </ProtectedRoute>
                         }
                     />
-                    
+                    <Route
+                        path="/premium-feast-preview"
+                        element={<PremiumFeastPreview />}
+                    />
+                    <Route
+                        path="/sweet-playful-preview"
+                        element={<SweetPlayfulPreview />}
+                    />
+                    <Route
+                        path="/urban-crave-preview"
+                        element={<UrbanCravePreview />}
+                    />
+                    <Route
+                        path="/editorial-pop-preview"
+                        element={<EditorialPopPreview />}
+                    />
                     <Route
                         path="/customer/orders/:orderId/details"
                         element={

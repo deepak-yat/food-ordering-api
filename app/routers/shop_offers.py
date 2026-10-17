@@ -15,7 +15,7 @@ from app.models.offer import Offer
 from app.models.offer_item import OfferItem
 from app.models.menu_item import MenuItem
 from app.schemas.offer import OfferResponse, OfferItemResponse,OfferCreate,OfferUpdate
-
+from app.services.offer_templates import validate_template_config
 
 router = APIRouter(
     prefix="/shop/offers",
@@ -100,6 +100,9 @@ def get_shop_offers(
                 is_active=offer.is_active,
                 status=get_offer_status(offer, now),
                 items=items,
+                # NEW: Template information
+                template_id=offer.template_id,
+                design_config=offer.design_config,
             )
         )
 
@@ -201,6 +204,18 @@ def create_shop_offer(
                     )
                 )
 
+    # Validate the selected template and its visual settings
+    try:
+        validated_design_config = validate_template_config(
+            template_id=data.template_id,
+            design_config=data.design_config,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
+
     # Create offer
     offer = Offer(
         shop_id=current_shop.shop_id,
@@ -211,7 +226,9 @@ def create_shop_offer(
         start_at=data.start_at,
         end_at=data.end_at,
         is_active=data.is_active,
-    )
+        template_id=data.template_id,
+        design_config=validated_design_config,
+        )
 
     db.add(offer)
     db.flush()
@@ -256,6 +273,8 @@ def create_shop_offer(
         is_active=offer.is_active,
         status=get_offer_status(offer, now),
         items=items,
+        template_id=offer.template_id,
+        design_config=offer.design_config,
     )
 
 @router.get(
@@ -316,6 +335,8 @@ def get_shop_offer(
         is_active=offer.is_active,
         status=get_offer_status(offer, now),
         items=items,
+        template_id=offer.template_id,
+        design_config=offer.design_config,
     )
 
 
@@ -460,6 +481,31 @@ def update_shop_offer(
                     )
                 )
 
+    # Use the submitted template, or retain the current template
+    template_id = (
+        data.template_id
+        if data.template_id is not None
+        else offer.template_id
+    )
+
+    # Use submitted settings, or retain the existing configuration
+    design_config = (
+        data.design_config
+        if data.design_config is not None
+        else offer.design_config
+    )
+
+    # Validate the resulting template configuration
+    try:
+        validated_design_config = validate_template_config(
+            template_id=template_id,
+            design_config=design_config,
+        )
+    except ValueError as error:
+        raise HTTPException(
+            status_code=400,
+            detail=str(error),
+        ) from error
     # Update offer fields
     if data.title is not None:
         offer.title = data.title
@@ -482,6 +528,12 @@ def update_shop_offer(
     if data.is_active is not None:
         offer.is_active = data.is_active
 
+    # Save the validated template settings
+    if data.template_id is not None:
+        offer.template_id = template_id
+
+    if data.design_config is not None or data.template_id is not None:
+        offer.design_config = validated_design_config    
     # Replace attached items only when item_ids was provided
     if data.item_ids is not None:
 
@@ -533,6 +585,8 @@ def update_shop_offer(
         is_active=offer.is_active,
         status=get_offer_status(offer, now),
         items=items,
+        template_id=offer.template_id,
+        design_config=offer.design_config,
     )
 
 @router.delete(
@@ -708,6 +762,8 @@ async def upload_offer_image(
             is_active=offer.is_active,
             status=get_offer_status(offer, now),
             items=items,
+            template_id=offer.template_id,
+            design_config=offer.design_config,
         )
 
     except HTTPException:

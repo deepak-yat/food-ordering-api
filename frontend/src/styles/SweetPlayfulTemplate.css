@@ -1,0 +1,653 @@
+/* =========================================
+   SWEET & PLAYFUL — BASE LAYOUT
+========================================= */
+
+.sweet-playful {
+    --playful-accent: #ff7b8a;
+    --playful-background: #fff3eb;
+    --playful-left-glow: #ffc2c9;
+    --playful-right-glow: #dccbff;
+    --playful-title-size: 40px;
+    --playful-text-align: center;
+
+    position: relative;
+    display: grid;
+    grid-template-columns:
+        minmax(0, 1fr)
+        minmax(240px, 1.1fr)
+        minmax(0, 1fr);
+    align-items: stretch;
+
+    width: 100%;
+    min-height: 390px;
+    isolation: isolate;
+    overflow: hidden;
+    border-radius: 24px;
+
+    color: #392b3a;
+
+    background:
+        radial-gradient(
+            ellipse at 0% 50%,
+            color-mix(
+                in srgb,
+                var(--playful-left-glow) 40%,
+                transparent
+            ),
+            transparent 55%
+        ),
+        radial-gradient(
+            ellipse at 100% 50%,
+            color-mix(
+                in srgb,
+                var(--playful-right-glow) 42%,
+                transparent
+            ),
+            transparent 55%
+        ),
+        linear-gradient(
+            135deg,
+            var(--playful-background),
+            #fff8f0 50%,
+            var(--playful-background)
+        );
+
+    box-shadow: 0 18px 50px rgba(110, 70, 80, 0.12);
+}
+
+/* =========================================
+   DECORATIVE BACKGROUND SHAPES
+========================================= */
+
+.sweet-playful__decoration {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 50%;
+    opacity: 0.5;
+}
+
+.sweet-playful__decoration--one {
+    top: -75px;
+    left: 32%;
+    width: 190px;
+    height: 190px;
+    background: radial-gradient(
+        circle,
+        rgba(255, 171, 186, 0.3),
+        transparent 70%
+    );
+}
+
+.sweet-playful__decoration--two {
+    right: 28%;
+    bottom: -100px;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(
+        circle,
+        rgba(190, 167, 255, 0.25),
+        transparent 70%
+    );
+}
+
+/* =========================================
+   FOOD IMAGE AREAS
+========================================= */
+
+.sweet-playful__visual {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    min-height: 100%;
+    overflow: hidden;
+    isolation: isolate;
+    background: transparent;
+}
+
+.sweet-playful__visual--left {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.sweet-playful__visual--right {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+/*
+ * Left image fades toward the right.
+ * Its inner edge dissolves into the central content.
+ */
+.sweet-playful__image--left {
+    -webkit-mask-image: linear-gradient(
+        to right,
+        #000 0%,
+        #000 35%,
+        rgba(0, 0, 0, 0.9) 48%,
+        rgba(0, 0, 0, 0.45) 68%,
+        transparent 100%
+    );
+
+    mask-image: linear-gradient(
+        to right,
+        #000 0%,
+        #000 35%,
+        rgba(0, 0, 0, 0.9) 48%,
+        rgba(0, 0, 0, 0.45) 68%,
+        transparent 100%
+    );
+}
+
+/*
+ * Right image fades toward the left.
+ * Its inner edge dissolves into the central content.
+ */
+.sweet-playful__image--right {
+    -webkit-mask-image: linear-gradient(
+        to left,
+        #000 0%,
+        #000 35%,
+        rgba(0, 0, 0, 0.9) 48%,
+        rgba(0, 0, 0, 0.45) 68%,
+        transparent 100%
+    );
+
+    mask-image: linear-gradient(
+        to left,
+        #000 0%,
+        #000 35%,
+        rgba(0, 0, 0, 0.9) 48%,
+        rgba(0, 0, 0, 0.45) 68%,
+        transparent 100%
+    );
+}
+
+.sweet-playful__image {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+
+    display: block;
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+    object-position: center;
+
+    transform: scale(1.03);
+    filter: saturate(1.1) contrast(1.02);
+
+    transition:
+        transform 650ms cubic-bezier(0.2, 0.7, 0.2, 1),
+        filter 350ms ease,
+        opacity 350ms ease;
+}
+
+/* Ambient light beneath each image */
+
+.sweet-playful__image-glow {
+    position: absolute;
+    z-index: 0;
+    inset: -10%;
+
+    pointer-events: none;
+
+    background: radial-gradient(
+        ellipse at center,
+        color-mix(
+            in srgb,
+            var(--playful-left-glow) 40%,
+            transparent
+        ),
+        transparent 72%
+    );
+
+    filter: blur(24px);
+    opacity: 0.65;
+}
+
+.sweet-playful__visual--right .sweet-playful__image-glow {
+    background: radial-gradient(
+        ellipse at center,
+        color-mix(
+            in srgb,
+            var(--playful-right-glow) 42%,
+            transparent
+        ),
+        transparent 72%
+    );
+}
+
+/* Image placeholders before images are uploaded */
+
+.sweet-playful__placeholder {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    color: #936a82;
+
+    background: radial-gradient(
+        ellipse at center,
+        rgba(255, 255, 255, 0.55),
+        transparent 72%
+    );
+}
+
+.sweet-playful__placeholder > span {
+    font-size: clamp(34px, 5vw, 64px);
+    filter: drop-shadow(0 8px 14px rgba(100, 60, 80, 0.12));
+}
+
+.sweet-playful__placeholder small {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+/* =========================================
+   CENTRAL OFFER CONTENT
+========================================= */
+
+.sweet-playful__content {
+    position: relative;
+    z-index: 2;
+
+    grid-column: 2;
+    grid-row: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 0;
+    padding: 34px 8px;
+
+    text-align: var(--playful-text-align);
+}
+
+.sweet-playful__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    max-width: 100%;
+    padding: 9px 15px;
+
+    border: 1px solid
+        color-mix(in srgb, var(--playful-accent) 28%, transparent);
+    border-radius: 999px;
+
+    color: color-mix(in srgb, var(--playful-accent) 75%, #563248);
+
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 5px 18px rgba(130, 80, 100, 0.07);
+
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 1.3px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.sweet-playful__badge > span {
+    color: var(--playful-accent);
+}
+
+.sweet-playful__shop {
+    width: 100%;
+    margin: 23px 0 10px;
+
+    color: #a17d8f;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2.2px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.sweet-playful__title {
+    width: 100%;
+    max-width: 420px;
+    margin: 0;
+
+    color: #392b3a;
+
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    font-size: var(--playful-title-size, 40px);
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1.08;
+
+    text-align: var(--playful-text-align, center);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+}
+
+.sweet-playful__description {
+    width: 100%;
+    max-width: 340px;
+    margin: 15px 0 22px;
+
+    color: #806b7a;
+
+    font-size: 13px;
+    line-height: 1.7;
+
+    text-align: var(--playful-text-align, center);
+    overflow-wrap: anywhere;
+}
+
+/* =========================================
+   DISCOUNT DISPLAY
+========================================= */
+
+.sweet-playful__discount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+
+    max-width: 100%;
+    padding: 15px 22px;
+
+    border: 2px dashed
+        color-mix(in srgb, var(--playful-accent) 65%, white);
+    border-radius: 20px;
+
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, var(--playful-accent) 14%, white),
+        rgba(255, 255, 255, 0.85)
+    );
+
+    box-shadow: 0 9px 24px
+        color-mix(in srgb, var(--playful-accent) 12%, transparent);
+
+    text-align: center;
+}
+
+.sweet-playful__discount-small {
+    color: #987c8c;
+
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.sweet-playful__discount-value {
+    color: var(--playful-accent);
+
+    font-size: clamp(26px, 3vw, 40px);
+    font-weight: 1000;
+    letter-spacing: -1px;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.sweet-playful__footer {
+    margin-top: 22px;
+
+    color: #ad8b9c;
+
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+}
+
+/* =========================================
+   SPARKLES
+========================================= */
+
+.sweet-playful__sparkle {
+    position: absolute;
+    z-index: 3;
+
+    color: var(--playful-accent);
+    pointer-events: none;
+
+    text-shadow: 0 3px 12px
+        color-mix(in srgb, var(--playful-accent) 22%, transparent);
+}
+
+.sweet-playful__sparkle--one {
+    top: 12%;
+    left: 48%;
+    font-size: 24px;
+}
+
+.sweet-playful__sparkle--two {
+    right: 47%;
+    bottom: 12%;
+    color: #b39af5;
+    font-size: 30px;
+}
+
+/* =========================================
+   ANIMATIONS
+========================================= */
+
+.sweet-playful--animated .sweet-playful__decoration--one {
+    animation: sweet-playful-float 7s ease-in-out infinite;
+}
+
+.sweet-playful--animated .sweet-playful__decoration--two {
+    animation: sweet-playful-float 9s ease-in-out infinite reverse;
+}
+
+.sweet-playful--animated .sweet-playful__sparkle--one {
+    animation: sweet-playful-twinkle 3s ease-in-out infinite;
+}
+
+.sweet-playful--animated .sweet-playful__sparkle--two {
+    animation: sweet-playful-twinkle 3.8s ease-in-out infinite 0.5s;
+}
+
+@keyframes sweet-playful-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-12px);
+    }
+}
+
+@keyframes sweet-playful-twinkle {
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(0.9) rotate(0deg);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.12) rotate(12deg);
+    }
+}
+
+/* Hover movement is optional and respects the animation toggle. */
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .sweet-playful--animated:hover .sweet-playful__image {
+        transform: scale(1.08);
+    }
+}
+
+/* Disable the fade masks when blending is switched off. */
+
+.sweet-playful:not(.sweet-playful--image-blend)
+    .sweet-playful__image--left {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+.sweet-playful:not(.sweet-playful--image-blend)
+    .sweet-playful__image--right {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+/* =========================================
+   RESPONSIVE LAYOUT
+========================================= */
+
+@media (max-width: 760px) {
+    .sweet-playful {
+        grid-template-columns:
+            minmax(0, 0.8fr)
+            minmax(180px, 1.4fr)
+            minmax(0, 0.8fr);
+
+        min-height: 340px;
+        border-radius: 20px;
+    }
+
+    .sweet-playful__content {
+        padding: 25px 4px;
+    }
+
+    .sweet-playful__badge {
+        gap: 5px;
+        padding: 8px 9px;
+        font-size: 8px;
+        letter-spacing: 0.6px;
+    }
+
+    .sweet-playful__shop {
+        margin-top: 18px;
+        font-size: 8px;
+        letter-spacing: 1.3px;
+    }
+
+    .sweet-playful__title {
+        font-size: min(var(--playful-title-size, 40px), 32px);
+        letter-spacing: -0.8px;
+    }
+
+    .sweet-playful__description {
+        margin: 12px 0 16px;
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .sweet-playful__discount {
+        padding: 11px 12px;
+        border-radius: 15px;
+    }
+
+    .sweet-playful__discount-small {
+        font-size: 7px;
+        letter-spacing: 0.5px;
+    }
+
+    .sweet-playful__discount-value {
+        font-size: 25px;
+    }
+
+    .sweet-playful__footer {
+        margin-top: 16px;
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 520px) {
+    .sweet-playful {
+        grid-template-columns: minmax(0, 1fr);
+        min-height: auto;
+    }
+
+    .sweet-playful__visual {
+        grid-column: 1;
+        min-height: 155px;
+    }
+
+    .sweet-playful__visual--left {
+        grid-row: 1;
+    }
+
+    .sweet-playful__content {
+        grid-column: 1;
+        grid-row: 2;
+        padding: 25px 22px 30px;
+    }
+
+    .sweet-playful__visual--right {
+        grid-row: 3;
+    }
+
+    /*
+     * In the stacked layout, fade both images toward
+     * the central content vertically instead of horizontally.
+     */
+
+    .sweet-playful__image--left {
+        -webkit-mask-image: linear-gradient(
+            to bottom,
+            #000 0%,
+            #000 35%,
+            rgba(0, 0, 0, 0.75) 65%,
+            transparent 100%
+        );
+
+        mask-image: linear-gradient(
+            to bottom,
+            #000 0%,
+            #000 35%,
+            rgba(0, 0, 0, 0.75) 65%,
+            transparent 100%
+        );
+    }
+
+    .sweet-playful__image--right {
+        -webkit-mask-image: linear-gradient(
+            to top,
+            #000 0%,
+            #000 35%,
+            rgba(0, 0, 0, 0.75) 65%,
+            transparent 100%
+        );
+
+        mask-image: linear-gradient(
+            to top,
+            #000 0%,
+            #000 35%,
+            rgba(0, 0, 0, 0.75) 65%,
+            transparent 100%
+        );
+    }
+
+    .sweet-playful__title {
+        font-size: min(var(--playful-title-size, 40px), 36px);
+    }
+
+    .sweet-playful__sparkle--one {
+        top: 7%;
+        left: 12%;
+    }
+
+    .sweet-playful__sparkle--two {
+        right: 12%;
+        bottom: 7%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sweet-playful *,
+    .sweet-playful *::before,
+    .sweet-playful *::after {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
+    }
+}
